@@ -83,6 +83,11 @@ export interface FeedMessage {
 	isAnnouncement?: boolean;
 	pinned?: boolean;
 	createdAt: string;
+	user?: {
+		id: string;
+		name: string;
+		avatarUrl?: string | null;
+	};
 }
 
 export interface MeetingEvent {
@@ -388,14 +393,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	}, [loadData]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
+	/* ─── Ref sync for notificationSettings & currentUser ─── */
+	const settingsRef = React.useRef(notificationSettings);
+	useEffect(() => {
+		settingsRef.current = notificationSettings;
+	}, [notificationSettings]);
+
+	const userRef = React.useRef(currentUser);
+	useEffect(() => {
+		userRef.current = currentUser;
+	}, [currentUser]);
+
 	/* ─── Persist Notifications ─── */
 	const saveNotifications = useCallback(
-		(newNotifications: AppNotification[]) => {
-			setNotifications(newNotifications);
-			localStorage.setItem(
-				'demos_notifications',
-				JSON.stringify(newNotifications),
-			);
+		(updater: AppNotification[] | ((prev: AppNotification[]) => AppNotification[])) => {
+			setNotifications((prev) => {
+				const next = typeof updater === 'function' ? updater(prev) : updater;
+				try {
+					localStorage.setItem(
+						'demos_notifications',
+						JSON.stringify(next),
+					);
+				} catch (e) {
+					console.error('Failed to persist notifications:', e);
+				}
+				return next;
+			});
 		},
 		[],
 	);
@@ -419,8 +442,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			url?: string;
 			meta?: Record<string, unknown>;
 		}) => {
+			const currentSettings = settingsRef.current;
 			// Check if this specific notification type is enabled
-			if (notificationSettings[type] === false) {
+			if (currentSettings[type] === false) {
 				return;
 			}
 
@@ -437,42 +461,128 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				meta,
 			};
 
-			saveNotifications([newNotification, ...notifications]);
+			saveNotifications((prev) => [newNotification, ...prev]);
 
 			// Play sound if enabled
-			if (notificationSettings.soundEnabled) {
+			if (currentSettings.soundEnabled) {
 				playNotificationSound();
 			}
 
 			// Send browser notification if enabled
-			if (notificationSettings.browserPushEnabled) {
+			if (currentSettings.browserPushEnabled) {
 				sendBrowserNotification(title, body, url);
 			}
 		},
-		[notificationSettings, notifications, saveNotifications],
+		[saveNotifications],
 	);
+
+	/* ─── Background Sync for Incoming Messages & Events ─── */
+	const knownMessageIdsRef = React.useRef<Set<string>>(new Set());
+	const isFirstSyncRef = React.useRef(true);
+
+	useEffect(() => {
+		let isMounted = true;
+
+		async function pollIncomingData() {
+			const user = userRef.current;
+			if (!user) return;
+
+			try {
+				const res = await fetch('/api/feed');
+				const data = await res.json();
+				if (data.messages && isMounted) {
+					const allMsgs: FeedMessage[] = data.messages;
+
+					// If first sync on page load, record all existing message IDs
+					if (isFirstSyncRef.current) {
+						allMsgs.forEach((m) => knownMessageIdsRef.current.add(m.id));
+						isFirstSyncRef.current = false;
+						return;
+					}
+
+					// Find new messages sent by OTHER users
+					const newMsgs = allMsgs.filter(
+						(m) =>
+							!knownMessageIdsRef.current.has(m.id) &&
+							m.userId !== user.id,
+					);
+
+					// Record all IDs
+					allMsgs.forEach((m) => knownMessageIdsRef.current.add(m.id));
+
+					// Trigger notifications for new incoming messages
+					newMsgs.forEach((m: FeedMessage) => {
+						const senderName = m.user?.name || 'A member';
+						const targetGroup = groups.find((g) => g.id === m.groupId);
+						const groupTitle = targetGroup?.name || 'Club';
+
+						if (m.fileUrl && m.fileName) {
+							triggerNotification({
+								type: 'feed_attachment',
+								title: `New File in ${groupTitle}`,
+								body: `${senderName} shared file "${m.fileName}".`,
+								groupId: m.groupId,
+								groupName: groupTitle,
+								url: `/group/${m.groupId}/feed`,
+							});
+						} else if (
+							m.content.includes('http://') ||
+							m.content.includes('https://')
+						) {
+							triggerNotification({
+								type: 'feed_link',
+								title: `Resource Link in ${groupTitle}`,
+								body: `${senderName} shared a link.`,
+								groupId: m.groupId,
+								groupName: groupTitle,
+								url: `/group/${m.groupId}/feed`,
+							});
+						} else {
+							triggerNotification({
+								type: 'feed_message',
+								title: `${groupTitle} Message`,
+								body: `${senderName}: ${m.content.slice(0, 70)}${m.content.length > 70 ? '...' : ''}`,
+								groupId: m.groupId,
+								groupName: groupTitle,
+								url: `/group/${m.groupId}/feed`,
+							});
+						}
+					});
+				}
+			} catch {
+				// Ignore polling network blips
+			}
+		}
+
+		// Initial check
+		pollIncomingData();
+
+		// Poll every 5 seconds
+		const interval = setInterval(pollIncomingData, 5000);
+		return () => {
+			isMounted = false;
+			clearInterval(interval);
+		};
+	}, [groups, triggerNotification]);
 
 	const markNotificationAsRead = useCallback(
 		(id: string) => {
-			const updated = notifications.map((n) =>
-				n.id === id ? { ...n, read: true } : n,
+			saveNotifications((prev) =>
+				prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
 			);
-			saveNotifications(updated);
 		},
-		[notifications, saveNotifications],
+		[saveNotifications],
 	);
 
 	const markAllNotificationsAsRead = useCallback(() => {
-		const updated = notifications.map((n) => ({ ...n, read: true }));
-		saveNotifications(updated);
-	}, [notifications, saveNotifications]);
+		saveNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+	}, [saveNotifications]);
 
 	const deleteNotification = useCallback(
 		(id: string) => {
-			const updated = notifications.filter((n) => n.id !== id);
-			saveNotifications(updated);
+			saveNotifications((prev) => prev.filter((n) => n.id !== id));
 		},
-		[notifications, saveNotifications],
+		[saveNotifications],
 	);
 
 	const clearAllNotifications = useCallback(() => {
@@ -839,7 +949,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			pinned?: boolean,
 		) => {
 			if (!currentUser) return;
-			const targetGroup = groups.find((g) => g.id === groupId);
 
 			try {
 				const res = await fetch('/api/feed', {
@@ -858,44 +967,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				const data = await res.json();
 				if (data.success && data.message) {
 					setFeedMessages((prev) => [...prev, data.message]);
-
-					if (fileUrl && fileName) {
-						triggerNotification({
-							type: 'feed_attachment',
-							title: `New File in ${targetGroup?.name || 'Club'}`,
-							body: `${currentUser.name} shared file "${fileName}".`,
-							groupId,
-							groupName: targetGroup?.name,
-							url: `/group/${groupId}/feed`,
-						});
-					} else if (
-						content.includes('http://') ||
-						content.includes('https://')
-					) {
-						triggerNotification({
-							type: 'feed_link',
-							title: `Resource Link in ${targetGroup?.name || 'Club'}`,
-							body: `${currentUser.name} shared a link.`,
-							groupId,
-							groupName: targetGroup?.name,
-							url: `/group/${groupId}/feed`,
-						});
-					} else {
-						triggerNotification({
-							type: 'feed_message',
-							title: `${targetGroup?.name || 'Club'} Message`,
-							body: `${currentUser.name}: ${content.slice(0, 70)}${content.length > 70 ? '...' : ''}`,
-							groupId,
-							groupName: targetGroup?.name,
-							url: `/group/${groupId}/feed`,
-						});
-					}
+					// Add to known IDs so poll doesn't duplicate
+					knownMessageIdsRef.current.add(data.message.id);
 				}
 			} catch (e) {
 				console.error('Could not save feed message:', e);
 			}
 		},
-		[currentUser, groups, triggerNotification],
+		[currentUser],
 	);
 
 	const deleteMessage = useCallback(async (messageId: string) => {

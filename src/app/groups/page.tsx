@@ -543,7 +543,7 @@ export default function GroupsPage() {
 								href="/search"
 								className="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary"
 							>
-								Explore Directory
+								Explore Clubs
 							</Link>
 							<button
 								onClick={openCreateModal}

@@ -6,19 +6,21 @@ export async function GET(req: Request) {
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId');
 
-		if (!groupId) {
-			return NextResponse.json(
-				{ error: 'Missing groupId parameter' },
-				{ status: 400 },
-			);
-		}
-
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
 		const messages = await prisma.feedMessage.findMany({
-			where: { groupId },
+			where: groupId ? { groupId } : undefined,
+			include: {
+				user: {
+					select: {
+						id: true,
+						name: true,
+						avatarUrl: true,
+					},
+				},
+			},
 			orderBy: { createdAt: 'asc' },
 		});
 
