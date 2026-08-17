@@ -194,6 +194,7 @@ export default function PendingPage() {
 													width={40}
 													height={40}
 													className="h-10 w-10 rounded-full object-cover border border-border shrink-0 mt-0.5"
+													unoptimized
 												/>
 											) : (
 												<div className="h-10 w-10 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">

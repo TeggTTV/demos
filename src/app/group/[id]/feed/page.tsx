@@ -814,6 +814,7 @@ export default function GroupFeedPage() {
 													width={32}
 													height={32}
 													className="h-8 w-8 rounded-full object-cover border border-border shrink-0 mt-0.5"
+													unoptimized
 												/>
 											) : (
 												<div className="h-8 w-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
@@ -1403,6 +1404,7 @@ export default function GroupFeedPage() {
 																						24
 																					}
 																					className="h-6 w-6 rounded-full object-cover border border-border"
+																					unoptimized
 																				/>
 																			) : (
 																				<div className="h-6 w-6 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold">
@@ -1851,6 +1853,7 @@ export default function GroupFeedPage() {
 													width={40}
 													height={40}
 													className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
+													unoptimized
 												/>
 											) : (
 												<div className="h-10 w-10 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-bold shrink-0">
@@ -1985,6 +1988,7 @@ export default function GroupFeedPage() {
 														width={36}
 														height={36}
 														className="h-9 w-9 rounded-full object-cover border border-border shrink-0"
+														unoptimized
 													/>
 												) : (
 													<div className="h-9 w-9 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-bold shrink-0">

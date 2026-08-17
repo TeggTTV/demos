@@ -33,10 +33,23 @@ export async function GET(req: Request) {
 			orderBy: { createdAt: 'asc' },
 		});
 
-		const messagesWithDownloadUrl = messages.map((msg) => ({
-			...msg,
-			fileUrl: msg.fileName ? `/api/feed/download?messageId=${msg.id}` : null,
-		}));
+		const messagesWithDownloadUrl = messages.map((msg) => {
+			const user = msg.user;
+			let avatarUrl = user?.avatarUrl;
+			if (avatarUrl && avatarUrl.startsWith('data:')) {
+				avatarUrl = `/api/users/avatar?userId=${user.id}`;
+			}
+			return {
+				...msg,
+				fileUrl: msg.fileName ? `/api/feed/download?messageId=${msg.id}` : null,
+				user: user
+					? {
+							...user,
+							avatarUrl,
+						}
+					: null,
+			};
+		});
 
 		return NextResponse.json({ messages: messagesWithDownloadUrl });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -77,6 +77,7 @@ export default function ProfilePage() {
 									className="h-16 w-16 rounded-full object-cover border border-border ring-2 ring-primary/20"
 									width={64}
 									height={64}
+									unoptimized
 								/>
 							) : (
 								<div className="h-16 w-16 rounded-full bg-primary-light text-primary flex items-center justify-center text-xl font-bold">

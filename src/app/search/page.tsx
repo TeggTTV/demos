@@ -500,6 +500,7 @@ function SearchContent() {
 														width={24}
 														height={24}
 														className="h-6 w-6 rounded-full object-cover border border-border"
+														unoptimized
 													/>
 												) : (
 													<div className="h-6 w-6 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold">

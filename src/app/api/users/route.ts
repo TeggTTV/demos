@@ -16,7 +16,17 @@ export async function GET() {
 				createdAt: true,
 			},
 		});
-		return NextResponse.json({ users });
+		const cleanUsers = users.map((user) => {
+			let avatarUrl = user.avatarUrl;
+			if (avatarUrl && avatarUrl.startsWith('data:')) {
+				avatarUrl = `/api/users/avatar?userId=${user.id}`;
+			}
+			return {
+				...user,
+				avatarUrl,
+			};
+		});
+		return NextResponse.json({ users: cleanUsers });
 	} catch (error) {
 		console.error('Error fetching users:', error);
 		return NextResponse.json(
