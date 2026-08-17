@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 	title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
 	description:
 		'The all-in-one platform for student organizations and campus clubs to promote themselves, invite members, share announcements, and track attendance.',
-	metadataBase: new URL('https://demos-clubs.vercel.app'),
+	metadataBase: new URL('https://demosclubhub.vercel.app'),
 	manifest: '/manifest.json',
 	appleWebApp: {
 		capable: true,
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: 'website',
 		locale: 'en_US',
-		url: 'https://demos-clubs.vercel.app/',
+		url: 'https://demosclubhub.vercel.app/',
 		siteName: 'Demos',
 		title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
 		description:
@@ -75,7 +75,10 @@ export default function RootLayout({
 				<meta name="application-name" content="Demos" />
 				<meta name="apple-mobile-web-app-title" content="Demos" />
 				<meta name="apple-mobile-web-app-capable" content="yes" />
-				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+				<meta
+					name="apple-mobile-web-app-status-bar-style"
+					content="default"
+				/>
 				<meta name="mobile-web-app-capable" content="yes" />
 				<meta name="theme-color" content="#4f46e5" />
 				<link rel="manifest" href="/manifest.json" />

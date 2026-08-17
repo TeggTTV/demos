@@ -166,22 +166,33 @@ export default function Home() {
 						</div>
 					</form>
 
-					{/* Quick Category Pills */}
-					<div className="mt-5 flex flex-wrap justify-center items-center gap-2">
-						{categories.slice(0, 5).map((cat) => (
-							<button
+					{/* Quick Category Links for Crawlers & Visitors */}
+					<div className="mt-6 flex flex-wrap justify-center items-center gap-2">
+						{categories.map((cat) => (
+							<Link
 								key={cat}
-								type="button"
-								onClick={() =>
-									router.push(
-										`/search?cat=${encodeURIComponent(cat)}`,
-									)
-								}
-								className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-all cursor-pointer shadow-2xs"
+								href={`/search?cat=${encodeURIComponent(cat)}`}
+								className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-all shadow-2xs"
 							>
 								{cat}
-							</button>
+							</Link>
 						))}
+					</div>
+
+					{/* Action Buttons */}
+					<div className="mt-8 flex flex-wrap justify-center items-center gap-3">
+						<Link
+							href="/search"
+							className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-primary-hover transition-all inline-flex items-center gap-2"
+						>
+							Explore All Clubs <FiArrowRight size={16} />
+						</Link>
+						<Link
+							href={currentUser ? '/groups' : '/auth/register'}
+							className="rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-text-primary hover:bg-surface-secondary hover:border-primary/40 transition-all"
+						>
+							Start a Student Organization
+						</Link>
 					</div>
 				</div>
 			</header>
@@ -189,88 +200,91 @@ export default function Home() {
 			{/* ═══════════ Core Pillars Grid ═══════════ */}
 			<section className="py-16 bg-surface-secondary/40 border-y border-border">
 				<div className="mx-auto max-w-7xl px-6 lg:px-8">
-					<div className="text-center max-w-2xl mx-auto mb-12">
+					<div className="text-center max-w-3xl mx-auto mb-12">
 						<h2 className="text-2xl sm:text-3xl font-bold text-text-primary">
-							Everything You Need to Run Your Club
+							Everything Student Leaders Need to Run Campus Organizations
 						</h2>
-						<p className="mt-2 text-sm text-text-muted">
-							Designed specifically for campus club presidents,
-							officers, and active student members.
+						<p className="mt-3 text-sm text-text-muted leading-relaxed">
+							Built specifically for university clubs, engineering design teams, academic honor societies, Greek life, cultural groups, and special interest student organizations.
 						</p>
 					</div>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 						{/* Card 1: Promotion */}
-						<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4">
+						<Link
+							href="/search"
+							className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
+						>
+							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
 								<FiShare2 size={20} />
 							</div>
-							<h3 className="text-base font-bold text-text-primary">
-								Club Promotion &amp; Showcase
+							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
+								Club Promotion &amp; Discovery
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Highlight your club’s mission, meeting times,
-								room locations, officer team, and direct social
-								links to attract passionate new recruits.
+								Highlight your club’s mission, meeting times, room locations, officer team, and direct social links to attract passionate new campus recruits.
 							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary">
-								Custom Banners &amp; Tags →
+							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
+								Browse Public Directory <FiArrowRight size={12} />
 							</div>
-						</div>
+						</Link>
 
 						{/* Card 2: Onboarding */}
-						<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4">
+						<Link
+							href="/join"
+							className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
+						>
+							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
 								<FiUsers size={20} />
 							</div>
-							<h3 className="text-base font-bold text-text-primary">
+							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
 								Member Invites &amp; Roster
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Accept membership applications with student
-								major and year notes, or generate instant
-								shareable invite codes for rapid onboarding.
+								Accept membership applications with student major and graduation year details, or generate instant shareable invite codes for frictionless onboarding.
 							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary">
-								1-Click Join Codes →
+							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
+								Redeem Invite Codes <FiArrowRight size={12} />
 							</div>
-						</div>
+						</Link>
 
 						{/* Card 3: Communication */}
-						<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4">
+						<Link
+							href={currentUser ? '/groups' : '/auth/register'}
+							className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
+						>
+							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
 								<FiMessageSquare size={20} />
 							</div>
-							<h3 className="text-base font-bold text-text-primary">
+							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
 								Club Hub &amp; Announcements
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Post pinned announcements, discussions, slide
-								decks, flyers, agendas, and resource links in a
-								private, focused space.
+								Post pinned announcements, discussions, slide decks, flyers, agendas, and resource links in a private, focused team workspace.
 							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary">
-								File &amp; Link Repositories →
+							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
+								Dedicated Hub Feeds <FiArrowRight size={12} />
 							</div>
-						</div>
+						</Link>
 
 						{/* Card 4: Attendance */}
-						<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4">
+						<Link
+							href="/search"
+							className="rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
+						>
+							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
 								<FiCheckCircle size={20} />
 							</div>
-							<h3 className="text-base font-bold text-text-primary">
+							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
 								Live Attendance Tracking
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Generate 4-digit PIN codes for instant student
-								self check-in during meetings, toggle live
-								roster checklists, and export CSV logs.
+								Generate 4-digit PIN codes for instant student self check-in during meetings, toggle live officer roster checklists, and export CSV logs.
 							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary">
-								PIN &amp; Manual Check-in →
+							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
+								Fast PIN Check-In <FiArrowRight size={12} />
 							</div>
-						</div>
+						</Link>
 					</div>
 				</div>
 			</section>
@@ -455,9 +469,88 @@ export default function Home() {
 				</div>
 			</section>
 
+			{/* ═══════════ In-Depth Guide & Campus Resources Section (High SEO Word Count & Outgoing Links) ═══════════ */}
+			<section className="py-16 bg-surface border-t border-border">
+				<div className="mx-auto max-w-7xl px-6 lg:px-8">
+					<div className="text-center max-w-3xl mx-auto mb-12">
+						<span className="text-xs font-bold text-primary uppercase tracking-wider">
+							Club Leadership Best Practices
+						</span>
+						<h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-1">
+							Why Student Organizations Choose Demos
+						</h2>
+						<p className="mt-3 text-sm text-text-secondary leading-relaxed">
+							Running a collegiate organization involves coordinating executive boards, promoting campus events, onboarding new recruits, maintaining member engagement, and reporting verified meeting attendance to university student unions and faculty advisors.
+						</p>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+						<div className="rounded-2xl border border-border bg-surface-secondary/40 p-6 space-y-3">
+							<h3 className="text-base font-bold text-text-primary">
+								1. Frictionless Attendance &amp; Officer Audits
+							</h3>
+							<p className="text-xs text-text-secondary leading-relaxed">
+								Eliminate paper sign-in sheets and shared Google Forms that get passed around. Demos generates dynamic 4-digit PIN check-in codes with session time limits. Officers can monitor the live attendance roster in real-time, mark excused absences, and download clean CSV reports formatted for campus administration compliance.
+							</p>
+							<p className="text-xs text-text-muted">
+								Learn more about open source web standards at{' '}
+								<a
+									href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-primary hover:underline font-medium"
+								>
+									MDN Web Docs (PWA)
+								</a>.
+							</p>
+						</div>
+
+						<div className="rounded-2xl border border-border bg-surface-secondary/40 p-6 space-y-3">
+							<h3 className="text-base font-bold text-text-primary">
+								2. Centralized Communication Hubs
+							</h3>
+							<p className="text-xs text-text-secondary leading-relaxed">
+								Fragmented communication across WhatsApp, GroupMe, Discord, and email leads to missed announcements. Demos provides a dedicated, ad-free club workspace featuring pinned executive notices, slide deck flyer sharing, and clickable link repositories accessible from any smartphone or laptop.
+							</p>
+							<p className="text-xs text-text-muted">
+								Discover best practices for student organizations at{' '}
+								<a
+									href="https://www.acui.org/"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-primary hover:underline font-medium"
+								>
+									ACUI Student Activities
+								</a>.
+							</p>
+						</div>
+
+						<div className="rounded-2xl border border-border bg-surface-secondary/40 p-6 space-y-3">
+							<h3 className="text-base font-bold text-text-primary">
+								3. Modern Progressive Web App (PWA)
+							</h3>
+							<p className="text-xs text-text-secondary leading-relaxed">
+								Demos is engineered as an installable Progressive Web Application (PWA). Students receive instant push notifications for important club announcements and meeting check-in reminders directly on their iOS and Android home screens without requiring heavy native app store downloads.
+							</p>
+							<p className="text-xs text-text-muted">
+								Explore web app guidelines at{' '}
+								<a
+									href="https://web.dev/explore/progressive-web-apps"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-primary hover:underline font-medium"
+								>
+									Google Web.dev
+								</a>.
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			{/* ═══════════ FAQ ═══════════ */}
 			<section className="py-16">
-				<div className="mx-auto max-w-2xl px-6">
+				<div className="mx-auto max-w-3xl px-6">
 					<h2 className="text-2xl font-bold text-text-primary text-center mb-8">
 						Frequently Asked Questions
 					</h2>

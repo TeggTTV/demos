@@ -52,12 +52,24 @@ export default function Footer() {
 								href="/pending"
 								className="hover:text-text-primary transition-colors"
 							>
-								Applications & Invites
+								Applications &amp; Invites
+							</Link>
+							<Link
+								href="/terms"
+								className="hover:text-text-primary transition-colors"
+							>
+								Terms of Service
+							</Link>
+							<Link
+								href="/privacy"
+								className="hover:text-text-primary transition-colors"
+							>
+								Privacy Policy
 							</Link>
 						</div>
 						<div className="text-center md:text-right text-[11px] text-text-muted/80">
 							© {new Date().getFullYear()} Demos. Built for
-							student leaders & campus organizations.
+							student leaders &amp; campus organizations.
 						</div>
 					</div>
 				</div>
