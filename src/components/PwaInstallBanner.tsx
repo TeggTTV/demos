@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FiX, FiShare, FiDownload, FiInfo } from 'react-icons/fi';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -10,6 +10,7 @@ export default function PwaInstallBanner() {
 	const [platform, setPlatform] = useState<'ios' | 'android' | 'other'>(
 		'other',
 	);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
 	useEffect(() => {
@@ -18,6 +19,7 @@ export default function PwaInstallBanner() {
 		// 1. Check if already running in standalone mode (installed)
 		const isStandalone =
 			window.matchMedia('(display-mode: standalone)').matches ||
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(window.navigator as any).standalone === true;
 
 		if (isStandalone) return;
@@ -37,6 +39,7 @@ export default function PwaInstallBanner() {
 		// Only show banner to mobile users
 		if (!isMobile) return;
 
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setPlatform(isIos ? 'ios' : isAndroid ? 'android' : 'other');
 
 		// 4. Delay banner showing for a cleaner onboarding experience (2 seconds)
@@ -88,7 +91,7 @@ export default function PwaInstallBanner() {
 
 	return (
 		<AnimatePresence>
-			<div className="fixed bottom-4 left-4 right-4 z-[9999] md:left-auto md:max-w-sm md:right-4">
+			<div className="fixed bottom-4 left-4 right-4 z-9999 md:left-auto md:max-w-sm md:right-4">
 				<motion.div
 					initial={{ opacity: 0, y: 50, scale: 0.95 }}
 					animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -125,7 +128,7 @@ export default function PwaInstallBanner() {
 					</div>
 
 					<div className="pt-1 flex items-center justify-between gap-3">
-						{true ? (
+						{platform === 'android' && deferredPrompt ? (
 							<button
 								onClick={handleInstall}
 								className="grow inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[11px] font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
