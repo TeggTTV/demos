@@ -22,18 +22,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+	title: {
+		default: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+		template: '%s | Demos',
+	},
 	description:
 		'The all-in-one platform for student organizations and campus clubs to promote themselves, invite members, share announcements, and track attendance.',
-	metadataBase: new URL('https://demosclubhub.vercel.app'),
+	metadataBase: new URL(
+		process.env.NEXT_PUBLIC_SITE_URL ||
+			process.env.SITE_URL ||
+			'https://demosclubhub.vercel.app',
+	),
 	manifest: '/manifest.json',
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: 'default',
 		title: 'Demos',
-	},
-	alternates: {
-		canonical: '/',
 	},
 	openGraph: {
 		type: 'website',

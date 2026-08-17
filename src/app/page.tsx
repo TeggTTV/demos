@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
 
 export default function Home() {
-	const { loginUser, hydrated, groups, currentUser } = useAppContext();
+	const { loginUser, groups, currentUser } = useAppContext();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [showAuthModal, setShowAuthModal] = useState(false);
 	const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
@@ -110,8 +110,6 @@ export default function Home() {
 			a: 'Yes, Demos is 100% free and open for student clubs, academic societies, recreational groups, and campus organizations.',
 		},
 	];
-
-	if (!hydrated) return null;
 
 	return (
 		<div className="flex min-h-screen flex-col bg-background">

@@ -2,12 +2,8 @@
 
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
-import { useAppContext } from '@/components/AppContext';
 
 export default function PrivacyPage() {
-	const { hydrated } = useAppContext();
-	if (!hydrated) return null;
-
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />

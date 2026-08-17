@@ -59,7 +59,13 @@ export default function GroupFeedPage() {
 	} = useAppContext();
 	const router = useRouter();
 
-	type FeedTab = 'feed' | 'attendance' | 'showcase' | 'roster' | 'roles' | 'settings';
+	type FeedTab =
+		| 'feed'
+		| 'attendance'
+		| 'showcase'
+		| 'roster'
+		| 'roles'
+		| 'settings';
 
 	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
 
@@ -69,8 +75,17 @@ export default function GroupFeedPage() {
 		if (typeof window !== 'undefined') {
 			const params = new URLSearchParams(window.location.search);
 			const tabParam = params.get('tab') as FeedTab | null;
-			const savedTab = localStorage.getItem(`demos_tab_${id}`) as FeedTab | null;
-			const validTabs: FeedTab[] = ['feed', 'attendance', 'showcase', 'roster', 'roles', 'settings'];
+			const savedTab = localStorage.getItem(
+				`demos_tab_${id}`,
+			) as FeedTab | null;
+			const validTabs: FeedTab[] = [
+				'feed',
+				'attendance',
+				'showcase',
+				'roster',
+				'roles',
+				'settings',
+			];
 
 			if (tabParam && validTabs.includes(tabParam)) {
 				setActiveTabState(tabParam);
@@ -2262,7 +2277,7 @@ export default function GroupFeedPage() {
 								<div className="space-y-3">
 									{/* Direct 1-Click Link */}
 									<div>
-										<label className="block text-[10px] font-bold text-primary uppercase tracking-wider mb-1 flex items-center gap-1">
+										<label className="block text-[10px] font-bold text-primary uppercase tracking-wider mb-1 items-center gap-1">
 											<FiLink size={11} /> 1-Click Direct
 											Join Link
 										</label>
@@ -2307,7 +2322,7 @@ export default function GroupFeedPage() {
 
 									{/* Raw Code for Explore Clubs */}
 									<div>
-										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1 flex items-center gap-1">
+										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1 items-center gap-1">
 											<FiKey size={11} /> Invite Code (For
 											Explore Clubs Page)
 										</label>

@@ -58,13 +58,17 @@ function SearchContent() {
 		currentUser,
 		groups,
 		requests,
-		sendJoinRequest,
 		users,
-		hydrated,
+		sendJoinRequest,
 		joinViaInviteCode,
 	} = useAppContext();
 	const searchParams = useSearchParams();
 	const router = useRouter();
+
+	const isMember = (club: Group) =>
+		currentUser &&
+		(club.memberIds.includes(currentUser.id) ||
+			club.leaderId === currentUser.id);
 
 	const [query, setQuery] = useState(searchParams.get('q') || '');
 	const [selectedCategory, setSelectedCategory] = useState(
@@ -221,22 +225,6 @@ function SearchContent() {
 				r.userId === currentUser?.id &&
 				r.status === 'PENDING',
 		);
-
-	const isMember = (club: Group) =>
-		currentUser &&
-		(club.memberIds.includes(currentUser.id) || club.leaderId === currentUser.id);
-
-	if (!hydrated) {
-		return (
-			<div className="flex min-h-screen flex-col bg-background">
-				<Nav />
-				<main className="grow flex items-center justify-center py-20">
-					<ClipLoader color="var(--primary)" size={35} />
-				</main>
-				<Footer />
-			</div>
-		);
-	}
 
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
