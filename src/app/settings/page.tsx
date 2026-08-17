@@ -114,13 +114,27 @@ export default function SettingsPage() {
 		}
 	};
 
-	const handleSendTestNotification = () => {
+	const handleSendTestNotification = async () => {
 		triggerNotification({
 			type: 'feed_message',
 			title: 'Demos Notification Test',
-			body: 'Your notification system is fully working!',
+			body: 'Your in-app notifications are working!',
 			url: '/settings',
 		});
+
+		// Trigger background Web Push from server as well
+		if (currentUser) {
+			try {
+				await fetch('/api/push/test', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ userId: currentUser.id }),
+				});
+			} catch (e) {
+				console.error('Failed to send server test push:', e);
+			}
+		}
+
 		setTestSent(true);
 		setTimeout(() => setTestSent(false), 3000);
 	};

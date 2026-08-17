@@ -285,13 +285,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		if (
 			typeof window !== 'undefined' &&
-			'serviceWorker' in navigator &&
-			process.env.NODE_ENV !== 'development'
+			'serviceWorker' in navigator
 		) {
 			navigator.serviceWorker
 				.register('/sw.js')
 				.then((reg) => {
-					console.log('PWA ServiceWorker registration successful with scope:', reg.scope);
+					console.log('PWA ServiceWorker registered with scope:', reg.scope);
 				})
 				.catch((err) => {
 					console.warn('PWA ServiceWorker registration failed:', err);
