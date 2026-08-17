@@ -7,18 +7,26 @@ export async function POST(req: Request) {
 		const { userId } = await req.json();
 
 		if (!userId) {
-			return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+			return NextResponse.json(
+				{ error: 'Missing userId' },
+				{ status: 400 },
+			);
 		}
 
 		if (!(await isDbConnected())) {
-			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+			return NextResponse.json(
+				{ error: 'Database unavailable' },
+				{ status: 503 },
+			);
 		}
 
 		const subs = await prisma.pushSubscription.findMany({
 			where: { userId },
 		});
 
-		console.log(`[Test Push] Found ${subs.length} active subscription(s) for user: ${userId}`);
+		console.log(
+			`[Test Push] Found ${subs.length} active subscription(s) for user: ${userId}`,
+		);
 
 		await sendWebPushToUsers([userId], {
 			title: '🎉 Demos Test Notification',

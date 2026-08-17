@@ -9,6 +9,7 @@ import {
 	NOTIFICATION_CONFIG_MAP,
 	requestNotificationPermission,
 	playNotificationSound,
+	sendBrowserNotification,
 	subscribeToPushNotifications,
 } from '@/utils/notificationUtils';
 import {
@@ -100,6 +101,10 @@ export default function SettingsPage() {
 			if (currentUser) {
 				await subscribeToPushNotifications(currentUser.id);
 			}
+			sendBrowserNotification(
+				'Notifications Enabled',
+				'You will now receive Demos updates on your device.',
+			);
 		}
 	};
 
@@ -114,21 +119,34 @@ export default function SettingsPage() {
 		}
 	};
 
-	const [testStatusMessage, setTestStatusMessage] = useState<string | null>(null);
+	const [testStatusMessage, setTestStatusMessage] = useState<string | null>(
+		null,
+	);
 
 	const handleSendTestNotification = async () => {
 		// 1. In-app notification & chime
 		triggerNotification({
 			type: 'feed_message',
 			title: 'Demos Notification Test',
-			body: 'Your in-app notifications are working!',
+			body: 'Your notification system is fully working!',
 			url: '/settings',
 		});
 
-		// 2. Ensure device push is subscribed
+		// 2. Direct browser notification popup
+		sendBrowserNotification(
+			'Demos Test Notification',
+			'Your device notification popup is working!',
+			'/settings',
+		);
+
+		// 3. Ensure device push is subscribed & trigger server push
 		if (currentUser) {
 			try {
-				if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+				if (
+					typeof window !== 'undefined' &&
+					'Notification' in window &&
+					Notification.permission === 'granted'
+				) {
 					await subscribeToPushNotifications(currentUser.id);
 				}
 
@@ -172,8 +190,8 @@ export default function SettingsPage() {
 							Settings
 						</h1>
 						<p className="text-xs text-text-muted mt-1">
-							Manage app installation, push permissions, and choose which
-							notifications you want to receive.
+							Manage app installation, push permissions, and
+							choose which notifications you want to receive.
 						</p>
 					</div>
 
@@ -189,8 +207,9 @@ export default function SettingsPage() {
 										Progressive Web App
 									</h2>
 									<p className="text-xs text-text-muted">
-										Install Demos to your home screen or desktop for fast
-										access and native alerts.
+										Install Demos to your home screen or
+										desktop for fast access and native
+										alerts.
 									</p>
 								</div>
 							</div>
@@ -228,11 +247,14 @@ export default function SettingsPage() {
 										Device Push Notifications
 									</h2>
 									<p className="text-xs text-text-muted">
-										Receive background system alerts even when the browser
-										tab is closed.
+										Receive background system alerts even
+										when the browser tab is closed.
 									</p>
 									<p className="text-[11px] text-primary/80 mt-1">
-										💡 On iPhone/iPad: Tap Share → &ldquo;Add to Home Screen&rdquo; first to enable background lock-screen notifications.
+										💡 On iPhone/iPad: Tap Share →
+										&ldquo;Add to Home Screen&rdquo; first
+										to enable background lock-screen
+										notifications.
 									</p>
 								</div>
 							</div>
@@ -275,7 +297,10 @@ export default function SettingsPage() {
 							{/* Sound toggle */}
 							<label className="flex items-center justify-between p-3 rounded-xl bg-surface-secondary/60 border border-border cursor-pointer hover:bg-surface-secondary transition-colors">
 								<span className="flex items-center gap-2 font-medium text-text-primary">
-									<FiVolume2 size={15} className="text-text-secondary" />
+									<FiVolume2
+										size={15}
+										className="text-text-secondary"
+									/>
 									Notification Sound
 								</span>
 								<input
@@ -285,7 +310,8 @@ export default function SettingsPage() {
 										updateNotificationSettings({
 											soundEnabled: e.target.checked,
 										});
-										if (e.target.checked) playNotificationSound();
+										if (e.target.checked)
+											playNotificationSound();
 									}}
 									className="h-4 w-4 rounded accent-primary cursor-pointer"
 								/>
@@ -294,12 +320,17 @@ export default function SettingsPage() {
 							{/* Browser push toggle */}
 							<label className="flex items-center justify-between p-3 rounded-xl bg-surface-secondary/60 border border-border cursor-pointer hover:bg-surface-secondary transition-colors">
 								<span className="flex items-center gap-2 font-medium text-text-primary">
-									<FiBell size={15} className="text-text-secondary" />
+									<FiBell
+										size={15}
+										className="text-text-secondary"
+									/>
 									Browser System Popups
 								</span>
 								<input
 									type="checkbox"
-									checked={notificationSettings.browserPushEnabled}
+									checked={
+										notificationSettings.browserPushEnabled
+									}
 									onChange={(e) => {
 										if (
 											e.target.checked &&
@@ -308,7 +339,8 @@ export default function SettingsPage() {
 											handleRequestPermission();
 										} else {
 											updateNotificationSettings({
-												browserPushEnabled: e.target.checked,
+												browserPushEnabled:
+													e.target.checked,
 											});
 										}
 									}}
@@ -343,7 +375,8 @@ export default function SettingsPage() {
 						<div className="divide-y divide-border/60">
 							{NOTIFICATION_KEYS.map((key) => {
 								const meta = NOTIFICATION_CONFIG_MAP[key];
-								const isChecked = notificationSettings[key] !== false;
+								const isChecked =
+									notificationSettings[key] !== false;
 
 								return (
 									<div
@@ -351,7 +384,9 @@ export default function SettingsPage() {
 										className="flex items-center justify-between py-3.5 first:pt-1 last:pb-1"
 									>
 										<div className="flex items-center gap-3">
-											<span className="text-lg">{meta.icon}</span>
+											<span className="text-lg">
+												{meta.icon}
+											</span>
 											<div>
 												<span className="text-xs font-semibold text-text-primary block">
 													{meta.label}
@@ -394,7 +429,8 @@ export default function SettingsPage() {
 								Clear Notification History
 							</h3>
 							<p className="text-[11px] text-text-muted mt-0.5">
-								Remove all saved in-app notifications from this device.
+								Remove all saved in-app notifications from this
+								device.
 							</p>
 						</div>
 						<button
