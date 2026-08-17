@@ -23,8 +23,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default:
-			'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+		default: 'Demos - Clubs, Recruitment & Attendance Tracking',
 		template: '%s | Demos',
 	},
 	description:
@@ -48,7 +47,7 @@ export const metadata: Metadata = {
 		locale: 'en_US',
 		url: 'https://demosclubhub.vercel.app/',
 		siteName: 'Demos',
-		title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+		title: 'Demos - Clubs, Recruitment & Attendance Tracking',
 		description:
 			'Promote your club, recruit members, collaborate in hubs, and track meeting attendance seamlessly.',
 		images: [
@@ -62,7 +61,7 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: 'summary_large_image',
-		title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+		title: 'Demos - Clubs, Recruitment & Attendance Tracking',
 		description:
 			'The all-in-one platform for student organizations to promote themselves, recruit members, and track meeting attendance.',
 		images: ['/ogtwitter.png'],
