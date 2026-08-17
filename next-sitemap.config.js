@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-	siteUrl: process.env.SITE_URL || 'https://demos-clubs.vercel.app',
+	siteUrl: process.env.SITE_URL || 'https://demosclubhub.vercel.app',
 	generateRobotsTxt: true,
 	robotsTxtOptions: {
 		policies: [
