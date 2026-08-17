@@ -110,7 +110,6 @@ export default function GroupsPage() {
 	const {
 		currentUser,
 		groups,
-		hydrated,
 		createGroup,
 		updateGroupSettings,
 		generateClubInvite,
@@ -410,27 +409,38 @@ export default function GroupsPage() {
 		}
 	};
 
-	if (!hydrated) return null;
-
 	if (!currentUser) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
 				<main className="grow flex items-center justify-center p-6 text-center">
-					<div className="max-w-md">
-						<h2 className="text-xl font-bold text-text-primary">
-							Sign In to View Your Clubs
-						</h2>
-						<p className="text-xs text-text-muted mt-2">
-							Access the clubs you lead, view meeting schedules,
-							and check into sessions.
+					<div className="max-w-xl py-12 space-y-4">
+						<div className="mx-auto h-12 w-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center text-xl shadow-xs">
+							<FiUsers size={24} />
+						</div>
+						<h1 className="text-3xl font-extrabold text-text-primary">
+							Manage Your Campus Clubs &amp; Hubs
+						</h1>
+						<p className="text-sm text-text-secondary leading-relaxed max-w-md mx-auto">
+							Access the student organizations and academic
+							societies you lead. Create meeting agendas, track
+							live student attendance with 4-digit PIN codes,
+							manage officer rosters, and share flyers.
 						</p>
-						<Link
-							href="/auth/login"
-							className="mt-5 inline-block rounded-lg bg-primary px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm"
-						>
-							Sign In Now
-						</Link>
+						<div className="pt-2 flex flex-wrap justify-center gap-3">
+							<Link
+								href="/auth/login"
+								className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all"
+							>
+								Sign In to Your Club Hub
+							</Link>
+							<Link
+								href="/search"
+								className="rounded-xl border border-border bg-surface px-5 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-secondary transition-all"
+							>
+								Browse Public Club Directory
+							</Link>
+						</div>
 					</div>
 				</main>
 				<Footer />

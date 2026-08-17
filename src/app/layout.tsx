@@ -47,6 +47,21 @@ export const metadata: Metadata = {
 		title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
 		description:
 			'Promote your club, recruit members, collaborate in hubs, and track meeting attendance seamlessly.',
+		images: [
+			{
+				url: '/web-app-manifest-512x512.png',
+				width: 512,
+				height: 512,
+				alt: 'Demos Club Platform',
+			},
+		],
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+		description:
+			'The all-in-one platform for student organizations to promote themselves, recruit members, and track meeting attendance.',
+		images: ['/web-app-manifest-512x512.png'],
 	},
 	robots: {
 		index: true,

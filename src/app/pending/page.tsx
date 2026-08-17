@@ -4,12 +4,7 @@ import { useState } from 'react';
 import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
-import {
-	FiClock,
-	FiSend,
-	FiArchive,
-	FiRefreshCw,
-} from 'react-icons/fi';
+import { FiClock, FiSend, FiArchive, FiRefreshCw } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -21,7 +16,6 @@ export default function PendingPage() {
 		users,
 		approveRequest,
 		declineRequest,
-		hydrated,
 		refreshData,
 	} = useAppContext();
 	const [activeTab, setActiveTab] = useState<'requests' | 'sent' | 'history'>(
@@ -35,16 +29,38 @@ export default function PendingPage() {
 		setIsRefreshing(false);
 	};
 
-	if (!hydrated) return null;
-
 	if (!currentUser) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
 				<main className="grow flex items-center justify-center p-6 text-center">
-					<p className="text-text-muted text-sm">
-						Please sign in to view club applications and invitations.
-					</p>
+					<div className="max-w-xl py-12 space-y-4">
+						<div className="mx-auto h-12 w-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center text-xl shadow-xs">
+							<FiClock size={24} />
+						</div>
+						<h1 className="text-3xl font-extrabold text-text-primary">
+							Club Applications &amp; Pending Invitations
+						</h1>
+						<p className="text-sm text-text-secondary leading-relaxed max-w-md mx-auto">
+							Review and manage incoming membership applications
+							for your campus clubs, check the status of your join
+							requests, or redeem direct club invite codes.
+						</p>
+						<div className="pt-2 flex flex-wrap justify-center gap-3">
+							<Link
+								href="/auth/login"
+								className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all"
+							>
+								Sign In to View Applications
+							</Link>
+							<Link
+								href="/join"
+								className="rounded-xl border border-border bg-surface px-5 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-secondary transition-all"
+							>
+								Redeem an Invite Code
+							</Link>
+						</div>
+					</div>
 				</main>
 				<Footer />
 			</div>
@@ -82,7 +98,9 @@ export default function PendingPage() {
 			APPROVED: 'bg-success-bg text-success border-success/20',
 			DECLINED: 'bg-danger-bg text-danger border-danger/20',
 		};
-		return map[status] || 'bg-surface-secondary text-text-muted border-border';
+		return (
+			map[status] || 'bg-surface-secondary text-text-muted border-border'
+		);
 	};
 
 	return (
@@ -107,8 +125,8 @@ export default function PendingPage() {
 					</button>
 				</div>
 				<p className="text-xs text-text-muted mb-6">
-					Review prospective member applications for clubs you lead and
-					track your own join requests.
+					Review prospective member applications for clubs you lead
+					and track your own join requests.
 				</p>
 
 				{/* Tabs */}
@@ -154,7 +172,8 @@ export default function PendingPage() {
 						{receivedPending.length === 0 ? (
 							<div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
 								<p className="text-xs text-text-muted">
-									No pending membership applications for your clubs.
+									No pending membership applications for your
+									clubs.
 								</p>
 							</div>
 						) : (
@@ -178,15 +197,19 @@ export default function PendingPage() {
 												/>
 											) : (
 												<div className="h-10 w-10 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
-													{applicant?.name?.[0] || 'U'}
+													{applicant?.name?.[0] ||
+														'U'}
 												</div>
 											)}
 											<div>
 												<h3 className="text-sm font-bold text-text-primary">
-													{applicant?.name || 'Applicant'}
+													{applicant?.name ||
+														'Applicant'}
 												</h3>
 												<div className="flex flex-wrap items-center gap-2 text-xs text-text-muted mt-0.5">
-													<span>{applicant?.email}</span>
+													<span>
+														{applicant?.email}
+													</span>
 													{applicant?.major && (
 														<span className="text-[10px] bg-primary-light text-primary px-2 py-0.2 rounded-full font-medium">
 															{applicant.major}
@@ -200,7 +223,8 @@ export default function PendingPage() {
 
 												{req.message && (
 													<p className="text-xs text-text-secondary mt-1 bg-surface-secondary p-2 rounded-lg border border-border/50 italic">
-														&ldquo;{req.message}&rdquo;
+														&ldquo;{req.message}
+														&rdquo;
 													</p>
 												)}
 											</div>
@@ -208,13 +232,17 @@ export default function PendingPage() {
 
 										<div className="flex items-center gap-2 self-end sm:self-center shrink-0">
 											<button
-												onClick={() => declineRequest(req.id)}
+												onClick={() =>
+													declineRequest(req.id)
+												}
 												className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger-bg transition-colors"
 											>
 												Decline
 											</button>
 											<button
-												onClick={() => approveRequest(req.id)}
+												onClick={() =>
+													approveRequest(req.id)
+												}
 												className="rounded-xl bg-primary px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-colors shadow-2xs"
 											>
 												Approve &amp; Add
@@ -254,7 +282,9 @@ export default function PendingPage() {
 										</h4>
 										<p className="text-xs text-text-muted mt-0.5">
 											Submitted on{' '}
-											{new Date(req.createdAt).toLocaleDateString()}
+											{new Date(
+												req.createdAt,
+											).toLocaleDateString()}
 										</p>
 										{req.message && (
 											<p className="text-xs text-text-secondary mt-1 italic">
@@ -294,7 +324,9 @@ export default function PendingPage() {
 											</span>
 											<span className="text-text-muted text-[11px]">
 												Applicant:{' '}
-												{applicant?.name || 'Club Member'} •{' '}
+												{applicant?.name ||
+													'Club Member'}{' '}
+												•{' '}
 												{new Date(
 													req.createdAt,
 												).toLocaleDateString()}

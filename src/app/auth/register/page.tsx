@@ -10,7 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 function RegisterContent() {
-	const { registerUser, hydrated } = useAppContext();
+	const { registerUser } = useAppContext();
 	const searchParams = useSearchParams();
 	const redirectUrl = searchParams.get('redirect') || '/groups';
 
@@ -49,8 +49,6 @@ function RegisterContent() {
 		}
 	};
 
-	if (!hydrated) return null;
-
 	return (
 		<main className="grow flex items-center justify-center px-4 py-12">
 			<div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 shadow-sm space-y-6">
@@ -67,15 +65,12 @@ function RegisterContent() {
 						Join Demos
 					</h1>
 					<p className="text-xs text-text-muted mt-1">
-						Create your account to discover clubs, join rosters,
-						and check into meetings.
+						Create your account to discover clubs, join rosters, and
+						check into meetings.
 					</p>
 				</div>
 
-				<form
-					onSubmit={handleRegister}
-					className="space-y-3.5 text-xs"
-				>
+				<form onSubmit={handleRegister} className="space-y-3.5 text-xs">
 					{error && (
 						<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-3 rounded-lg text-center font-medium">
 							{error}
@@ -144,9 +139,7 @@ function RegisterContent() {
 								if (file) {
 									const reader = new FileReader();
 									reader.onload = () => {
-										setAvatarUrl(
-											reader.result as string,
-										);
+										setAvatarUrl(reader.result as string);
 									};
 									reader.readAsDataURL(file);
 								}
@@ -186,7 +179,15 @@ export default function RegisterPage() {
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
-			<Suspense fallback={<main className="grow flex items-center justify-center py-20"><span className="text-xs text-text-muted">Loading...</span></main>}>
+			<Suspense
+				fallback={
+					<main className="grow flex items-center justify-center py-20">
+						<span className="text-xs text-text-muted">
+							Loading...
+						</span>
+					</main>
+				}
+			>
 				<RegisterContent />
 			</Suspense>
 			<Footer />

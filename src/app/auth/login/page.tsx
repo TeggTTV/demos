@@ -10,7 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 function LoginContent() {
-	const { loginUser, hydrated } = useAppContext();
+	const { loginUser } = useAppContext();
 	const searchParams = useSearchParams();
 	const redirectUrl = searchParams.get('redirect') || '/groups';
 
@@ -34,8 +34,6 @@ function LoginContent() {
 			setError(res.error || 'Login failed');
 		}
 	};
-
-	if (!hydrated) return null;
 
 	return (
 		<main className="grow flex items-center justify-center px-4 py-12">
