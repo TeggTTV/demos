@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/components/AppContext';
+import { Analytics } from '@vercel/analytics/react';
 
 export const viewport: Viewport = {
 	width: 'device-width',
@@ -84,6 +85,7 @@ export default function RootLayout({
 				suppressHydrationWarning
 			>
 				<AppProvider>{children}</AppProvider>
+				<Analytics />
 			</body>
 		</html>
 	);
