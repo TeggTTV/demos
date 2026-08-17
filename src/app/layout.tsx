@@ -34,6 +34,9 @@ export const metadata: Metadata = {
 			'https://demosclubhub.vercel.app',
 	),
 	manifest: '/manifest.json',
+	alternates: {
+		canonical: '/',
+	},
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: 'default',

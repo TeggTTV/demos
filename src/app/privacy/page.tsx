@@ -5,6 +5,9 @@ import Footer from '@/components/Footer';
 export const metadata: Metadata = {
 	title: 'Privacy Policy',
 	description: 'Privacy Policy and data security guidelines for student organization members and officers on Demos.',
+	alternates: {
+		canonical: '/privacy',
+	},
 };
 
 export default function PrivacyPage() {

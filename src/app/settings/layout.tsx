@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-	title: 'My Clubs',
-	description: 'Manage and access your registered student organizations, join codes, and administrative tools.',
+	title: 'App Settings',
 	robots: {
 		index: false,
 		follow: false,
 	},
 };
 
-export default function GroupsLayout({
+export default function SettingsLayout({
 	children,
 }: {
 	children: React.ReactNode;
