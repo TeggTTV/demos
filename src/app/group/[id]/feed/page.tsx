@@ -1078,8 +1078,8 @@ export default function GroupFeedPage() {
 								⏱️ Meeting Attendance Tracker
 							</h2>
 							<p className="text-xs text-text-muted mt-0.5">
-								Self check-in with 4-digit PIN codes, live
-								roster verification, and attendance reports.
+								Self check-in with link, live roster
+								verification, and attendance reports.
 							</p>
 						</div>
 
@@ -1115,8 +1115,8 @@ export default function GroupFeedPage() {
 							</h3>
 							<p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
 								Officers and Leaders can create a meeting
-								session to enable 4-digit PIN attendance
-								check-in for members.
+								session to enable link attendance check-in for
+								members.
 							</p>
 							{canManage && (
 								<button
@@ -1289,7 +1289,7 @@ export default function GroupFeedPage() {
 															<input
 																type="text"
 																required
-																placeholder="Enter 4-Digit Meeting PIN"
+																placeholder="Enter PIN"
 																value={
 																	checkInInput
 																}
@@ -1668,9 +1668,8 @@ export default function GroupFeedPage() {
 										/>
 
 										<p className="text-[11px] text-text-muted">
-											A unique 4-digit check-in PIN code
-											will be automatically generated for
-											this session.
+											A unique link will be automatically
+											generated for this session.
 										</p>
 
 										<div className="pt-2 flex justify-end gap-2">

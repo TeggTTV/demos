@@ -67,13 +67,8 @@ const compileFrequency = (
 };
 
 export default function GroupsPage() {
-	const {
-		currentUser,
-		groups,
-		createGroup,
-		joinViaInviteCode,
-		events,
-	} = useAppContext();
+	const { currentUser, groups, createGroup, joinViaInviteCode, events } =
+		useAppContext();
 	const router = useRouter();
 
 	const [activeTab, setActiveTab] = useState<'all' | 'leading' | 'joined'>(
@@ -162,10 +157,6 @@ export default function GroupsPage() {
 		setModalOpen(true);
 	};
 
-
-
-
-
 	const handleCreateGroup = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!currentUser) return;
@@ -232,7 +223,6 @@ export default function GroupsPage() {
 		}
 	};
 
-
 	if (!currentUser) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
@@ -248,8 +238,8 @@ export default function GroupsPage() {
 						<p className="text-sm text-text-secondary leading-relaxed max-w-md mx-auto">
 							Access the student organizations and academic
 							societies you lead. Create meeting agendas, track
-							live student attendance with 4-digit PIN codes,
-							manage officer rosters, and share flyers.
+							live student attendance with unique link, manage
+							officer rosters, and share flyers.
 						</p>
 						<div className="pt-2 flex flex-wrap justify-center gap-3">
 							<Link
@@ -401,7 +391,9 @@ export default function GroupsPage() {
 							return (
 								<div
 									key={club.id}
-									onClick={() => router.push(`/group/${club.id}/feed`)}
+									onClick={() =>
+										router.push(`/group/${club.id}/feed`)
+									}
 									className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all flex flex-col cursor-pointer"
 								>
 									{/* Banner */}
@@ -511,9 +503,7 @@ export default function GroupsPage() {
 												👥 {club.memberIds.length}{' '}
 												Members
 											</span>
-											<div
-												className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-all shadow-2xs inline-flex items-center gap-1"
-											>
+											<div className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-all shadow-2xs inline-flex items-center gap-1">
 												Enter Hub{' '}
 												<FiArrowRight size={12} />
 											</div>
@@ -946,8 +936,6 @@ export default function GroupsPage() {
 					</div>
 				)}
 			</AnimatePresence>
-
-
 
 			<Footer />
 		</div>

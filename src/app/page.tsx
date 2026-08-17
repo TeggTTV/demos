@@ -83,7 +83,7 @@ export default function Home() {
 		{
 			num: '03',
 			title: 'Track Meeting Attendance',
-			desc: 'Generate 4-digit PINs during meetings for instant student self check-in, manage officer rosters, and export logs to CSV.',
+			desc: 'Generate links during meetings for instant student self check-in, manage officer rosters, and export logs to CSV.',
 			icon: FiCheckCircle,
 		},
 	];
@@ -91,7 +91,7 @@ export default function Home() {
 	const faqItems = [
 		{
 			q: 'How does attendance tracking work on Demos?',
-			a: 'Club leaders and officers can create meeting sessions in their Club Hub. Each session generates an instant 4-digit PIN code (or QR code). Members attending the meeting simply type the PIN on their phones to check in. Officers can also manually check off members (Present, Late, Excused, Absent) and export attendance logs to CSV.',
+			a: 'Club leaders and officers can create meeting sessions in their Club Hub. Each session generates an instant link. Members attending the meeting simply type the PIN on their phones to check in. Officers can also manually check off members (Present, Late, Excused, Absent) and export attendance logs to CSV.',
 		},
 		{
 			q: 'How can clubs promote themselves and recruit new members?',
@@ -132,10 +132,9 @@ export default function Home() {
 						for Your Club
 					</h1>
 					<p className="mt-5 text-base leading-7 text-text-secondary max-w-2xl mx-auto">
-						Demos empowers student organizations to showcase their
-						work, invite new members, communicate via dedicated club
-						hubs, and track meeting attendance with effortless
-						4-digit PIN check-ins.
+						Demos allows student clubs to showcase their work,
+						invite new members, communicate via club feeds, and
+						track meeting attendance with effortless check-ins.
 					</p>
 
 					{/* Search */}
@@ -200,10 +199,14 @@ export default function Home() {
 				<div className="mx-auto max-w-7xl px-6 lg:px-8">
 					<div className="text-center max-w-3xl mx-auto mb-12">
 						<h2 className="text-2xl sm:text-3xl font-bold text-text-primary">
-							Everything Student Leaders Need to Run Campus Organizations
+							Everything Student Leaders Need to Run Campus
+							Organizations
 						</h2>
 						<p className="mt-3 text-sm text-text-muted leading-relaxed">
-							Built specifically for university clubs, engineering design teams, academic honor societies, Greek life, cultural groups, and special interest student organizations.
+							Built specifically for university clubs, engineering
+							design teams, academic honor societies, Greek life,
+							cultural groups, and special interest student
+							organizations.
 						</p>
 					</div>
 
@@ -220,10 +223,13 @@ export default function Home() {
 								Club Promotion &amp; Discovery
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Highlight your club’s mission, meeting times, room locations, officer team, and direct social links to attract passionate new campus recruits.
+								Highlight your club’s mission, meeting times,
+								room locations, officer team, and direct social
+								links to attract passionate new campus recruits.
 							</p>
 							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
-								Browse Public Directory <FiArrowRight size={12} />
+								Browse Public Directory{' '}
+								<FiArrowRight size={12} />
 							</div>
 						</Link>
 
@@ -239,7 +245,10 @@ export default function Home() {
 								Member Invites &amp; Roster
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Accept membership applications with student major and graduation year details, or generate instant shareable invite codes for frictionless onboarding.
+								Accept membership applications with student
+								major and graduation year details, or generate
+								instant shareable invite codes for frictionless
+								onboarding.
 							</p>
 							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
 								Redeem Invite Codes <FiArrowRight size={12} />
@@ -258,7 +267,9 @@ export default function Home() {
 								Club Hub &amp; Announcements
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Post pinned announcements, discussions, slide decks, flyers, agendas, and resource links in a private, focused team workspace.
+								Post pinned announcements, discussions, slide
+								decks, flyers, agendas, and resource links in a
+								private, focused team workspace.
 							</p>
 							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
 								Dedicated Hub Feeds <FiArrowRight size={12} />
@@ -277,10 +288,11 @@ export default function Home() {
 								Live Attendance Tracking
 							</h3>
 							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Generate 4-digit PIN codes for instant student self check-in during meetings, toggle live officer roster checklists, and export CSV logs.
+								Generate links for instant student self check-in
+								during meetings and export CSV when its over.
 							</p>
 							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
-								Fast PIN Check-In <FiArrowRight size={12} />
+								Fast Link Check-In <FiArrowRight size={12} />
 							</div>
 						</Link>
 					</div>
@@ -478,7 +490,12 @@ export default function Home() {
 							Why Student Organizations Choose Demos
 						</h2>
 						<p className="mt-3 text-sm text-text-secondary leading-relaxed">
-							Running a collegiate organization involves coordinating executive boards, promoting campus events, onboarding new recruits, maintaining member engagement, and reporting verified meeting attendance to university student unions and faculty advisors.
+							Running a collegiate organization involves
+							coordinating executive boards, promoting campus
+							events, onboarding new recruits, maintaining member
+							engagement, and reporting verified meeting
+							attendance to university student unions and faculty
+							advisors.
 						</p>
 					</div>
 
@@ -488,7 +505,13 @@ export default function Home() {
 								1. Frictionless Attendance &amp; Officer Audits
 							</h3>
 							<p className="text-xs text-text-secondary leading-relaxed">
-								Eliminate paper sign-in sheets and shared Google Forms that get passed around. Demos generates dynamic 4-digit PIN check-in codes with session time limits. Officers can monitor the live attendance roster in real-time, mark excused absences, and download clean CSV reports formatted for campus administration compliance.
+								Eliminate paper sign-in sheets and shared Google
+								Forms that get passed around. Demos generates
+								dynamic link check-in with session time limits.
+								Officers can monitor the live attendance roster
+								in real-time, mark excused absences, and
+								download clean CSV reports formatted for campus
+								administration compliance.
 							</p>
 							<p className="text-xs text-text-muted">
 								Learn more about open source web standards at{' '}
@@ -499,7 +522,8 @@ export default function Home() {
 									className="text-primary hover:underline font-medium"
 								>
 									MDN Web Docs (PWA)
-								</a>.
+								</a>
+								.
 							</p>
 						</div>
 
@@ -508,10 +532,17 @@ export default function Home() {
 								2. Centralized Communication Hubs
 							</h3>
 							<p className="text-xs text-text-secondary leading-relaxed">
-								Fragmented communication across WhatsApp, GroupMe, Discord, and email leads to missed announcements. Demos provides a dedicated, ad-free club workspace featuring pinned executive notices, slide deck flyer sharing, and clickable link repositories accessible from any smartphone or laptop.
+								Fragmented communication across WhatsApp,
+								GroupMe, Discord, and email leads to missed
+								announcements. Demos provides a dedicated,
+								ad-free club workspace featuring pinned
+								executive notices, slide deck flyer sharing, and
+								clickable link repositories accessible from any
+								smartphone or laptop.
 							</p>
 							<p className="text-xs text-text-muted">
-								Discover best practices for student organizations at{' '}
+								Discover best practices for student
+								organizations at{' '}
 								<a
 									href="https://www.acui.org/"
 									target="_blank"
@@ -519,7 +550,8 @@ export default function Home() {
 									className="text-primary hover:underline font-medium"
 								>
 									ACUI Student Activities
-								</a>.
+								</a>
+								.
 							</p>
 						</div>
 
@@ -528,7 +560,13 @@ export default function Home() {
 								3. Modern Progressive Web App (PWA)
 							</h3>
 							<p className="text-xs text-text-secondary leading-relaxed">
-								Demos is engineered as an installable Progressive Web Application (PWA). Students receive instant push notifications for important club announcements and meeting check-in reminders directly on their iOS and Android home screens without requiring heavy native app store downloads.
+								Demos is engineered as an installable
+								Progressive Web Application (PWA). Students
+								receive instant push notifications for important
+								club announcements and meeting check-in
+								reminders directly on their iOS and Android home
+								screens without requiring heavy native app store
+								downloads.
 							</p>
 							<p className="text-xs text-text-muted">
 								Explore web app guidelines at{' '}
@@ -539,7 +577,8 @@ export default function Home() {
 									className="text-primary hover:underline font-medium"
 								>
 									Google Web.dev
-								</a>.
+								</a>
+								.
 							</p>
 						</div>
 					</div>
