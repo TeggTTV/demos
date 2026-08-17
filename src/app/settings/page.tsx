@@ -114,7 +114,10 @@ export default function SettingsPage() {
 		}
 	};
 
+	const [testStatusMessage, setTestStatusMessage] = useState<string | null>(null);
+
 	const handleSendTestNotification = async () => {
+		// 1. In-app notification & chime
 		triggerNotification({
 			type: 'feed_message',
 			title: 'Demos Notification Test',
@@ -122,14 +125,23 @@ export default function SettingsPage() {
 			url: '/settings',
 		});
 
-		// Trigger background Web Push from server as well
+		// 2. Ensure device push is subscribed
 		if (currentUser) {
 			try {
-				await fetch('/api/push/test', {
+				if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+					await subscribeToPushNotifications(currentUser.id);
+				}
+
+				const res = await fetch('/api/push/test', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ userId: currentUser.id }),
 				});
+				const data = await res.json();
+				if (data.message) {
+					setTestStatusMessage(data.message);
+					setTimeout(() => setTestStatusMessage(null), 5000);
+				}
 			} catch (e) {
 				console.error('Failed to send server test push:', e);
 			}
@@ -252,6 +264,12 @@ export default function SettingsPage() {
 								</button>
 							</div>
 						</div>
+
+						{testStatusMessage && (
+							<div className="rounded-xl border border-primary/20 bg-primary-light/50 px-3.5 py-2.5 text-xs text-primary font-medium">
+								{testStatusMessage}
+							</div>
+						)}
 
 						<div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
 							{/* Sound toggle */}
