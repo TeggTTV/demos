@@ -7,6 +7,7 @@ export const viewport: Viewport = {
 	width: 'device-width',
 	initialScale: 1,
 	maximumScale: 1,
+	themeColor: '#4f46e5',
 };
 
 const geistSans = Geist({
@@ -23,14 +24,20 @@ export const metadata: Metadata = {
 	title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
 	description:
 		'The all-in-one platform for student organizations and campus clubs to promote themselves, invite members, share announcements, and track attendance.',
-	metadataBase: new URL('https://demos-clubs.edu'),
+	metadataBase: new URL('https://demos-clubs.vercel.app'),
+	manifest: '/manifest.json',
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: 'default',
+		title: 'Demos',
+	},
 	alternates: {
 		canonical: '/',
 	},
 	openGraph: {
 		type: 'website',
 		locale: 'en_US',
-		url: 'https://demos-clubs.edu/',
+		url: 'https://demos-clubs.vercel.app/',
 		siteName: 'Demos',
 		title: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
 		description:
@@ -64,7 +71,13 @@ export default function RootLayout({
 			suppressHydrationWarning
 		>
 			<head>
+				<meta name="application-name" content="Demos" />
 				<meta name="apple-mobile-web-app-title" content="Demos" />
+				<meta name="apple-mobile-web-app-capable" content="yes" />
+				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+				<meta name="mobile-web-app-capable" content="yes" />
+				<meta name="theme-color" content="#4f46e5" />
+				<link rel="manifest" href="/manifest.json" />
 			</head>
 			<body
 				className="min-h-full flex flex-col bg-background text-foreground font-sans"

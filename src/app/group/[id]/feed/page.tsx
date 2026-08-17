@@ -55,6 +55,7 @@ export default function GroupFeedPage() {
 		checkInToEvent,
 		updateAttendanceStatus,
 		generateClubInvite,
+		triggerNotification,
 	} = useAppContext();
 	const router = useRouter();
 
@@ -141,6 +142,15 @@ export default function GroupFeedPage() {
 				officerIds: newOfficerIds,
 			});
 			if (res.success) {
+				const targetUser = users.find((u) => u.id === targetUserId);
+				triggerNotification({
+					type: 'member_promoted',
+					title: 'Officer Promoted',
+					body: `${targetUser?.name || 'A member'} was promoted to Officer in "${group.name}".`,
+					groupId: group.id,
+					groupName: group.name,
+					url: `/group/${group.id}/feed`,
+				});
 				setRoleChangeSuccess(
 					'Member promoted to Officer successfully!',
 				);
@@ -161,6 +171,15 @@ export default function GroupFeedPage() {
 			officerIds: newOfficerIds,
 		});
 		if (res.success) {
+			const targetUser = users.find((u) => u.id === targetUserId);
+			triggerNotification({
+				type: 'member_demoted',
+				title: 'Officer Demoted',
+				body: `${targetUser?.name || 'An officer'} was demoted to Member in "${group.name}".`,
+				groupId: group.id,
+				groupName: group.name,
+				url: `/group/${group.id}/feed`,
+			});
 			setRoleChangeSuccess('Officer demoted to Member successfully!');
 			setTimeout(() => setRoleChangeSuccess(null), 3000);
 		}

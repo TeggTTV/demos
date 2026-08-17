@@ -10,4 +10,5 @@ module.exports = {
 			},
 		],
 	},
+	exclude: ['/auth/*', '/join', '/pending', '/profile', '/settings'],
 };

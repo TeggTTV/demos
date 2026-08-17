@@ -7,6 +7,14 @@ import React, {
 	useEffect,
 	useCallback,
 } from 'react';
+import {
+	AppNotification,
+	NotificationSettings,
+	DEFAULT_NOTIFICATION_SETTINGS,
+	NotificationType,
+	playNotificationSound,
+	sendBrowserNotification,
+} from '@/utils/notificationUtils';
 
 /* ──────────────────────────── Types ──────────────────────────── */
 
@@ -114,6 +122,9 @@ interface AppContextType {
 	events: MeetingEvent[];
 	attendances: AttendanceRecord[];
 	invites: ClubInvite[];
+	notifications: AppNotification[];
+	notificationSettings: NotificationSettings;
+	unreadNotificationCount: number;
 	theme: Theme;
 	hydrated: boolean;
 	toggleTheme: () => void;
@@ -225,6 +236,24 @@ interface AppContextType {
 		error?: string;
 	}>;
 	refreshData: () => Promise<void>;
+
+	// Notifications API
+	triggerNotification: (params: {
+		type: NotificationType;
+		title: string;
+		body: string;
+		groupId?: string;
+		groupName?: string;
+		url?: string;
+		meta?: Record<string, unknown>;
+	}) => void;
+	markNotificationAsRead: (id: string) => void;
+	markAllNotificationsAsRead: () => void;
+	deleteNotification: (id: string) => void;
+	clearAllNotifications: () => void;
+	updateNotificationSettings: (
+		newSettings: Partial<NotificationSettings>,
+	) => void;
 }
 
 /* ──────────────────────────── Context ─────────────────────────── */
@@ -240,8 +269,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const [events, setEvents] = useState<MeetingEvent[]>([]);
 	const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
 	const [invites, setInvites] = useState<ClubInvite[]>([]);
+	const [notifications, setNotifications] = useState<AppNotification[]>([]);
+	const [notificationSettings, setNotificationSettings] =
+		useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
 	const [theme, setTheme] = useState<Theme>('light');
 	const [hydrated, setHydrated] = useState(false);
+
+	/* ─── Service Worker Registration ─── */
+	useEffect(() => {
+		if (
+			typeof window !== 'undefined' &&
+			'serviceWorker' in navigator &&
+			process.env.NODE_ENV !== 'development'
+		) {
+			navigator.serviceWorker
+				.register('/sw.js')
+				.then((reg) => {
+					console.log('PWA ServiceWorker registration successful with scope:', reg.scope);
+				})
+				.catch((err) => {
+					console.warn('PWA ServiceWorker registration failed:', err);
+				});
+		}
+	}, []);
 
 	/* ─── Hydrate pure from API ─── */
 	const loadData = useCallback(async () => {
@@ -311,10 +361,139 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		}
 
+		// Load Notifications and Settings from localStorage
+		const savedNotifications = localStorage.getItem('demos_notifications');
+		if (savedNotifications) {
+			try {
+				setNotifications(JSON.parse(savedNotifications));
+			} catch {
+				localStorage.removeItem('demos_notifications');
+			}
+		}
+
+		const savedSettings = localStorage.getItem('demos_notification_settings');
+		if (savedSettings) {
+			try {
+				setNotificationSettings({
+					...DEFAULT_NOTIFICATION_SETTINGS,
+					...JSON.parse(savedSettings),
+				});
+			} catch {
+				localStorage.removeItem('demos_notification_settings');
+			}
+		}
+
 		loadData();
 		setHydrated(true);
 	}, [loadData]);
 	/* eslint-enable react-hooks/set-state-in-effect */
+
+	/* ─── Persist Notifications ─── */
+	const saveNotifications = useCallback(
+		(newNotifications: AppNotification[]) => {
+			setNotifications(newNotifications);
+			localStorage.setItem(
+				'demos_notifications',
+				JSON.stringify(newNotifications),
+			);
+		},
+		[],
+	);
+
+	/* ─── Notification Dispatcher ─── */
+	const triggerNotification = useCallback(
+		({
+			type,
+			title,
+			body,
+			groupId,
+			groupName,
+			url = '/',
+			meta,
+		}: {
+			type: NotificationType;
+			title: string;
+			body: string;
+			groupId?: string;
+			groupName?: string;
+			url?: string;
+			meta?: Record<string, unknown>;
+		}) => {
+			// Check if this specific notification type is enabled
+			if (notificationSettings[type] === false) {
+				return;
+			}
+
+			const newNotification: AppNotification = {
+				id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+				type,
+				title,
+				body,
+				groupId,
+				groupName,
+				url,
+				read: false,
+				createdAt: new Date().toISOString(),
+				meta,
+			};
+
+			saveNotifications([newNotification, ...notifications]);
+
+			// Play sound if enabled
+			if (notificationSettings.soundEnabled) {
+				playNotificationSound();
+			}
+
+			// Send browser notification if enabled
+			if (notificationSettings.browserPushEnabled) {
+				sendBrowserNotification(title, body, url);
+			}
+		},
+		[notificationSettings, notifications, saveNotifications],
+	);
+
+	const markNotificationAsRead = useCallback(
+		(id: string) => {
+			const updated = notifications.map((n) =>
+				n.id === id ? { ...n, read: true } : n,
+			);
+			saveNotifications(updated);
+		},
+		[notifications, saveNotifications],
+	);
+
+	const markAllNotificationsAsRead = useCallback(() => {
+		const updated = notifications.map((n) => ({ ...n, read: true }));
+		saveNotifications(updated);
+	}, [notifications, saveNotifications]);
+
+	const deleteNotification = useCallback(
+		(id: string) => {
+			const updated = notifications.filter((n) => n.id !== id);
+			saveNotifications(updated);
+		},
+		[notifications, saveNotifications],
+	);
+
+	const clearAllNotifications = useCallback(() => {
+		saveNotifications([]);
+	}, [saveNotifications]);
+
+	const updateNotificationSettings = useCallback(
+		(newSettings: Partial<NotificationSettings>) => {
+			setNotificationSettings((prev) => {
+				const updated = { ...prev, ...newSettings };
+				localStorage.setItem(
+					'demos_notification_settings',
+					JSON.stringify(updated),
+				);
+				return updated;
+			});
+		},
+		[],
+	);
+
+	const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
 	/* ─── Theme Toggle ─── */
 	const toggleTheme = useCallback(() => {
@@ -424,6 +603,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			);
 			if (exists) return;
 
+			const targetGroup = groups.find((g) => g.id === groupId);
+
 			try {
 				const res = await fetch('/api/requests', {
 					method: 'POST',
@@ -438,52 +619,102 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				const data = await res.json();
 				if (data.success && data.request) {
 					setRequests((prev) => [...prev, data.request]);
+
+					triggerNotification({
+						type: 'join_request',
+						title: 'Join Request Submitted',
+						body: `Your application to join "${targetGroup?.name || 'the club'}" was sent.`,
+						groupId,
+						groupName: targetGroup?.name,
+						url: '/pending',
+					});
 				}
 			} catch (e) {
 				console.error('Could not save join request:', e);
 			}
 		},
-		[currentUser, requests],
+		[currentUser, groups, requests, triggerNotification],
 	);
 
-	const approveRequest = useCallback(async (requestId: string) => {
-		try {
-			const res = await fetch('/api/requests', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'approve', requestId }),
-			});
-			const data = await res.json();
-			if (data.success && data.request) {
-				setRequests((prev) =>
-					prev.map((r) => (r.id === requestId ? data.request : r)),
-				);
-				const gRes = await fetch('/api/groups');
-				const gData = await gRes.json();
-				if (gData.groups) setGroups(gData.groups);
-			}
-		} catch (e) {
-			console.error('Could not approve request:', e);
-		}
-	}, []);
+	const approveRequest = useCallback(
+		async (requestId: string) => {
+			const reqObj = requests.find((r) => r.id === requestId);
+			const targetGroup = groups.find((g) => g.id === reqObj?.groupId);
+			const applicant = users.find((u) => u.id === reqObj?.userId);
 
-	const declineRequest = useCallback(async (requestId: string) => {
-		try {
-			const res = await fetch('/api/requests', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'decline', requestId }),
-			});
-			const data = await res.json();
-			if (data.success && data.request) {
-				setRequests((prev) =>
-					prev.map((r) => (r.id === requestId ? data.request : r)),
-				);
+			try {
+				const res = await fetch('/api/requests', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ action: 'approve', requestId }),
+				});
+				const data = await res.json();
+				if (data.success && data.request) {
+					setRequests((prev) =>
+						prev.map((r) => (r.id === requestId ? data.request : r)),
+					);
+					const gRes = await fetch('/api/groups');
+					const gData = await gRes.json();
+					if (gData.groups) setGroups(gData.groups);
+
+					triggerNotification({
+						type: 'join_request_status',
+						title: 'Application Approved',
+						body: `Approved ${applicant?.name || 'member'} for "${targetGroup?.name || 'Club'}".`,
+						groupId: targetGroup?.id,
+						groupName: targetGroup?.name,
+						url: targetGroup ? `/group/${targetGroup.id}/feed` : '/groups',
+					});
+
+					triggerNotification({
+						type: 'member_added',
+						title: 'New Member Joined',
+						body: `${applicant?.name || 'A student'} was added to "${targetGroup?.name || 'Club'}".`,
+						groupId: targetGroup?.id,
+						groupName: targetGroup?.name,
+						url: targetGroup ? `/group/${targetGroup.id}/feed` : '/groups',
+					});
+				}
+			} catch (e) {
+				console.error('Could not approve request:', e);
 			}
-		} catch (e) {
-			console.error('Could not decline request:', e);
-		}
-	}, []);
+		},
+		[groups, requests, triggerNotification, users],
+	);
+
+	const declineRequest = useCallback(
+		async (requestId: string) => {
+			const reqObj = requests.find((r) => r.id === requestId);
+			const targetGroup = groups.find((g) => g.id === reqObj?.groupId);
+			const applicant = users.find((u) => u.id === reqObj?.userId);
+
+			try {
+				const res = await fetch('/api/requests', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ action: 'decline', requestId }),
+				});
+				const data = await res.json();
+				if (data.success && data.request) {
+					setRequests((prev) =>
+						prev.map((r) => (r.id === requestId ? data.request : r)),
+					);
+
+					triggerNotification({
+						type: 'join_request_status',
+						title: 'Join Request Declined',
+						body: `Application for ${applicant?.name || 'member'} to join "${targetGroup?.name || 'Club'}" was declined.`,
+						groupId: targetGroup?.id,
+						groupName: targetGroup?.name,
+						url: '/pending',
+					});
+				}
+			} catch (e) {
+				console.error('Could not decline request:', e);
+			}
+		},
+		[groups, requests, triggerNotification, users],
+	);
 
 	/* ─── Club Invite Codes ─── */
 	const generateClubInvite = useCallback(
@@ -550,18 +781,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				if (data.success && data.groupId) {
 					const gRes = await fetch('/api/groups');
 					const gData = await gRes.json();
+					let joinedGroup: Group | undefined;
 					if (gData.groups) {
 						setGroups(gData.groups);
-						const joinedGroup = gData.groups.find(
+						joinedGroup = gData.groups.find(
 							(g: Group) => g.id === data.groupId,
 						);
-						return {
-							success: true,
-							group: joinedGroup,
-							groupId: data.groupId,
-						};
 					}
-					return { success: true, groupId: data.groupId };
+
+					triggerNotification({
+						type: 'invite_used',
+						title: 'Invite Code Redeemed',
+						body: `You joined "${joinedGroup?.name || 'Club'}" using code ${cleanCode}!`,
+						groupId: data.groupId,
+						groupName: joinedGroup?.name,
+						url: `/group/${data.groupId}/feed`,
+					});
+
+					triggerNotification({
+						type: 'member_added',
+						title: 'Member Joined via Invite',
+						body: `${currentUser.name} joined "${joinedGroup?.name || 'Club'}".`,
+						groupId: data.groupId,
+						groupName: joinedGroup?.name,
+						url: `/group/${data.groupId}/feed`,
+					});
+
+					return {
+						success: true,
+						group: joinedGroup,
+						groupId: data.groupId,
+					};
 				}
 				return {
 					success: false,
@@ -575,7 +825,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				};
 			}
 		},
-		[currentUser],
+		[currentUser, triggerNotification],
 	);
 
 	/* ─── Feed Messages & Announcements ─── */
@@ -589,6 +839,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			pinned?: boolean,
 		) => {
 			if (!currentUser) return;
+			const targetGroup = groups.find((g) => g.id === groupId);
 
 			try {
 				const res = await fetch('/api/feed', {
@@ -607,12 +858,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				const data = await res.json();
 				if (data.success && data.message) {
 					setFeedMessages((prev) => [...prev, data.message]);
+
+					if (fileUrl && fileName) {
+						triggerNotification({
+							type: 'feed_attachment',
+							title: `New File in ${targetGroup?.name || 'Club'}`,
+							body: `${currentUser.name} shared file "${fileName}".`,
+							groupId,
+							groupName: targetGroup?.name,
+							url: `/group/${groupId}/feed`,
+						});
+					} else if (
+						content.includes('http://') ||
+						content.includes('https://')
+					) {
+						triggerNotification({
+							type: 'feed_link',
+							title: `Resource Link in ${targetGroup?.name || 'Club'}`,
+							body: `${currentUser.name} shared a link.`,
+							groupId,
+							groupName: targetGroup?.name,
+							url: `/group/${groupId}/feed`,
+						});
+					} else {
+						triggerNotification({
+							type: 'feed_message',
+							title: `${targetGroup?.name || 'Club'} Message`,
+							body: `${currentUser.name}: ${content.slice(0, 70)}${content.length > 70 ? '...' : ''}`,
+							groupId,
+							groupName: targetGroup?.name,
+							url: `/group/${groupId}/feed`,
+						});
+					}
 				}
 			} catch (e) {
 				console.error('Could not save feed message:', e);
 			}
 		},
-		[currentUser],
+		[currentUser, groups, triggerNotification],
 	);
 
 	const deleteMessage = useCallback(async (messageId: string) => {
@@ -765,6 +1048,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			},
 		) => {
 			try {
+				const targetGroup = groups.find((g) => g.id === groupId);
+
 				const res = await fetch('/api/groups', {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
@@ -785,6 +1070,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 									),
 							),
 						);
+						const kickedUser = users.find(
+							(u) => u.id === settings.kickUserId,
+						);
+						triggerNotification({
+							type: 'member_removed',
+							title: 'Member Removed',
+							body: `${kickedUser?.name || 'A member'} was removed from "${targetGroup?.name || 'Club'}".`,
+							groupId,
+							groupName: targetGroup?.name,
+							url: `/group/${groupId}/feed`,
+						});
 					}
 					if (settings.deleteLinkId || settings.deleteFileId) {
 						const messageId =
@@ -806,7 +1102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return { success: false, error: 'Network error updating club' };
 			}
 		},
-		[],
+		[groups, triggerNotification, users],
 	);
 
 	/* ─── Event & Attendance Management ─── */
@@ -824,6 +1120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			if (!currentUser)
 				return { success: false, error: 'Must be logged in' };
 
+			const targetGroup = groups.find((g) => g.id === groupId);
 			const randomCode = `DEMO-${Math.floor(1000 + Math.random() * 9000)}`;
 
 			try {
@@ -840,6 +1137,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				const data = await res.json();
 				if (data.success && data.event) {
 					setEvents((prev) => [data.event, ...prev]);
+
+					triggerNotification({
+						type: 'attendance_opened',
+						title: `Meeting Check-In Open: ${data.event.title}`,
+						body: `Attendance is open for "${targetGroup?.name || 'Club'}" at ${eventData.time}. PIN: ${randomCode}`,
+						groupId,
+						groupName: targetGroup?.name,
+						url: `/group/${groupId}/feed`,
+					});
+
 					return { success: true, event: data.event };
 				}
 				return {
@@ -854,11 +1161,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				};
 			}
 		},
-		[currentUser],
+		[currentUser, groups, triggerNotification],
 	);
 
 	const toggleEventActive = useCallback(
 		async (eventId: string, isActive: boolean) => {
+			const targetEvent = events.find((e) => e.id === eventId);
+			const targetGroup = groups.find((g) => g.id === targetEvent?.groupId);
+
 			try {
 				const res = await fetch('/api/events', {
 					method: 'PUT',
@@ -872,6 +1182,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 							e.id === eventId ? { ...e, isActive } : e,
 						),
 					);
+
+					if (isActive) {
+						triggerNotification({
+							type: 'attendance_opened',
+							title: `Check-In Opened: ${targetEvent?.title || 'Meeting'}`,
+							body: `Attendance session is active for "${targetGroup?.name || 'Club'}". Code: ${targetEvent?.checkInCode}`,
+							groupId: targetGroup?.id,
+							groupName: targetGroup?.name,
+							url: targetGroup
+								? `/group/${targetGroup.id}/feed`
+								: '/groups',
+						});
+					} else {
+						triggerNotification({
+							type: 'attendance_closed',
+							title: `Check-In Closed: ${targetEvent?.title || 'Meeting'}`,
+							body: `Attendance check-in has concluded for "${targetGroup?.name || 'Club'}".`,
+							groupId: targetGroup?.id,
+							groupName: targetGroup?.name,
+							url: targetGroup
+								? `/group/${targetGroup.id}/feed`
+								: '/groups',
+						});
+					}
+
 					return { success: true };
 				}
 				return { success: false };
@@ -880,7 +1215,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return { success: false };
 			}
 		},
-		[],
+		[events, groups, triggerNotification],
 	);
 
 	const deleteMeetingEvent = useCallback(async (eventId: string) => {
@@ -961,6 +1296,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						);
 						return [data.record, ...filtered];
 					});
+
+					const targetGroup = groups.find((g) => g.id === event.groupId);
+					triggerNotification({
+						type: 'attendance_status',
+						title: 'Check-In Confirmed',
+						body: `You are marked PRESENT for "${event.title}" (${targetGroup?.name || 'Club'}).`,
+						groupId: event.groupId,
+						groupName: targetGroup?.name,
+						url: `/group/${event.groupId}/feed`,
+					});
+
 					return {
 						success: true,
 						message: 'Attendance verified! You are checked in.',
@@ -975,7 +1321,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return { success: false, error: 'Network error checking in' };
 			}
 		},
-		[currentUser, events],
+		[currentUser, events, groups, triggerNotification],
 	);
 
 	const updateAttendanceStatus = useCallback(
@@ -986,6 +1332,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		) => {
 			const event = events.find((e) => e.id === eventId);
 			const targetUser = users.find((u) => u.id === userId);
+			const targetGroup = groups.find((g) => g.id === event?.groupId);
 
 			try {
 				const res = await fetch('/api/attendance', {
@@ -1010,6 +1357,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						);
 						return [data.record, ...filtered];
 					});
+
+					triggerNotification({
+						type: 'attendance_status',
+						title: `Attendance Updated: ${status}`,
+						body: `${targetUser?.name || 'Member'} marked as ${status} for "${event?.title || 'Meeting'}".`,
+						groupId: event?.groupId,
+						groupName: targetGroup?.name,
+						url: event?.groupId
+							? `/group/${event.groupId}/feed`
+							: '/groups',
+					});
+
 					return { success: true };
 				}
 				return { success: false };
@@ -1018,7 +1377,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return { success: false };
 			}
 		},
-		[events, users],
+		[events, groups, triggerNotification, users],
 	);
 
 	return (
@@ -1032,6 +1391,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				events,
 				attendances,
 				invites,
+				notifications,
+				notificationSettings,
+				unreadNotificationCount,
 				theme,
 				hydrated,
 				toggleTheme,
@@ -1055,6 +1417,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				generateClubInvite,
 				joinViaInviteCode,
 				refreshData: loadData,
+				triggerNotification,
+				markNotificationAsRead,
+				markAllNotificationsAsRead,
+				deleteNotification,
+				clearAllNotifications,
+				updateNotificationSettings,
 			}}
 		>
 			{children}

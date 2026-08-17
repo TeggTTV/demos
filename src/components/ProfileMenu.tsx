@@ -8,17 +8,15 @@ import {
 	FiUsers,
 	FiInbox,
 	FiLogOut,
-	FiSun,
-	FiMoon,
 	FiUser,
 	FiCompass,
+	FiSettings,
 } from 'react-icons/fi';
 import { useAppContext } from './AppContext';
 import Image from 'next/image';
 
 export default function ProfileMenu() {
-	const { currentUser, logoutUser, requests, groups, theme, toggleTheme } =
-		useAppContext();
+	const { currentUser, logoutUser, requests, groups } = useAppContext();
 
 	const [profileOpen, setProfileOpen] = useState(false);
 	const profileRef = useRef<HTMLDivElement>(null);
@@ -115,26 +113,6 @@ export default function ProfileMenu() {
 								</div>
 
 								<div className="p-1.5">
-									{/* Theme toggle */}
-									{/* <button
-										onClick={(e) => {
-											e.stopPropagation();
-											toggleTheme();
-										}}
-										className="flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors cursor-pointer"
-									>
-										{theme === 'light' ? (
-											<FiMoon size={15} />
-										) : (
-											<FiSun size={15} />
-										)}
-										{theme === 'light'
-											? 'Dark Mode'
-											: 'Light Mode'}
-									</button> */}
-
-									<div className="h-px bg-border my-1" />
-
 									{/* Edit Profile Link */}
 									<Link
 										href="/profile"
@@ -182,6 +160,16 @@ export default function ProfileMenu() {
 										)}
 									</Link>
 
+									{/* Settings Link */}
+									<Link
+										href="/settings"
+										onClick={() => setProfileOpen(false)}
+										className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors"
+									>
+										<FiSettings size={15} />
+										Settings
+									</Link>
+
 									<div className="h-px bg-border my-1" />
 
 									{/* Logout */}
@@ -213,6 +201,14 @@ export default function ProfileMenu() {
 										className="flex w-full items-center gap-3 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary-light rounded-lg transition-colors"
 									>
 										Create Account
+									</Link>
+									<Link
+										href="/settings"
+										onClick={() => setProfileOpen(false)}
+										className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors"
+									>
+										<FiSettings size={15} />
+										Settings
 									</Link>
 								</div>
 							</>
