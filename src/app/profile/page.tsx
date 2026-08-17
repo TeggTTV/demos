@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/Input';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { compressImage } from '@/utils/imageCompression';
 
 export default function ProfilePage() {
 	const { currentUser, updateProfile, hydrated } = useAppContext();
@@ -135,16 +136,15 @@ export default function ProfilePage() {
 							<input
 								type="file"
 								accept="image/*"
-								onChange={(e) => {
+								onChange={async (e) => {
 									const file = e.target.files?.[0];
 									if (file) {
-										const reader = new FileReader();
-										reader.onload = () => {
-											setAvatarUrl(
-												reader.result as string,
-											);
-										};
-										reader.readAsDataURL(file);
+										try {
+											const compressedDataUrl = await compressImage(file);
+											setAvatarUrl(compressedDataUrl);
+										} catch (err) {
+											console.error('Image compression failed:', err);
+										}
 									}
 								}}
 								className="block w-full text-xs text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
