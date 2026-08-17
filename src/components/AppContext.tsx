@@ -247,6 +247,8 @@ interface AppContextType {
 	isIdle: boolean;
 	fetchGroups: () => Promise<void>;
 	fetchInvites: () => Promise<void>;
+	fetchEvents: () => Promise<void>;
+	fetchAttendances: () => Promise<void>;
 	refreshData: () => Promise<void>;
 
 	// Notifications API
@@ -392,13 +394,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			fetchGroups(),
 			fetchRequests(),
 			fetchUsers(),
-			fetchEvents(),
-			fetchAttendances(),
 			fetchInvites(),
 		]);
 	}, [
-		fetchAttendances,
-		fetchEvents,
 		fetchGroups,
 		fetchInvites,
 		fetchRequests,
@@ -471,6 +469,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			subscribeToPushNotifications(currentUser.id).catch(() => {});
 		}
 	}, [currentUser]);
+
+	const eventsRef = React.useRef(events);
+	useEffect(() => {
+		eventsRef.current = events;
+	}, [events]);
 
 	/* ─── Persist Notifications ─── */
 	const saveNotifications = useCallback(
@@ -587,7 +590,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				// Only refresh data specifically needed by the current active page/tab
 				if (pathname.includes('/group/')) {
 					if (currentTab === 'attendance') {
-						await Promise.allSettled([fetchEvents(), fetchAttendances()]);
+						const groupId = pathname.split('/')[2];
+						const hasActiveEvent = eventsRef.current.some(
+							(e) => e.groupId === groupId && e.isActive,
+						);
+						if (hasActiveEvent) {
+							await Promise.allSettled([fetchEvents(), fetchAttendances()]);
+						}
 					} else if (currentTab === 'roster' || currentTab === 'roles') {
 						await fetchUsers();
 					} else if (currentTab === 'settings') {
@@ -1613,6 +1622,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				isIdle,
 				fetchGroups,
 				fetchInvites,
+				fetchEvents,
+				fetchAttendances,
 				refreshData: loadData,
 				triggerNotification,
 				markNotificationAsRead,

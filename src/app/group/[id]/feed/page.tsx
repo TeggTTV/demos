@@ -58,6 +58,8 @@ export default function GroupFeedPage() {
 		deleteClubInvites,
 		fetchGroups,
 		fetchInvites,
+		fetchEvents,
+		fetchAttendances,
 		isIdle,
 		invites,
 		triggerNotification,
@@ -315,6 +317,7 @@ export default function GroupFeedPage() {
 	const activeInvite = invites.find((i) => i.groupId === id);
 	useEffect(() => {
 		if (activeInvite) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setGeneratedInviteCode(activeInvite.code);
 		} else {
 			setGeneratedInviteCode('');
@@ -328,6 +331,14 @@ export default function GroupFeedPage() {
 			fetchInvites();
 		}
 	}, [activeTab, fetchGroups, fetchInvites]);
+
+	// Fetch events and attendances once when loading attendance tab
+	useEffect(() => {
+		if (activeTab === 'attendance') {
+			fetchEvents();
+			fetchAttendances();
+		}
+	}, [activeTab, fetchEvents, fetchAttendances]);
 
 	useEffect(() => {
 		if (!id || isIdle) return;
