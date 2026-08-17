@@ -59,9 +59,37 @@ export default function GroupFeedPage() {
 	} = useAppContext();
 	const router = useRouter();
 
-	const [activeTab, setActiveTab] = useState<
-		'feed' | 'attendance' | 'showcase' | 'roster' | 'roles' | 'settings'
-	>('feed');
+	type FeedTab = 'feed' | 'attendance' | 'showcase' | 'roster' | 'roles' | 'settings';
+
+	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
+
+	// Sync activeTab with URL search params / localStorage
+	/* eslint-disable react-hooks/set-state-in-effect */
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			const params = new URLSearchParams(window.location.search);
+			const tabParam = params.get('tab') as FeedTab | null;
+			const savedTab = localStorage.getItem(`demos_tab_${id}`) as FeedTab | null;
+			const validTabs: FeedTab[] = ['feed', 'attendance', 'showcase', 'roster', 'roles', 'settings'];
+
+			if (tabParam && validTabs.includes(tabParam)) {
+				setActiveTabState(tabParam);
+			} else if (savedTab && validTabs.includes(savedTab)) {
+				setActiveTabState(savedTab);
+			}
+		}
+	}, [id]);
+	/* eslint-enable react-hooks/set-state-in-effect */
+
+	const setActiveTab = (tab: FeedTab) => {
+		setActiveTabState(tab);
+		if (typeof window !== 'undefined') {
+			localStorage.setItem(`demos_tab_${id}`, tab);
+			const url = new URL(window.location.href);
+			url.searchParams.set('tab', tab);
+			window.history.replaceState({}, '', url.toString());
+		}
+	};
 	const [rosterSearchQuery, setRosterSearchQuery] = useState('');
 	const [rosterRoleFilter, setRosterRoleFilter] = useState<
 		'all' | 'leaders' | 'officers' | 'members'

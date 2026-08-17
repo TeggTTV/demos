@@ -283,14 +283,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Service Worker Registration ─── */
 	useEffect(() => {
-		if (
-			typeof window !== 'undefined' &&
-			'serviceWorker' in navigator
-		) {
+		if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
 			navigator.serviceWorker
 				.register('/sw.js')
 				.then((reg) => {
-					console.log('PWA ServiceWorker registered with scope:', reg.scope);
+					console.log(
+						'PWA ServiceWorker registered with scope:',
+						reg.scope,
+					);
 				})
 				.catch((err) => {
 					console.warn('PWA ServiceWorker registration failed:', err);
@@ -376,7 +376,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		}
 
-		const savedSettings = localStorage.getItem('demos_notification_settings');
+		const savedSettings = localStorage.getItem(
+			'demos_notification_settings',
+		);
 		if (savedSettings) {
 			try {
 				setNotificationSettings({
@@ -414,9 +416,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Persist Notifications ─── */
 	const saveNotifications = useCallback(
-		(updater: AppNotification[] | ((prev: AppNotification[]) => AppNotification[])) => {
+		(
+			updater:
+				| AppNotification[]
+				| ((prev: AppNotification[]) => AppNotification[]),
+		) => {
 			setNotifications((prev) => {
-				const next = typeof updater === 'function' ? updater(prev) : updater;
+				const next =
+					typeof updater === 'function' ? updater(prev) : updater;
 				try {
 					localStorage.setItem(
 						'demos_notifications',
@@ -488,7 +495,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		[saveNotifications],
 	);
 
-	/* ─── Background Sync for Incoming Messages & Events ─── */
+	/* ─── Background Sync for Incoming Messages, Attendance & App Data ─── */
 	const knownMessageIdsRef = React.useRef<Set<string>>(new Set());
 	const isFirstSyncRef = React.useRef(true);
 
@@ -500,6 +507,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			if (!user) return;
 
 			try {
+				// 1. Refresh general app data (clubs, attendance, events, requests, invites, users)
+				await loadData();
+
+				// 2. Refresh feed messages & check for new incoming messages
 				const res = await fetch('/api/feed');
 				const data = await res.json();
 				if (data.messages && isMounted) {
@@ -507,7 +518,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 					// If first sync on page load, record all existing message IDs
 					if (isFirstSyncRef.current) {
-						allMsgs.forEach((m) => knownMessageIdsRef.current.add(m.id));
+						allMsgs.forEach((m) =>
+							knownMessageIdsRef.current.add(m.id),
+						);
 						isFirstSyncRef.current = false;
 						return;
 					}
@@ -520,17 +533,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					);
 
 					// Record all IDs
-					allMsgs.forEach((m) => knownMessageIdsRef.current.add(m.id));
+					allMsgs.forEach((m) =>
+						knownMessageIdsRef.current.add(m.id),
+					);
 
 					// Trigger notifications for new incoming messages
 					newMsgs.forEach((m: FeedMessage) => {
-						// If the user is actively looking at this specific club feed and the tab is focused, skip notification
+						// If the user is actively looking at this specific club feed, skip in-app notification & chime
 						if (typeof window !== 'undefined') {
 							const currentPath = window.location.pathname;
 							const isViewingCurrentFeed =
-								currentPath === `/group/${m.groupId}/feed` &&
-								document.visibilityState === 'visible' &&
-								document.hasFocus();
+								currentPath.includes(`/group/${m.groupId}`) &&
+								typeof document !== 'undefined' &&
+								document.visibilityState === 'visible';
 
 							if (isViewingCurrentFeed) {
 								return;
@@ -538,7 +553,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						}
 
 						const senderName = m.user?.name || 'A member';
-						const targetGroup = groups.find((g) => g.id === m.groupId);
+						const targetGroup = groups.find(
+							(g) => g.id === m.groupId,
+						);
 						const groupTitle = targetGroup?.name || 'Club';
 
 						if (m.fileUrl && m.fileName) {
@@ -582,13 +599,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		// Initial check
 		pollIncomingData();
 
-		// Poll every 5 seconds
-		const interval = setInterval(pollIncomingData, 5000);
+		// Poll every 4 seconds
+		const interval = setInterval(pollIncomingData, 4000);
 		return () => {
 			isMounted = false;
 			clearInterval(interval);
 		};
-	}, [groups, triggerNotification]);
+	}, [groups, loadData, triggerNotification]);
 
 	const markNotificationAsRead = useCallback(
 		(id: string) => {
@@ -786,7 +803,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				const data = await res.json();
 				if (data.success && data.request) {
 					setRequests((prev) =>
-						prev.map((r) => (r.id === requestId ? data.request : r)),
+						prev.map((r) =>
+							r.id === requestId ? data.request : r,
+						),
 					);
 					const gRes = await fetch('/api/groups');
 					const gData = await gRes.json();
@@ -798,7 +817,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						body: `Approved ${applicant?.name || 'member'} for "${targetGroup?.name || 'Club'}".`,
 						groupId: targetGroup?.id,
 						groupName: targetGroup?.name,
-						url: targetGroup ? `/group/${targetGroup.id}/feed` : '/groups',
+						url: targetGroup
+							? `/group/${targetGroup.id}/feed`
+							: '/groups',
 					});
 
 					triggerNotification({
@@ -807,7 +828,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						body: `${applicant?.name || 'A student'} was added to "${targetGroup?.name || 'Club'}".`,
 						groupId: targetGroup?.id,
 						groupName: targetGroup?.name,
-						url: targetGroup ? `/group/${targetGroup.id}/feed` : '/groups',
+						url: targetGroup
+							? `/group/${targetGroup.id}/feed`
+							: '/groups',
 					});
 				}
 			} catch (e) {
@@ -832,7 +855,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				const data = await res.json();
 				if (data.success && data.request) {
 					setRequests((prev) =>
-						prev.map((r) => (r.id === requestId ? data.request : r)),
+						prev.map((r) =>
+							r.id === requestId ? data.request : r,
+						),
 					);
 
 					triggerNotification({
@@ -872,7 +897,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				});
 				const data = await res.json();
 				if (data.success && data.invite) {
-					setInvites((prev) => [data.invite, ...prev]);
+					setInvites((prev) => [
+						data.invite,
+						...prev.filter((i) => i.groupId !== groupId),
+					]);
 					return { success: true, code: data.invite.code };
 				}
 				return {
@@ -1271,7 +1299,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const toggleEventActive = useCallback(
 		async (eventId: string, isActive: boolean) => {
 			const targetEvent = events.find((e) => e.id === eventId);
-			const targetGroup = groups.find((g) => g.id === targetEvent?.groupId);
+			const targetGroup = groups.find(
+				(g) => g.id === targetEvent?.groupId,
+			);
 
 			try {
 				const res = await fetch('/api/events', {
@@ -1401,7 +1431,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						return [data.record, ...filtered];
 					});
 
-					const targetGroup = groups.find((g) => g.id === event.groupId);
+					const targetGroup = groups.find(
+						(g) => g.id === event.groupId,
+					);
 					triggerNotification({
 						type: 'attendance_status',
 						title: 'Check-In Confirmed',

@@ -98,13 +98,18 @@ export async function POST(req: Request) {
 			return NextResponse.json({ success: true, groupId: invite.groupId });
 		}
 
-		// Create Invite Code
+		// Create Invite Code (Delete existing invites for this group first to keep DB clean)
 		if (!groupId || !code) {
 			return NextResponse.json(
 				{ error: 'Missing groupId or code' },
 				{ status: 400 },
 			);
 		}
+
+		// Remove all previous invites for this club
+		await prisma.clubInvite.deleteMany({
+			where: { groupId },
+		});
 
 		const newInvite = await prisma.clubInvite.upsert({
 			where: { code: code.toUpperCase() },
