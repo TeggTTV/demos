@@ -845,7 +845,8 @@ export default function SearchPage() {
 			fallback={
 				<div className="flex min-h-screen flex-col bg-background">
 					<Nav />
-					<main className="grow flex items-center justify-center py-20">
+					<main className="grow flex items-center justify-center py-20 flex-col gap-2">
+						<h1 className="text-xs text-text-muted font-normal">Loading...</h1>
 						<ClipLoader color="var(--primary)" size={35} />
 					</main>
 					<Footer />

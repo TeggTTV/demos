@@ -114,7 +114,7 @@ export default function JoinPage() {
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
-			<Suspense fallback={<div className="flex-1 flex items-center justify-center p-8"><span className="text-xs text-text-muted">Loading...</span></div>}>
+			<Suspense fallback={<div className="flex-1 flex items-center justify-center p-8"><h1 className="text-xs text-text-muted font-normal">Loading...</h1></div>}>
 				<JoinContent />
 			</Suspense>
 			<Footer />
