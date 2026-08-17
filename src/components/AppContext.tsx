@@ -298,54 +298,85 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
-	/* ─── Hydrate pure from API ─── */
-	const loadData = useCallback(async () => {
+	/* ─── Modular Data Fetchers for Active Tabs / Pages ─── */
+	const fetchGroups = useCallback(async () => {
 		try {
-			// Groups / Clubs
-			const gRes = await fetch('/api/groups');
-			const gData = await gRes.json();
-			if (gData.groups) {
-				setGroups(gData.groups);
-			}
-
-			// Requests
-			const rRes = await fetch('/api/requests');
-			const rData = await rRes.json();
-			if (rData.requests) {
-				setRequests(rData.requests);
-			}
-
-			// Users
-			const uRes = await fetch('/api/users');
-			const uData = await uRes.json();
-			if (uData.users) {
-				setUsers(uData.users);
-			}
-
-			// Events
-			const eRes = await fetch('/api/events');
-			const eData = await eRes.json();
-			if (eData.events) {
-				setEvents(eData.events);
-			}
-
-			// Attendance
-			const aRes = await fetch('/api/attendance');
-			const aData = await aRes.json();
-			if (aData.attendances) {
-				setAttendances(aData.attendances);
-			}
-
-			// Invites
-			const iRes = await fetch('/api/invites');
-			const iData = await iRes.json();
-			if (iData.invites) {
-				setInvites(iData.invites);
-			}
+			const res = await fetch('/api/groups');
+			const data = await res.json();
+			if (data.groups) setGroups(data.groups);
 		} catch (e) {
-			console.error('API loadData failed:', e);
+			console.error('fetchGroups failed:', e);
 		}
 	}, []);
+
+	const fetchRequests = useCallback(async () => {
+		try {
+			const res = await fetch('/api/requests');
+			const data = await res.json();
+			if (data.requests) setRequests(data.requests);
+		} catch (e) {
+			console.error('fetchRequests failed:', e);
+		}
+	}, []);
+
+	const fetchUsers = useCallback(async () => {
+		try {
+			const res = await fetch('/api/users');
+			const data = await res.json();
+			if (data.users) setUsers(data.users);
+		} catch (e) {
+			console.error('fetchUsers failed:', e);
+		}
+	}, []);
+
+	const fetchEvents = useCallback(async () => {
+		try {
+			const res = await fetch('/api/events');
+			const data = await res.json();
+			if (data.events) setEvents(data.events);
+		} catch (e) {
+			console.error('fetchEvents failed:', e);
+		}
+	}, []);
+
+	const fetchAttendances = useCallback(async () => {
+		try {
+			const res = await fetch('/api/attendance');
+			const data = await res.json();
+			if (data.attendances) setAttendances(data.attendances);
+		} catch (e) {
+			console.error('fetchAttendances failed:', e);
+		}
+	}, []);
+
+	const fetchInvites = useCallback(async () => {
+		try {
+			const res = await fetch('/api/invites');
+			const data = await res.json();
+			if (data.invites) setInvites(data.invites);
+		} catch (e) {
+			console.error('fetchInvites failed:', e);
+		}
+	}, []);
+
+	/* ─── Hydrate pure from API ─── */
+	const loadData = useCallback(async () => {
+		await Promise.allSettled([
+			fetchGroups(),
+			fetchRequests(),
+			fetchUsers(),
+			fetchEvents(),
+			fetchAttendances(),
+			fetchInvites(),
+		]);
+	}, [
+		fetchAttendances,
+		fetchEvents,
+		fetchGroups,
+		fetchInvites,
+		fetchRequests,
+		fetchUsers,
+	]);
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
@@ -507,10 +538,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			if (!user) return;
 
 			try {
-				// 1. Refresh general app data (clubs, attendance, events, requests, invites, users)
-				await loadData();
+				// Only refresh data relevant to the currently active page/tab
+				if (typeof window !== 'undefined') {
+					const pathname = window.location.pathname;
+					const searchParams = new URLSearchParams(window.location.search);
+					const currentTab = searchParams.get('tab') || 'feed';
 
-				// 2. Refresh feed messages & check for new incoming messages
+					if (pathname.includes('/group/')) {
+						// Inside a club page: refresh only what matches the active tab
+						if (currentTab === 'attendance') {
+							await Promise.allSettled([fetchEvents(), fetchAttendances()]);
+						} else if (currentTab === 'roster' || currentTab === 'roles') {
+							await Promise.allSettled([fetchGroups(), fetchUsers()]);
+						} else if (currentTab === 'settings') {
+							await Promise.allSettled([fetchGroups(), fetchInvites()]);
+						}
+					} else if (pathname === '/pending') {
+						await Promise.allSettled([fetchRequests(), fetchGroups()]);
+					} else if (pathname === '/groups' || pathname === '/search' || pathname === '/') {
+						await fetchGroups();
+					} else if (pathname === '/profile') {
+						await Promise.allSettled([fetchUsers(), fetchGroups()]);
+					}
+				}
+
+				// Refresh feed messages & check for new incoming messages
 				const res = await fetch('/api/feed');
 				const data = await res.json();
 				if (data.messages && isMounted) {
@@ -605,7 +657,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			isMounted = false;
 			clearInterval(interval);
 		};
-	}, [groups, loadData, triggerNotification]);
+	}, [
+		fetchAttendances,
+		fetchEvents,
+		fetchGroups,
+		fetchInvites,
+		fetchRequests,
+		fetchUsers,
+		groups,
+		triggerNotification,
+	]);
 
 	const markNotificationAsRead = useCallback(
 		(id: string) => {
