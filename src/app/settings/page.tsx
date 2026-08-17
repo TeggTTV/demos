@@ -9,7 +9,7 @@ import {
 	NOTIFICATION_CONFIG_MAP,
 	requestNotificationPermission,
 	playNotificationSound,
-	sendBrowserNotification,
+	subscribeToPushNotifications,
 } from '@/utils/notificationUtils';
 import {
 	FiBell,
@@ -40,6 +40,7 @@ const NOTIFICATION_KEYS: NotificationType[] = [
 
 export default function SettingsPage() {
 	const {
+		currentUser,
 		notificationSettings,
 		updateNotificationSettings,
 		clearAllNotifications,
@@ -96,10 +97,9 @@ export default function SettingsPage() {
 		setPermissionStatus(permission);
 		if (permission === 'granted') {
 			updateNotificationSettings({ browserPushEnabled: true });
-			sendBrowserNotification(
-				'Notifications Enabled',
-				'You will now receive Demos updates on your device.',
-			);
+			if (currentUser) {
+				await subscribeToPushNotifications(currentUser.id);
+			}
 		}
 	};
 
@@ -204,6 +204,9 @@ export default function SettingsPage() {
 									<p className="text-xs text-text-muted">
 										Receive background system alerts even when the browser
 										tab is closed.
+									</p>
+									<p className="text-[11px] text-primary/80 mt-1">
+										💡 On iPhone/iPad: Tap Share → &ldquo;Add to Home Screen&rdquo; first to enable background lock-screen notifications.
 									</p>
 								</div>
 							</div>

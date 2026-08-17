@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { sendWebPushToGroupMembers } from '@/utils/serverPush';
 
 export async function GET(req: Request) {
 	try {
@@ -59,7 +60,18 @@ export async function POST(req: Request) {
 				isActive: true,
 				createdById,
 			},
+			include: {
+				group: { select: { name: true } },
+			},
 		});
+
+		// Trigger background Web Push to club members
+		const groupName = newEvent.group?.name || 'Club';
+		sendWebPushToGroupMembers(groupId, createdById, {
+			title: `Attendance Open: ${title}`,
+			body: `Meeting check-in opened for "${groupName}" at ${time}. PIN: ${newEvent.checkInCode}`,
+			url: `/group/${groupId}/feed`,
+		}).catch(() => {});
 
 		return NextResponse.json({ success: true, event: newEvent });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,7 +107,23 @@ export async function PUT(req: Request) {
 				time: time !== undefined ? time : undefined,
 				location: location !== undefined ? location : undefined,
 			},
+			include: {
+				group: { select: { name: true } },
+			},
 		});
+
+		if (isActive !== undefined) {
+			const groupName = updated.group?.name || 'Club';
+			sendWebPushToGroupMembers(updated.groupId, null, {
+				title: isActive
+					? `Check-In Opened: ${updated.title}`
+					: `Check-In Closed: ${updated.title}`,
+				body: isActive
+					? `Attendance session is active for "${groupName}". Code: ${updated.checkInCode}`
+					: `Attendance check-in has closed for "${groupName}".`,
+				url: `/group/${updated.groupId}/feed`,
+			}).catch(() => {});
+		}
 
 		return NextResponse.json({ success: true, event: updated });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any

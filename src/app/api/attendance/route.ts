@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { sendWebPushToUsers } from '@/utils/serverPush';
 
 export async function GET(req: Request) {
 	try {
@@ -71,7 +72,20 @@ export async function POST(req: Request) {
 				status: status || 'PRESENT',
 				checkInMethod: checkInMethod || 'CODE',
 			},
+			include: {
+				event: { select: { title: true } },
+				group: { select: { name: true } },
+			},
 		});
+
+		// If attendance was manually verified by an officer, notify the student
+		if (checkInMethod === 'MANUAL') {
+			sendWebPushToUsers([userId], {
+				title: `Attendance Updated: ${status || 'PRESENT'}`,
+				body: `You are marked ${status || 'PRESENT'} for "${record.event.title}" (${record.group.name}).`,
+				url: `/group/${groupId}/feed`,
+			}).catch(() => {});
+		}
 
 		return NextResponse.json({ success: true, record });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any

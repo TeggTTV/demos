@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { sendWebPushToUsers } from '@/utils/serverPush';
 
 export async function GET() {
 	try {
@@ -53,6 +54,26 @@ export async function POST(req: Request) {
 					status: 'PENDING',
 				},
 			});
+			const targetGroup = await prisma.group.findUnique({
+				where: { id: groupId },
+				select: { name: true, leaderId: true, officerIds: true },
+			});
+			const applicant = await prisma.user.findUnique({
+				where: { id: userId },
+				select: { name: true },
+			});
+
+			if (targetGroup) {
+				const leaderAndOfficers = Array.from(
+					new Set([targetGroup.leaderId, ...(targetGroup.officerIds || [])]),
+				);
+				sendWebPushToUsers(leaderAndOfficers, {
+					title: 'New Club Join Request',
+					body: `${applicant?.name || 'A student'} applied to join "${targetGroup.name}".`,
+					url: '/pending',
+				}).catch(() => {});
+			}
+
 			return NextResponse.json({ success: true, request: newRequest });
 		}
 
@@ -67,6 +88,9 @@ export async function POST(req: Request) {
 			const joinReq = await prisma.joinRequest.update({
 				where: { id: requestId },
 				data: { status: 'APPROVED' },
+				include: {
+					group: { select: { name: true } },
+				},
 			});
 
 			// Add to GroupMember relationships
@@ -85,6 +109,13 @@ export async function POST(req: Request) {
 				},
 			});
 
+			// Push notify the approved applicant
+			sendWebPushToUsers([joinReq.userId], {
+				title: 'Application Approved!',
+				body: `You are now an official member of "${joinReq.group.name}".`,
+				url: `/group/${joinReq.groupId}/feed`,
+			}).catch(() => {});
+
 			return NextResponse.json({ success: true, request: joinReq });
 		}
 
@@ -99,7 +130,18 @@ export async function POST(req: Request) {
 			const joinReq = await prisma.joinRequest.update({
 				where: { id: requestId },
 				data: { status: 'DECLINED' },
+				include: {
+					group: { select: { name: true } },
+				},
 			});
+
+			// Push notify the declined applicant
+			sendWebPushToUsers([joinReq.userId], {
+				title: 'Join Request Update',
+				body: `Your request to join "${joinReq.group.name}" was declined.`,
+				url: '/pending',
+			}).catch(() => {});
+
 			return NextResponse.json({ success: true, request: joinReq });
 		}
 

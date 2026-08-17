@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { sendWebPushToUsers } from '@/utils/serverPush';
 
 export async function GET() {
 	try {
@@ -181,6 +182,7 @@ export async function PUT(req: Request) {
 
 		// 1. Kick user if requested
 		if (kickUserId) {
+			const targetGroup = await prisma.group.findUnique({ where: { id: groupId } });
 			await prisma.groupMember.deleteMany({
 				where: {
 					groupId,
@@ -202,9 +204,44 @@ export async function PUT(req: Request) {
 					},
 				});
 			}
+
+			// Push notify kicked member
+			sendWebPushToUsers([kickUserId], {
+				title: 'Club Membership Update',
+				body: `You were removed from "${targetGroup?.name || 'Club'}".`,
+				url: '/groups',
+			}).catch(() => {});
 		}
 
-		// 2. Delete shared link / file if requested
+		// 2. Officer promotion/demotion push notification
+		if (officerIds !== undefined) {
+			const existing = await prisma.group.findUnique({ where: { id: groupId } });
+			if (existing) {
+				const oldOfficers = existing.officerIds || [];
+				const newOfficers = officerIds || [];
+
+				const promoted = newOfficers.filter((id: string) => !oldOfficers.includes(id));
+				const demoted = oldOfficers.filter((id: string) => !newOfficers.includes(id));
+
+				if (promoted.length > 0) {
+					sendWebPushToUsers(promoted, {
+						title: 'Congratulations! You are an Officer',
+						body: `You were promoted to Officer in "${existing.name}".`,
+						url: `/group/${groupId}/feed`,
+					}).catch(() => {});
+				}
+
+				if (demoted.length > 0) {
+					sendWebPushToUsers(demoted, {
+						title: 'Club Role Update',
+						body: `Your role in "${existing.name}" was changed to Member.`,
+						url: `/group/${groupId}/feed`,
+					}).catch(() => {});
+				}
+			}
+		}
+
+		// 3. Delete shared link / file if requested
 		if (deleteLinkId || deleteFileId) {
 			const messageId = deleteLinkId || deleteFileId;
 			await prisma.feedMessage.deleteMany({
@@ -215,7 +252,7 @@ export async function PUT(req: Request) {
 			});
 		}
 
-		// 3. Update settings
+		// 4. Update settings
 		const updatedGroup = await prisma.group.update({
 			where: { id: groupId },
 			data: {

@@ -31,6 +31,7 @@ model User {
   feedMessages   FeedMessage[]
   attendances    AttendanceRecord[]
   createdEvents  MeetingEvent[]     @relation("EventCreator")
+  pushSubscriptions PushSubscription[]
 }
 
 model Group {
@@ -151,4 +152,14 @@ model AttendanceRecord {
   timestamp     DateTime     @default(now())
 
   @@unique([eventId, userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }

@@ -248,3 +248,95 @@ export async function sendBrowserNotification(
 		// Ignore errors if notification creation fails
 	}
 }
+
+/**
+ * Helper to convert Base64 URL string to Uint8Array for VAPID applicationServerKey
+ */
+function urlBase64ToUint8Array(base64String: string) {
+	const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+	const base64 = (base64String + padding)
+		.replace(/-/g, '+')
+		.replace(/_/g, '/');
+
+	const rawData = window.atob(base64);
+	const outputArray = new Uint8Array(rawData.length);
+
+	for (let i = 0; i < rawData.length; ++i) {
+		outputArray[i] = rawData.charCodeAt(i);
+	}
+	return outputArray;
+}
+
+/**
+ * Subscribe device to native PushManager and store on server
+ */
+export async function subscribeToPushNotifications(userId: string) {
+	if (
+		typeof window === 'undefined' ||
+		!('serviceWorker' in navigator) ||
+		!('PushManager' in window)
+	) {
+		return null;
+	}
+
+	try {
+		const registration = await navigator.serviceWorker.ready;
+		const vapidPublicKey =
+			process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+			'BB4eNNEmNKgaMYSnsuOM-GRpIwBvtVusDf64vgeW0hiLN5FEq6IzI_Xi4QWFv6HhQBDDg5WUEXPZ3C08FS16DFs';
+
+		const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+		let subscription = await registration.pushManager.getSubscription();
+
+		if (!subscription) {
+			subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: convertedVapidKey,
+			});
+		}
+
+		// Register subscription with backend
+		await fetch('/api/push', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				userId,
+				subscription,
+			}),
+		});
+
+		return subscription;
+	} catch (error) {
+		console.error('Failed to subscribe to Web Push:', error);
+		return null;
+	}
+}
+
+/**
+ * Unsubscribe device from PushManager
+ */
+export async function unsubscribeFromPushNotifications() {
+	if (
+		typeof window === 'undefined' ||
+		!('serviceWorker' in navigator) ||
+		!('PushManager' in window)
+	) {
+		return;
+	}
+
+	try {
+		const registration = await navigator.serviceWorker.ready;
+		const subscription = await registration.pushManager.getSubscription();
+		if (subscription) {
+			await fetch('/api/push', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ endpoint: subscription.endpoint }),
+			});
+			await subscription.unsubscribe();
+		}
+	} catch (e) {
+		console.error('Failed to unsubscribe:', e);
+	}
+}

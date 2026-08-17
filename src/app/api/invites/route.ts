@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { sendWebPushToUsers } from '@/utils/serverPush';
 
 export async function GET(req: Request) {
 	try {
@@ -75,6 +76,24 @@ export async function POST(req: Request) {
 					role: 'MEMBER',
 				},
 			});
+
+			const joinedUser = await prisma.user.findUnique({
+				where: { id: userId },
+				select: { name: true },
+			});
+			const group = await prisma.group.findUnique({
+				where: { id: invite.groupId },
+				select: { name: true, leaderId: true, officerIds: true },
+			});
+
+			if (group) {
+				const staff = Array.from(new Set([group.leaderId, ...(group.officerIds || [])]));
+				sendWebPushToUsers(staff, {
+					title: 'Invite Code Redeemed',
+					body: `${joinedUser?.name || 'A new member'} joined "${group.name}" via invite code.`,
+					url: `/group/${invite.groupId}/feed`,
+				}).catch(() => {});
+			}
 
 			return NextResponse.json({ success: true, groupId: invite.groupId });
 		}

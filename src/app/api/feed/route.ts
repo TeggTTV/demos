@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { sendWebPushToGroupMembers } from '@/utils/serverPush';
 
 export async function GET(req: Request) {
 	try {
@@ -58,7 +59,31 @@ export async function POST(req: Request) {
 				isAnnouncement: Boolean(isAnnouncement),
 				pinned: Boolean(pinned),
 			},
+			include: {
+				user: { select: { name: true } },
+				group: { select: { name: true } },
+			},
 		});
+
+		// Trigger background Web Push to group members
+		const senderName = newMessage.user?.name || 'A member';
+		const groupName = newMessage.group?.name || 'Club';
+		let title = `${groupName} Message`;
+		let body = `${senderName}: ${content || 'New attachment'}`;
+
+		if (fileUrl && fileName) {
+			title = `New File in ${groupName}`;
+			body = `${senderName} shared "${fileName}".`;
+		} else if (content && (content.includes('http://') || content.includes('https://'))) {
+			title = `Resource Link in ${groupName}`;
+			body = `${senderName} shared a link.`;
+		}
+
+		sendWebPushToGroupMembers(groupId, userId, {
+			title,
+			body: body.slice(0, 120),
+			url: `/group/${groupId}/feed`,
+		}).catch(() => {});
 
 		return NextResponse.json({ success: true, message: newMessage });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any

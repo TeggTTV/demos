@@ -14,6 +14,7 @@ import {
 	NotificationType,
 	playNotificationSound,
 	sendBrowserNotification,
+	subscribeToPushNotifications,
 } from '@/utils/notificationUtils';
 
 /* ──────────────────────────── Types ──────────────────────────── */
@@ -402,6 +403,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const userRef = React.useRef(currentUser);
 	useEffect(() => {
 		userRef.current = currentUser;
+		if (
+			currentUser &&
+			typeof window !== 'undefined' &&
+			'Notification' in window &&
+			Notification.permission === 'granted'
+		) {
+			subscribeToPushNotifications(currentUser.id).catch(() => {});
+		}
 	}, [currentUser]);
 
 	/* ─── Persist Notifications ─── */
