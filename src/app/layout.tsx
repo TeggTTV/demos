@@ -23,7 +23,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: 'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
+		default:
+			'Demos - Campus Clubs, Member Recruitment & Attendance Tracking',
 		template: '%s | Demos',
 	},
 	description:
@@ -72,9 +73,17 @@ export const metadata: Metadata = {
 	},
 	icons: {
 		icon: [
-			{ url: '/favicon.ico', sizes: 'any' },
-			{ url: '/icon0.svg', type: 'image/svg+xml' },
-			{ url: '/icon1.png', type: 'image/png', sizes: '32x32' },
+			{
+				url: '/icon1.png',
+				type: 'image/png',
+				sizes: '32x32',
+				media: '(prefers-color-scheme: light)',
+			},
+			// {
+			// 	url: '/icon0.svg',
+			// 	type: 'image/svg+xml',
+			// 	media: '(prefers-color-scheme: dark)',
+			// },
 		],
 		apple: [
 			{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
