@@ -13,7 +13,15 @@ export async function GET(req: Request) {
 
 		const messages = await prisma.feedMessage.findMany({
 			where: groupId ? { groupId } : undefined,
-			include: {
+			select: {
+				id: true,
+				groupId: true,
+				userId: true,
+				content: true,
+				fileName: true,
+				isAnnouncement: true,
+				pinned: true,
+				createdAt: true,
 				user: {
 					select: {
 						id: true,
@@ -25,7 +33,12 @@ export async function GET(req: Request) {
 			orderBy: { createdAt: 'asc' },
 		});
 
-		return NextResponse.json({ messages });
+		const messagesWithDownloadUrl = messages.map((msg) => ({
+			...msg,
+			fileUrl: msg.fileName ? `/api/feed/download?messageId=${msg.id}` : null,
+		}));
+
+		return NextResponse.json({ messages: messagesWithDownloadUrl });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
 		console.error('Feed GET Error:', error);

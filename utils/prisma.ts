@@ -10,6 +10,10 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+let lastChecked = 0;
+let cachedConnectionResult = false;
+const CACHE_TTL = 30000; // Cache connection status for 30 seconds
+
 export async function isDbConnected(): Promise<boolean> {
 	if (
 		!process.env.DATABASE_URL ||
@@ -17,8 +21,14 @@ export async function isDbConnected(): Promise<boolean> {
 	) {
 		return false;
 	}
+
+	const now = Date.now();
+	if (now - lastChecked < CACHE_TTL) {
+		return cachedConnectionResult;
+	}
+
 	try {
-		// Quick connection check by querying a minimal command or user record
+		// Quick connection check by querying a minimal user record
 		const checkPromise = prisma.user.findFirst({ select: { id: true } });
 
 		// Race with a timeout to prevent locking up build/server
@@ -30,12 +40,16 @@ export async function isDbConnected(): Promise<boolean> {
 		);
 
 		await Promise.race([checkPromise, timeoutPromise]);
+		cachedConnectionResult = true;
+		lastChecked = now;
 		return true;
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	} catch (e) {
 		console.warn(
 			'Prisma database offline or unreachable. Falling back to local storage.',
 		);
+		cachedConnectionResult = false;
+		lastChecked = now;
 		return false;
 	}
 }
