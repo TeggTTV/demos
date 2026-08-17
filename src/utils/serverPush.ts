@@ -50,6 +50,7 @@ export async function sendWebPushToUsers(
 			url: payload.url || '/',
 			icon: payload.icon || '/web-app-manifest-192x192.png',
 			badge: payload.badge || '/icon1.png',
+			tag: payload.tag || `demos_${payload.title}`,
 			data: { url: payload.url || '/' },
 		});
 

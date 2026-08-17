@@ -106,6 +106,8 @@ self.addEventListener('push', (event) => {
 		body: data.body,
 		icon: data.icon || '/web-app-manifest-192x192.png',
 		badge: data.badge || '/icon1.png',
+		tag: data.tag || `demos_${data.title}`,
+		renotify: false,
 		vibrate: [100, 50, 100],
 		data: {
 			url: targetUrl,

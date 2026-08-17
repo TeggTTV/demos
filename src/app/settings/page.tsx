@@ -132,14 +132,7 @@ export default function SettingsPage() {
 			url: '/settings',
 		});
 
-		// 2. Direct browser notification popup
-		sendBrowserNotification(
-			'Demos Test Notification',
-			'Your device notification popup is working!',
-			'/settings',
-		);
-
-		// 3. Ensure device push is subscribed & trigger server push
+		// 2. Ensure device push is subscribed & trigger server push
 		if (currentUser) {
 			try {
 				if (

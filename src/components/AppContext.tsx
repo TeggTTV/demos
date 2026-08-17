@@ -476,8 +476,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				playNotificationSound();
 			}
 
-			// Send browser notification if enabled
-			if (currentSettings.browserPushEnabled) {
+			// Send browser notification only if the app is currently in background or tab is hidden
+			if (
+				currentSettings.browserPushEnabled &&
+				typeof document !== 'undefined' &&
+				(document.visibilityState !== 'visible' || !document.hasFocus())
+			) {
 				sendBrowserNotification(title, body, url);
 			}
 		},
