@@ -110,28 +110,9 @@ self.addEventListener('push', (event) => {
 		data: {
 			url: targetUrl,
 		},
-		actions: [{ action: 'open', title: 'Open' }],
 	};
 
-	event.waitUntil(
-		clients
-			.matchAll({ type: 'window', includeUncontrolled: true })
-			.then((clientList) => {
-				// If a window is currently focused and looking at the exact target URL, don't interrupt with a popup
-				const isActivelyViewing = clientList.some(
-					(client) =>
-						client.focused &&
-						client.visibilityState === 'visible' &&
-						client.url.includes(targetUrl),
-				);
-
-				if (isActivelyViewing) {
-					return;
-				}
-
-				return self.registration.showNotification(data.title, options);
-			}),
-	);
+	event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 // Handle notification click to navigate to the relevant url
