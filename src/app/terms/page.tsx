@@ -1,7 +1,11 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+	title: 'Terms of Service',
+	description: 'Terms of Service and usage guidelines for the Demos club hub platform.',
+};
 
 export default function TermsPage() {
 	return (

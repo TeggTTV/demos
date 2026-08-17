@@ -1,7 +1,11 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+	title: 'Privacy Policy',
+	description: 'Privacy Policy and data security guidelines for student organization members and officers on Demos.',
+};
 
 export default function PrivacyPage() {
 	return (
