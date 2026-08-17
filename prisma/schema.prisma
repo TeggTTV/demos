@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String             @id @default(auto()) @map("_id") @db.ObjectId
+  email          String             @unique
+  name           String
+  avatarUrl      String?
+  role           String             @default("APPLICANT")
+  password       String             @default("")
+  bio            String?
+  major          String?
+  year           String?
+  createdAt      DateTime           @default(now())
+
+  // Relations
+  ledGroups      Group[]            @relation("GroupLeader")
+  memberships    GroupMember[]
+  requests       JoinRequest[]
+  feedMessages   FeedMessage[]
+  attendances    AttendanceRecord[]
+  createdEvents  MeetingEvent[]     @relation("EventCreator")
+}
+
+model Group {
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  tagline          String?
+  description      String
+  category         String             @default("Technology & Coding") // Category / Subject
+  subject          String             @default("General") // Kept for legacy compatibility
+  meetingFrequency String             @default("Weekly")
+  meetingLocation  String?            @default("Campus Center")
+  minMembers       Int                @default(1)
+  maxMembers       Int                @default(50)
+  isPrivate        Boolean            @default(false)
+  profanityFilter  Boolean            @default(false)
+  bannerUrl        String?
+  logoUrl          String?
+  websiteUrl       String?
+  instagramUrl     String?
+  discordUrl       String?
+  tags             String[]           @default([])
+  officerIds       String[]           @default([])
+  createdAt        DateTime           @default(now())
+  
+  // Leader
+  leaderId         String             @db.ObjectId
+  leader           User               @relation("GroupLeader", fields: [leaderId], references: [id])
+  
+  // Relations
+  members          GroupMember[]
+  requests         JoinRequest[]
+  feedMessages     FeedMessage[]
+  events           MeetingEvent[]
+  attendances      AttendanceRecord[]
+  invites          ClubInvite[]
+}
+
+model GroupMember {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  groupId  String   @db.ObjectId
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String   @db.ObjectId
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER") // "LEADER", "OFFICER", "MEMBER"
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model JoinRequest {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  groupId   String   @db.ObjectId
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String?  @default("")
+  status    String   @default("PENDING") // "PENDING", "APPROVED", "DECLINED"
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model ClubInvite {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  groupId   String    @db.ObjectId
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  code      String    @unique
+  email     String?
+  status    String    @default("ACTIVE") // "ACTIVE", "USED", "EXPIRED"
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+}
+
+model FeedMessage {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  groupId        String   @db.ObjectId
+  group          Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content        String
+  fileUrl        String?
+  fileName       String?
+  isAnnouncement Boolean  @default(false)
+  pinned         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model MeetingEvent {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  groupId     String             @db.ObjectId
+  group       Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  date        String             // YYYY-MM-DD
+  time        String             // e.g. "18:00"
+  location    String?            @default("Main Hall")
+  checkInCode String             // 4-6 character alphanumeric code
+  isActive    Boolean            @default(true)
+  createdById String             @db.ObjectId
+  creator     User               @relation("EventCreator", fields: [createdById], references: [id])
+  createdAt   DateTime           @default(now())
+
+  attendances AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  eventId       String       @db.ObjectId
+  event         MeetingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId       String       @db.ObjectId
+  group         Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId        String       @db.ObjectId
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName      String?
+  userEmail     String?
+  status        String       @default("PRESENT") // "PRESENT", "LATE", "EXCUSED", "ABSENT"
+  checkInMethod String       @default("CODE")    // "CODE", "MANUAL", "QR"
+  timestamp     DateTime     @default(now())
+
+  @@unique([eventId, userId])
+}
