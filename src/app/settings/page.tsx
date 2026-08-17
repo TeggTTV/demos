@@ -20,6 +20,8 @@ import {
 	FiDownload,
 	FiTrash2,
 	FiSend,
+	FiInfo,
+	FiShare,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
@@ -53,6 +55,7 @@ export default function SettingsPage() {
 		useState<NotificationPermission>('default');
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+	const [isMobile, setIsMobile] = useState(false);
 	const [isInstalled, setIsInstalled] = useState(false);
 	const [testSent, setTestSent] = useState(false);
 	const [saveSuccess, setSaveSuccess] = useState(false);
@@ -64,6 +67,11 @@ export default function SettingsPage() {
 			if ('Notification' in window) {
 				setPermissionStatus(Notification.permission);
 			}
+
+			// Detect if on mobile
+			const ua = window.navigator.userAgent.toLowerCase();
+			const mobileCheck = /iphone|ipad|ipod|android|mobi|tablet|opera mini/.test(ua);
+			setIsMobile(mobileCheck);
 
 			// Check standalone mode
 			if (
@@ -92,6 +100,8 @@ export default function SettingsPage() {
 		}
 	}, []);
 	/* eslint-enable react-hooks/set-state-in-effect */
+
+	const isNotOnMobilePwa = isMobile && !isInstalled;
 
 	const handleRequestPermission = async () => {
 		const permission = await requestNotificationPermission();
@@ -226,6 +236,36 @@ export default function SettingsPage() {
 								)}
 							</div>
 						</div>
+
+						{isNotOnMobilePwa && (
+							<div className="mt-4 border-t border-border/60 pt-4 space-y-3">
+								<div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-amber-600 dark:text-amber-500 flex items-start gap-2.5">
+									<FiInfo size={16} className="shrink-0 mt-0.5" />
+									<div>
+										<strong className="block text-xs font-bold">App Installation Required</strong>
+										<span className="block text-[11px] mt-0.5 leading-relaxed">
+											To configure background notifications on mobile devices, this app must be installed on your Home Screen first.
+										</span>
+									</div>
+								</div>
+
+								{typeof window !== 'undefined' && /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()) ? (
+									<div className="rounded-xl bg-primary-light/50 border border-primary/20 px-4 py-3 text-primary flex items-start gap-2 text-[11px] font-semibold">
+										<FiShare className="shrink-0 mt-0.5 text-primary" size={14} />
+										<span>
+											Tap the share icon in Safari and select <strong>&quot;Add to Home Screen&quot;</strong> to download it.
+										</span>
+									</div>
+								) : (
+									<div className="rounded-xl bg-surface-secondary border border-border px-4 py-3 text-text-secondary flex items-start gap-2 text-[11px]">
+										<FiDownload className="shrink-0 mt-0.5 text-text-muted" size={14} />
+										<span>
+											Open your mobile browser menu and select <strong>&quot;Add to Home Screen&quot;</strong> to install.
+										</span>
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 
 					{/* Section 2: Browser & System Push */}
@@ -264,7 +304,12 @@ export default function SettingsPage() {
 								) : (
 									<button
 										onClick={handleRequestPermission}
-										className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
+										disabled={isNotOnMobilePwa}
+										className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors shadow-xs ${
+											isNotOnMobilePwa
+												? 'opacity-50 cursor-not-allowed bg-primary/80'
+												: 'hover:bg-primary-hover cursor-pointer'
+										}`}
 									>
 										Enable Permissions
 									</button>
@@ -272,7 +317,12 @@ export default function SettingsPage() {
 
 								<button
 									onClick={handleSendTestNotification}
-									className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+									disabled={isNotOnMobilePwa}
+									className={`inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors ${
+										isNotOnMobilePwa
+											? 'opacity-50 cursor-not-allowed'
+											: 'hover:text-text-primary cursor-pointer'
+									}`}
 								>
 									<FiSend size={13} />
 									{testSent ? 'Sent!' : 'Send Test'}
@@ -288,7 +338,11 @@ export default function SettingsPage() {
 
 						<div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
 							{/* Sound toggle */}
-							<label className="flex items-center justify-between p-3 rounded-xl bg-surface-secondary/60 border border-border cursor-pointer hover:bg-surface-secondary transition-colors">
+							<label className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+								isNotOnMobilePwa
+									? 'bg-surface-secondary/40 border-border/50 opacity-60 cursor-not-allowed'
+									: 'bg-surface-secondary/60 border-border cursor-pointer hover:bg-surface-secondary'
+							}`}>
 								<span className="flex items-center gap-2 font-medium text-text-primary">
 									<FiVolume2
 										size={15}
@@ -298,6 +352,7 @@ export default function SettingsPage() {
 								</span>
 								<input
 									type="checkbox"
+									disabled={isNotOnMobilePwa}
 									checked={notificationSettings.soundEnabled}
 									onChange={(e) => {
 										updateNotificationSettings({
@@ -306,12 +361,16 @@ export default function SettingsPage() {
 										if (e.target.checked)
 											playNotificationSound();
 									}}
-									className="h-4 w-4 rounded accent-primary cursor-pointer"
+									className="h-4 w-4 rounded accent-primary cursor-pointer disabled:cursor-not-allowed"
 								/>
 							</label>
 
 							{/* Browser push toggle */}
-							<label className="flex items-center justify-between p-3 rounded-xl bg-surface-secondary/60 border border-border cursor-pointer hover:bg-surface-secondary transition-colors">
+							<label className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+								isNotOnMobilePwa
+									? 'bg-surface-secondary/40 border-border/50 opacity-60 cursor-not-allowed'
+									: 'bg-surface-secondary/60 border-border cursor-pointer hover:bg-surface-secondary'
+							}`}>
 								<span className="flex items-center gap-2 font-medium text-text-primary">
 									<FiBell
 										size={15}
@@ -321,6 +380,7 @@ export default function SettingsPage() {
 								</span>
 								<input
 									type="checkbox"
+									disabled={isNotOnMobilePwa}
 									checked={
 										notificationSettings.browserPushEnabled
 									}
@@ -337,7 +397,7 @@ export default function SettingsPage() {
 											});
 										}
 									}}
-									className="h-4 w-4 rounded accent-primary cursor-pointer"
+									className="h-4 w-4 rounded accent-primary cursor-pointer disabled:cursor-not-allowed"
 								/>
 							</label>
 						</div>
@@ -394,11 +454,14 @@ export default function SettingsPage() {
 											type="button"
 											role="switch"
 											aria-checked={isChecked}
+											disabled={isNotOnMobilePwa}
 											onClick={() => handleToggleKey(key)}
-											className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+											className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
 												isChecked
 													? 'bg-primary'
 													: 'bg-surface-tertiary border-border'
+											} ${
+												isNotOnMobilePwa ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'
 											}`}
 										>
 											<span
