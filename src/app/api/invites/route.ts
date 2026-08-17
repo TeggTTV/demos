@@ -130,3 +130,28 @@ export async function POST(req: Request) {
 		return NextResponse.json({ error: error.message }, { status: 500 });
 	}
 }
+
+export async function DELETE(req: Request) {
+	try {
+		const { searchParams } = new URL(req.url);
+		const groupId = searchParams.get('groupId');
+
+		if (!(await isDbConnected())) {
+			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+		}
+
+		if (!groupId) {
+			return NextResponse.json({ error: 'Missing groupId' }, { status: 400 });
+		}
+
+		await prisma.clubInvite.deleteMany({
+			where: { groupId },
+		});
+
+		return NextResponse.json({ success: true });
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} catch (error: any) {
+		console.error('Invites DELETE Error:', error);
+		return NextResponse.json({ error: error.message }, { status: 500 });
+	}
+}

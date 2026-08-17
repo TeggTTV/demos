@@ -3,17 +3,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAppContext, Group } from '@/components/AppContext';
+import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import {
 	FiUsers,
 	FiArrowRight,
 	FiPlus,
-	FiMoreVertical,
 	FiCalendar,
 	FiMapPin,
-	FiShare2,
 	FiKey,
 	FiCheck,
 	FiShield,
@@ -25,29 +23,19 @@ import { Checkbox } from '@/components/ui/Checkbox';
 
 export const BANNER_COLOR_PRESETS = [
 	{
-		id: 'indigo',
-		name: 'Indigo Violet',
-		value: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-	},
-	{
-		id: 'ocean',
-		name: 'Ocean Cyan',
-		value: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
-	},
-	{
-		id: 'emerald',
-		name: 'Emerald Mint',
-		value: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-	},
-	{
-		id: 'amber',
-		name: 'Sunset Amber',
-		value: 'linear-gradient(135deg, #d97706 0%, #ea580c 100%)',
+		id: 'blue',
+		name: 'Ocean Blue Glow',
+		value: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
 	},
 	{
 		id: 'rose',
-		name: 'Crimson Rose',
-		value: 'linear-gradient(135deg, #e11d48 0%, #be185d 100%)',
+		name: 'Sunset Rose',
+		value: 'linear-gradient(135deg, #be123c 0%, #f43f5e 100%)',
+	},
+	{
+		id: 'green',
+		name: 'Emerald Forest',
+		value: 'linear-gradient(135deg, #065f46 0%, #10b981 100%)',
 	},
 	{
 		id: 'purple',
@@ -66,34 +54,6 @@ export const BANNER_COLOR_PRESETS = [
 	},
 ];
 
-const parseCustomFrequency = (freq: string) => {
-	const daysMap: Record<string, boolean> = {
-		Mon: false,
-		Tue: false,
-		Wed: false,
-		Thu: false,
-		Fri: false,
-		Sat: false,
-		Sun: false,
-	};
-	let time = '18:00';
-	let isCustom = false;
-
-	if (freq && freq.startsWith('Weekly on ')) {
-		isCustom = true;
-		const parts = freq.replace('Weekly on ', '').split(' at ');
-		if (parts[0]) {
-			parts[0].split(', ').forEach((day) => {
-				if (daysMap[day] !== undefined) daysMap[day] = true;
-			});
-		}
-		if (parts[1]) {
-			time = parts[1];
-		}
-	}
-	return { isCustom, days: daysMap, time };
-};
-
 const compileFrequency = (
 	isCustom: boolean,
 	preset: string,
@@ -111,10 +71,7 @@ export default function GroupsPage() {
 		currentUser,
 		groups,
 		createGroup,
-		updateGroupSettings,
-		generateClubInvite,
 		joinViaInviteCode,
-		users,
 		events,
 	} = useAppContext();
 	const router = useRouter();
@@ -148,31 +105,6 @@ export default function GroupsPage() {
 	const [inviteCodeInput, setInviteCodeInput] = useState('');
 	const [inviteError, setInviteError] = useState('');
 	const [inviteSuccess, setInviteSuccess] = useState('');
-
-	// Settings state
-	const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-	const [settingsOpen, setSettingsOpen] = useState(false);
-	const [settingsName, setSettingsName] = useState('');
-	const [settingsTagline, setSettingsTagline] = useState('');
-	const [settingsDesc, setSettingsDesc] = useState('');
-	const [settingsCategory, setSettingsCategory] = useState('');
-	const [settingsFreq, setSettingsFreq] = useState('Weekly');
-	const [settingsLocation, setSettingsLocation] = useState('');
-	const [settingsEnableCustomBanner, setSettingsEnableCustomBanner] =
-		useState(false);
-	const [settingsBannerColor, setSettingsBannerColor] = useState(
-		BANNER_COLOR_PRESETS[0].value,
-	);
-	const [settingsBannerPreview, setSettingsBannerPreview] = useState('');
-	const [settingsDiscord, setSettingsDiscord] = useState('');
-	const [settingsInstagram, setSettingsInstagram] = useState('');
-	const [settingsWebsite, setSettingsWebsite] = useState('');
-	const [settingsPrivate, setSettingsPrivate] = useState(false);
-	const [settingsFilter, setSettingsFilter] = useState(false);
-	const [generatedCode, setGeneratedCode] = useState('');
-	const [copiedCode, setCopiedCode] = useState(false);
-	const [updating, setUpdating] = useState(false);
-	const [settingsError, setSettingsError] = useState('');
 
 	// Custom frequency state variables
 	const [isCustomFreq, setIsCustomFreq] = useState(false);
@@ -230,89 +162,9 @@ export default function GroupsPage() {
 		setModalOpen(true);
 	};
 
-	const openSettings = (g: Group) => {
-		setSelectedGroupId(g.id);
-		setSettingsName(g.name);
-		setSettingsTagline(g.tagline || '');
-		setSettingsDesc(g.description);
-		setSettingsCategory(g.category || 'General');
-		setSettingsFreq(g.meetingFrequency);
-		setSettingsLocation(g.meetingLocation || '');
-		setSettingsDiscord(g.discordUrl || '');
-		setSettingsInstagram(g.instagramUrl || '');
-		setSettingsWebsite(g.websiteUrl || '');
-		setSettingsPrivate(!!g.isPrivate);
-		setSettingsFilter(!!g.profanityFilter);
-		setGeneratedCode('');
-		setCopiedCode(false);
 
-		if (
-			g.bannerUrl?.startsWith('data:') ||
-			g.bannerUrl?.startsWith('http')
-		) {
-			setSettingsEnableCustomBanner(true);
-			setSettingsBannerPreview(g.bannerUrl);
-			setSettingsBannerColor(BANNER_COLOR_PRESETS[0].value);
-		} else if (g.bannerUrl) {
-			setSettingsEnableCustomBanner(false);
-			setSettingsBannerPreview('');
-			setSettingsBannerColor(g.bannerUrl);
-		} else {
-			setSettingsEnableCustomBanner(false);
-			setSettingsBannerPreview('');
-			setSettingsBannerColor(BANNER_COLOR_PRESETS[0].value);
-		}
 
-		const { isCustom, days, time } = parseCustomFrequency(
-			g.meetingFrequency,
-		);
-		setIsCustomFreq(isCustom);
-		setCustomDays(days);
-		setCustomTime(time);
 
-		setSettingsOpen(true);
-	};
-
-	const handleSaveSettings = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!selectedGroupId) return;
-		setUpdating(true);
-		setSettingsError('');
-
-		const finalFreq = compileFrequency(
-			isCustomFreq,
-			settingsFreq,
-			customDays,
-			customTime,
-		);
-
-		const finalBanner =
-			settingsEnableCustomBanner && settingsBannerPreview
-				? settingsBannerPreview
-				: settingsBannerColor;
-
-		const res = await updateGroupSettings(selectedGroupId, {
-			name: settingsName,
-			tagline: settingsTagline,
-			description: settingsDesc,
-			category: settingsCategory,
-			meetingFrequency: finalFreq,
-			meetingLocation: settingsLocation,
-			bannerUrl: finalBanner,
-			discordUrl: settingsDiscord,
-			instagramUrl: settingsInstagram,
-			websiteUrl: settingsWebsite,
-			isPrivate: settingsPrivate,
-			profanityFilter: settingsFilter,
-		});
-		setUpdating(false);
-		if (res.success) {
-			setSettingsOpen(false);
-			setSelectedGroupId(null);
-		} else {
-			setSettingsError(res.error || 'Failed to update settings');
-		}
-	};
 
 	const handleCreateGroup = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -380,34 +232,6 @@ export default function GroupsPage() {
 		}
 	};
 
-	const handleGenerateCode = async (groupId: string) => {
-		const res = await generateClubInvite(groupId);
-		if (res.success && res.code) {
-			setGeneratedCode(res.code);
-		}
-	};
-
-	const handleCopyCode = (code: string) => {
-		navigator.clipboard.writeText(code);
-		setCopiedCode(true);
-		setTimeout(() => setCopiedCode(false), 2000);
-	};
-
-	const handleKickMember = async (memberId: string) => {
-		if (!selectedGroupId) return;
-		if (
-			confirm(
-				'Are you sure you want to remove this member from the club?',
-			)
-		) {
-			const res = await updateGroupSettings(selectedGroupId, {
-				kickUserId: memberId,
-			});
-			if (!res.success) {
-				alert(res.error || 'Failed to remove member');
-			}
-		}
-	};
 
 	if (!currentUser) {
 		return (
@@ -577,7 +401,8 @@ export default function GroupsPage() {
 							return (
 								<div
 									key={club.id}
-									className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all flex flex-col"
+									onClick={() => router.push(`/group/${club.id}/feed`)}
+									className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all flex flex-col cursor-pointer"
 								>
 									{/* Banner */}
 									<div className="h-32 w-full relative bg-surface-secondary overflow-hidden">
@@ -613,18 +438,6 @@ export default function GroupsPage() {
 													Officer
 												</span>
 											) : null}
-
-											{(isLeader || isOfficer) && (
-												<button
-													onClick={() =>
-														openSettings(club)
-													}
-													className="h-6 w-6 rounded-full bg-surface/90 backdrop-blur-xs flex items-center justify-center text-text-secondary hover:text-text-primary shadow-xs cursor-pointer border border-border"
-													title="Club Settings"
-												>
-													<FiMoreVertical size={13} />
-												</button>
-											)}
 										</div>
 									</div>
 
@@ -698,13 +511,12 @@ export default function GroupsPage() {
 												👥 {club.memberIds.length}{' '}
 												Members
 											</span>
-											<Link
-												href={`/group/${club.id}/feed`}
+											<div
 												className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-all shadow-2xs inline-flex items-center gap-1"
 											>
 												Enter Hub{' '}
 												<FiArrowRight size={12} />
-											</Link>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -1135,311 +947,7 @@ export default function GroupsPage() {
 				)}
 			</AnimatePresence>
 
-			{/* ═══════════ Club Settings Modal ═══════════ */}
-			<AnimatePresence>
-				{settingsOpen && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							className="w-full max-w-xl rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 my-8"
-						>
-							<div className="flex items-center justify-between border-b border-border pb-3">
-								<div>
-									<h2 className="text-lg font-bold text-text-primary">
-										Club Settings &amp; Member Roster
-									</h2>
-									<p className="text-xs text-text-muted">
-										Update details, copy invite codes, and
-										manage members.
-									</p>
-								</div>
-								<button
-									onClick={() => setSettingsOpen(false)}
-									className="text-text-muted hover:text-text-primary p-1 rounded-lg"
-								>
-									✕
-								</button>
-							</div>
 
-							{/* Shareable Invite Code Generator */}
-							<div className="rounded-xl bg-primary-light/50 border border-primary/20 p-3.5 space-y-2">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-bold text-primary flex items-center gap-1.5">
-										<FiShare2 /> Shareable Club Invite Code
-									</span>
-									{selectedGroupId && (
-										<button
-											type="button"
-											onClick={() =>
-												handleGenerateCode(
-													selectedGroupId,
-												)
-											}
-											className="text-[11px] font-semibold text-primary underline cursor-pointer"
-										>
-											Generate / Refresh Code
-										</button>
-									)}
-								</div>
-
-								{generatedCode ? (
-									<div className="flex items-center gap-2">
-										<input
-											readOnly
-											value={generatedCode}
-											className="grow rounded-lg border border-primary/30 bg-surface px-3 py-1.5 text-xs font-mono font-bold text-primary"
-										/>
-										<button
-											type="button"
-											onClick={() =>
-												handleCopyCode(generatedCode)
-											}
-											className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white cursor-pointer"
-										>
-											{copiedCode ? 'Copied!' : 'Copy'}
-										</button>
-									</div>
-								) : (
-									<p className="text-xs text-text-secondary">
-										Click Generate to create a 1-click code
-										for new recruits.
-									</p>
-								)}
-							</div>
-
-							<form
-								onSubmit={handleSaveSettings}
-								className="space-y-3 text-xs"
-							>
-								{settingsError && (
-									<div className="text-xs text-danger bg-danger-bg p-2 rounded-lg text-center">
-										{settingsError}
-									</div>
-								)}
-
-								<Input
-									label="Club Name"
-									value={settingsName}
-									onChange={(e) =>
-										setSettingsName(e.target.value)
-									}
-								/>
-
-								<Input
-									label="Tagline"
-									value={settingsTagline}
-									onChange={(e) =>
-										setSettingsTagline(e.target.value)
-									}
-								/>
-
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Description
-									</label>
-									<textarea
-										rows={3}
-										value={settingsDesc}
-										onChange={(e) =>
-											setSettingsDesc(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface p-2.5 text-xs text-text-primary"
-									/>
-								</div>
-
-								<Input
-									label="Meeting Location"
-									value={settingsLocation}
-									onChange={(e) =>
-										setSettingsLocation(e.target.value)
-									}
-								/>
-
-								{/* Banner Setting */}
-								<div className="rounded-xl border border-border bg-surface-secondary/40 p-3 space-y-3">
-									<div className="flex items-center justify-between">
-										<span className="text-[11px] font-bold text-text-primary uppercase tracking-wider">
-											Club Banner
-										</span>
-										<label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
-											<Checkbox
-												checked={
-													settingsEnableCustomBanner
-												}
-												onChange={() =>
-													setSettingsEnableCustomBanner(
-														!settingsEnableCustomBanner,
-													)
-												}
-											/>
-											<span>Upload custom image</span>
-										</label>
-									</div>
-
-									<div className="relative h-20 w-full rounded-lg overflow-hidden border border-border flex items-center justify-center">
-										{settingsEnableCustomBanner &&
-										settingsBannerPreview ? (
-											<>
-												<Image
-													src={settingsBannerPreview}
-													alt="Banner Preview"
-													fill
-													className="object-cover"
-												/>
-												<button
-													type="button"
-													onClick={() =>
-														setSettingsBannerPreview(
-															'',
-														)
-													}
-													className="absolute top-1 right-1 bg-black/60 text-white rounded px-1.5 py-0.5 text-[9px]"
-												>
-													Remove
-												</button>
-											</>
-										) : (
-											<div
-												className="w-full h-full flex items-center justify-center text-white font-bold text-xs shadow-inner"
-												style={{
-													background:
-														settingsBannerColor,
-												}}
-											>
-												{settingsName ||
-													'Banner Preview'}
-											</div>
-										)}
-									</div>
-
-									{settingsEnableCustomBanner ? (
-										<input
-											type="file"
-											accept="image/*"
-											onChange={(e) => {
-												const file =
-													e.target.files?.[0];
-												if (file) {
-													const reader =
-														new FileReader();
-													reader.onload = () => {
-														setSettingsBannerPreview(
-															reader.result as string,
-														);
-													};
-													reader.readAsDataURL(file);
-												}
-											}}
-											className="block w-full text-xs text-text-secondary file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
-										/>
-									) : (
-										<select
-											value={settingsBannerColor}
-											onChange={(e) =>
-												setSettingsBannerColor(
-													e.target.value,
-												)
-											}
-											className="w-full rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-										>
-											{BANNER_COLOR_PRESETS.map(
-												(preset) => (
-													<option
-														key={preset.id}
-														value={preset.value}
-													>
-														{preset.name}
-													</option>
-												),
-											)}
-										</select>
-									)}
-								</div>
-
-								{/* Member Roster List */}
-								{selectedGroupId && (
-									<div className="pt-2 border-t border-border space-y-2">
-										<h4 className="font-semibold text-text-primary text-[11px] uppercase tracking-wider">
-											Member Roster
-										</h4>
-										<div className="max-h-36 overflow-y-auto space-y-1.5 divide-y divide-border/40">
-											{groups
-												.find(
-													(g) =>
-														g.id ===
-														selectedGroupId,
-												)
-												?.memberIds.map((mId) => {
-													const memUser = users.find(
-														(u) => u.id === mId,
-													);
-													const isMemLeader =
-														groups.find(
-															(g) =>
-																g.id ===
-																selectedGroupId,
-														)?.leaderId === mId;
-													return (
-														<div
-															key={mId}
-															className="flex items-center justify-between pt-1.5 text-xs"
-														>
-															<div className="flex items-center gap-2">
-																<span className="font-medium text-text-primary">
-																	{memUser?.name ||
-																		'Club Member'}
-																</span>
-																{isMemLeader && (
-																	<span className="text-[9px] bg-primary text-white px-1.5 py-0.2 rounded-full font-bold">
-																		Leader
-																	</span>
-																)}
-															</div>
-															{!isMemLeader && (
-																<button
-																	type="button"
-																	onClick={() =>
-																		handleKickMember(
-																			mId,
-																		)
-																	}
-																	className="text-[11px] text-danger hover:underline cursor-pointer"
-																>
-																	Remove
-																</button>
-															)}
-														</div>
-													);
-												})}
-										</div>
-									</div>
-								)}
-
-								<div className="pt-3 flex justify-end gap-2">
-									<button
-										type="button"
-										onClick={() => setSettingsOpen(false)}
-										className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary"
-									>
-										Cancel
-									</button>
-									<button
-										type="submit"
-										disabled={updating}
-										className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50"
-									>
-										{updating
-											? 'Saving...'
-											: 'Save Settings'}
-									</button>
-								</div>
-							</form>
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
 
 			<Footer />
 		</div>

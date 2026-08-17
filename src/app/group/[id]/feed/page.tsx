@@ -55,17 +55,16 @@ export default function GroupFeedPage() {
 		checkInToEvent,
 		updateAttendanceStatus,
 		generateClubInvite,
+		deleteClubInvites,
+		fetchGroups,
+		fetchInvites,
+		isIdle,
+		invites,
 		triggerNotification,
 	} = useAppContext();
 	const router = useRouter();
 
-	type FeedTab =
-		| 'feed'
-		| 'attendance'
-		| 'showcase'
-		| 'roster'
-		| 'roles'
-		| 'settings';
+	type FeedTab = 'feed' | 'attendance' | 'roster' | 'roles' | 'settings';
 
 	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
 
@@ -81,7 +80,6 @@ export default function GroupFeedPage() {
 			const validTabs: FeedTab[] = [
 				'feed',
 				'attendance',
-				'showcase',
 				'roster',
 				'roles',
 				'settings',
@@ -120,7 +118,6 @@ export default function GroupFeedPage() {
 		'all' | 'announcements' | 'files' | 'links'
 	>('all');
 	const [isLoading, setIsLoading] = useState(true);
-	const [isIdle, setIsIdle] = useState(false);
 
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -143,6 +140,7 @@ export default function GroupFeedPage() {
 	const [creatingEvent, setCreatingEvent] = useState(false);
 
 	// Settings & Invites State
+	const [isEditingSettings, setIsEditingSettings] = useState(false);
 	const [settingsName, setSettingsName] = useState('');
 	const [settingsTagline, setSettingsTagline] = useState('');
 	const [settingsDesc, setSettingsDesc] = useState('');
@@ -313,31 +311,47 @@ export default function GroupFeedPage() {
 		loadFeed();
 	}, [id, fetchFeedMessages]);
 
-	// Idle detection & feed polling
+	// Sync generated invite code with database values from global context
+	const activeInvite = invites.find((i) => i.groupId === id);
 	useEffect(() => {
-		if (isIdle) return;
-		let timeoutId: NodeJS.Timeout;
-		const resetTimer = () => {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => setIsIdle(true), 5 * 60 * 1000);
-		};
-		const eventsList = ['mousemove', 'keydown', 'click', 'scroll'];
-		eventsList.forEach((e) => window.addEventListener(e, resetTimer));
-		resetTimer();
-		return () => {
-			clearTimeout(timeoutId);
-			eventsList.forEach((e) =>
-				window.removeEventListener(e, resetTimer),
-			);
-		};
-	}, [isIdle]);
+		if (activeInvite) {
+			setGeneratedInviteCode(activeInvite.code);
+		} else {
+			setGeneratedInviteCode('');
+		}
+	}, [activeInvite]);
+
+	// Fetch groups and invites once when loading settings page/tab
+	useEffect(() => {
+		if (activeTab === 'settings') {
+			fetchGroups();
+			fetchInvites();
+		}
+	}, [activeTab, fetchGroups, fetchInvites]);
 
 	useEffect(() => {
 		if (!id || isIdle) return;
-		const interval = setInterval(() => {
-			fetchFeedMessages(id);
-		}, 4000);
-		return () => clearInterval(interval);
+		let active = true;
+		let timeoutId: NodeJS.Timeout;
+
+		const poll = async () => {
+			if (!active) return;
+			try {
+				await fetchFeedMessages(id);
+			} catch (e) {
+				console.error('Feed poll failed:', e);
+			}
+			if (active) {
+				timeoutId = setTimeout(poll, 4000);
+			}
+		};
+
+		timeoutId = setTimeout(poll, 4000);
+
+		return () => {
+			active = false;
+			clearTimeout(timeoutId);
+		};
 	}, [id, fetchFeedMessages, isIdle]);
 
 	if (!hydrated) {
@@ -485,7 +499,7 @@ export default function GroupFeedPage() {
 				? settingsBannerPreview
 				: settingsBannerColor;
 
-		await updateGroupSettings(id, {
+		const res = await updateGroupSettings(id, {
 			name: settingsName,
 			tagline: settingsTagline,
 			description: settingsDesc,
@@ -496,8 +510,11 @@ export default function GroupFeedPage() {
 			websiteUrl: settingsWebsite,
 		});
 		setUpdatingSettings(false);
-		setSettingsSuccess(true);
-		setTimeout(() => setSettingsSuccess(false), 3000);
+		if (res.success) {
+			setSettingsSuccess(true);
+			setIsEditingSettings(false);
+			setTimeout(() => setSettingsSuccess(false), 3000);
+		}
 	};
 
 	const exportAttendanceCSV = () => {
@@ -659,16 +676,6 @@ export default function GroupFeedPage() {
 							)}
 						</button>
 						<button
-							onClick={() => setActiveTab('showcase')}
-							className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-								activeTab === 'showcase'
-									? 'border-primary text-primary'
-									: 'border-transparent text-text-muted hover:text-text-primary'
-							}`}
-						>
-							🏛️ Showcase
-						</button>
-						<button
 							onClick={() => setActiveTab('roster')}
 							className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
 								activeTab === 'roster'
@@ -679,29 +686,27 @@ export default function GroupFeedPage() {
 							👥 Member Roster
 						</button>
 						{canManage && (
-							<>
-								<button
-									onClick={() => setActiveTab('roles')}
-									className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-										activeTab === 'roles'
-											? 'border-primary text-primary'
-											: 'border-transparent text-text-muted hover:text-text-primary'
-									}`}
-								>
-									🛡️ Member Roles
-								</button>
-								<button
-									onClick={() => setActiveTab('settings')}
-									className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-										activeTab === 'settings'
-											? 'border-primary text-primary'
-											: 'border-transparent text-text-muted hover:text-text-primary'
-									}`}
-								>
-									⚙️ Club Settings
-								</button>
-							</>
+							<button
+								onClick={() => setActiveTab('roles')}
+								className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+									activeTab === 'roles'
+										? 'border-primary text-primary'
+										: 'border-transparent text-text-muted hover:text-text-primary'
+								}`}
+							>
+								🛡️ Member Roles
+							</button>
 						)}
+						<button
+							onClick={() => setActiveTab('settings')}
+							className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === 'settings'
+									? 'border-primary text-primary'
+									: 'border-transparent text-text-muted hover:text-text-primary'
+							}`}
+						>
+							⚙️ Club Settings
+						</button>
 					</div>
 				</div>
 			</div>
@@ -1685,126 +1690,6 @@ export default function GroupFeedPage() {
 				</main>
 			)}
 
-			{/* ═══════════ Tab 3: Showcase ═══════════ */}
-			{activeTab === 'showcase' && (
-				<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-						{/* About Info */}
-						<div className="lg:col-span-2 space-y-6">
-							<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-4">
-								<h2 className="text-xl font-bold text-text-primary">
-									About {group.name}
-								</h2>
-								<p className="text-xs sm:text-sm text-text-secondary leading-relaxed whitespace-pre-line">
-									{group.description}
-								</p>
-
-								{group.tags && group.tags.length > 0 && (
-									<div className="pt-2">
-										<h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-											Focus Areas &amp; Activities
-										</h4>
-										<div className="flex flex-wrap gap-1.5">
-											{group.tags.map((t) => (
-												<span
-													key={t}
-													className="bg-primary-light text-primary text-xs font-semibold px-2.5 py-1 rounded-lg"
-												>
-													#{t}
-												</span>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
-						</div>
-
-						{/* Right: Quick Facts Card */}
-						<div className="space-y-6">
-							<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-4">
-								<h3 className="text-base font-bold text-text-primary">
-									Club Details
-								</h3>
-								<div className="space-y-3 text-xs">
-									<div>
-										<span className="text-text-muted block">
-											Meeting Schedule:
-										</span>
-										<span className="font-semibold text-text-primary mt-0.5 flex items-center gap-1.5">
-											<FiCalendar className="text-primary" />{' '}
-											{group.meetingFrequency}
-										</span>
-									</div>
-									<div>
-										<span className="text-text-muted block">
-											Meeting Room:
-										</span>
-										<span className="font-semibold text-text-primary mt-0.5 flex items-center gap-1.5">
-											<FiMapPin className="text-primary" />{' '}
-											{group.meetingLocation ||
-												'Campus Center'}
-										</span>
-									</div>
-									<div>
-										<span className="text-text-muted block">
-											Category:
-										</span>
-										<span className="font-semibold text-text-primary mt-0.5">
-											{group.category}
-										</span>
-									</div>
-									{group.discordUrl && (
-										<div>
-											<span className="text-text-muted block">
-												Discord:
-											</span>
-											<a
-												href={group.discordUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="font-semibold text-primary hover:underline mt-0.5 block truncate"
-											>
-												{group.discordUrl}
-											</a>
-										</div>
-									)}
-									{group.instagramUrl && (
-										<div>
-											<span className="text-text-muted block">
-												Instagram:
-											</span>
-											<a
-												href={group.instagramUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="font-semibold text-primary hover:underline mt-0.5 block truncate"
-											>
-												{group.instagramUrl}
-											</a>
-										</div>
-									)}
-									{group.websiteUrl && (
-										<div>
-											<span className="text-text-muted block">
-												Website:
-											</span>
-											<a
-												href={group.websiteUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="font-semibold text-primary hover:underline mt-0.5 block truncate"
-											>
-												{group.websiteUrl}
-											</a>
-										</div>
-									)}
-								</div>
-							</div>
-						</div>
-					</div>
-				</main>
-			)}
-
 			{/* ═══════════ Tab 4: Member Roster ═══════════ */}
 			{activeTab === 'roster' && (
 				<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -2229,325 +2114,545 @@ export default function GroupFeedPage() {
 			)}
 
 			{/* ═══════════ Tab 6: Club Settings ═══════════ */}
-			{activeTab === 'settings' && canManage && (
+			{activeTab === 'settings' && (
 				<main className="grow mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 					<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-6">
-						<div className="border-b border-border pb-4">
-							<h2 className="text-xl font-bold text-text-primary">
-								Club Settings
-							</h2>
-							<p className="text-xs text-text-muted mt-0.5">
-								Configure club details, meeting locations,
-								visual banners, and recruit with shareable
-								codes.
-							</p>
+						<div className="flex justify-between items-center border-b border-border pb-4">
+							<div>
+								<h2 className="text-xl font-bold text-text-primary">
+									Club Details &amp; Settings
+								</h2>
+								<p className="text-xs text-text-muted mt-0.5">
+									View information about {group.name} and
+									configure settings if you are an officer.
+								</p>
+							</div>
+							{canManage && !isEditingSettings && (
+								<button
+									onClick={() => {
+										setSettingsName(group.name);
+										setSettingsTagline(group.tagline || '');
+										setSettingsDesc(group.description);
+										setSettingsLocation(
+											group.meetingLocation || '',
+										);
+										setSettingsEnableCustomBanner(
+											group.bannerUrl?.startsWith(
+												'data:',
+											) ||
+												group.bannerUrl?.startsWith(
+													'http',
+												) ||
+												false,
+										);
+										if (
+											group.bannerUrl?.startsWith(
+												'data:',
+											) ||
+											group.bannerUrl?.startsWith('http')
+										) {
+											setSettingsBannerPreview(
+												group.bannerUrl,
+											);
+										} else {
+											setSettingsBannerColor(
+												group.bannerUrl ||
+													BANNER_COLOR_PRESETS[0]
+														.value,
+											);
+										}
+										setSettingsDiscord(
+											group.discordUrl || '',
+										);
+										setSettingsInstagram(
+											group.instagramUrl || '',
+										);
+										setSettingsWebsite(
+											group.websiteUrl || '',
+										);
+										setIsEditingSettings(true);
+									}}
+									className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-2xs transition-all cursor-pointer"
+								>
+									Edit Club Info
+								</button>
+							)}
 						</div>
 
 						{/* Invite Link & Code Generator Box */}
-						<div className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4">
-							<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/15 pb-3">
-								<div>
-									<span className="text-xs font-bold text-primary flex items-center gap-1.5">
-										<FiShare2 /> Shareable Recruitment
-										Invite
-									</span>
-									<p className="text-[11px] text-text-muted mt-0.5">
-										Share a 1-click link or code with
-										prospective members to join immediately.
-									</p>
-								</div>
-								<button
-									type="button"
-									onClick={async () => {
-										const res =
-											await generateClubInvite(id);
-										if (res.success && res.code) {
-											setGeneratedInviteCode(res.code);
-										}
-									}}
-									className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-2xs transition-all cursor-pointer self-start sm:self-auto"
-								>
-									{generatedInviteCode
-										? 'Regenerate Invite'
-										: 'Generate Invite Link'}
-								</button>
-							</div>
-
-							{generatedInviteCode ? (
-								<div className="space-y-3">
-									{/* Direct 1-Click Link */}
+						{canManage && !isEditingSettings && (
+							<div className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4">
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/15 pb-3">
 									<div>
-										<label className="block text-[10px] font-bold text-primary uppercase tracking-wider mb-1 items-center gap-1">
-											<FiLink size={11} /> 1-Click Direct
-											Join Link
-										</label>
-										<div className="flex items-center gap-2">
-											<input
-												readOnly
-												value={
-													typeof window !==
-													'undefined'
-														? `${window.location.origin}/join/${generatedInviteCode}`
-														: `/join/${generatedInviteCode}`
-												}
-												className="grow rounded-lg border border-primary/30 bg-surface px-3 py-2 text-xs font-mono font-bold text-primary"
-											/>
-											<button
-												type="button"
-												onClick={() => {
-													const link = `${window.location.origin}/join/${generatedInviteCode}`;
-													navigator.clipboard.writeText(
-														link,
-													);
-													setCopiedInviteLink(true);
-													setTimeout(
-														() =>
-															setCopiedInviteLink(
-																false,
-															),
-														2000,
-													);
-												}}
-												className="rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-primary-hover transition-all cursor-pointer shrink-0 flex items-center gap-1"
-											>
-												<FiLink size={12} />
-												<span>
-													{copiedInviteLink
-														? 'Link Copied!'
-														: 'Copy Link'}
-												</span>
-											</button>
-										</div>
+										<span className="text-xs font-bold text-primary flex items-center gap-1.5">
+											<FiShare2 /> Shareable Recruitment
+											Invite
+										</span>
+										<p className="text-[11px] text-text-muted mt-0.5">
+											Share a 1-click link or code with
+											prospective members to join
+											immediately.
+										</p>
 									</div>
-
-									{/* Raw Code for Explore Clubs */}
-									<div>
-										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1 items-center gap-1">
-											<FiKey size={11} /> Invite Code (For
-											Explore Clubs Page)
-										</label>
-										<div className="flex items-center gap-2">
-											<input
-												readOnly
-												value={generatedInviteCode}
-												className="grow rounded-lg border border-border bg-surface px-3 py-2 text-xs font-mono font-bold text-text-primary"
-											/>
-											<button
-												type="button"
-												onClick={() => {
-													navigator.clipboard.writeText(
-														generatedInviteCode,
+									<div className="flex items-center gap-2 self-start sm:self-auto">
+										<button
+											type="button"
+											onClick={async () => {
+												const res =
+													await generateClubInvite(
+														id,
 													);
-													setCopiedInvite(true);
-													setTimeout(
-														() =>
-															setCopiedInvite(
-																false,
-															),
-														2000,
+												if (res.success && res.code) {
+													setGeneratedInviteCode(
+														res.code,
 													);
-												}}
-												className="rounded-lg border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-all cursor-pointer shrink-0 flex items-center gap-1"
-											>
-												<FiKey size={12} />
-												<span>
-													{copiedInvite
-														? 'Code Copied!'
-														: 'Copy Code'}
-												</span>
-											</button>
-										</div>
-									</div>
-								</div>
-							) : (
-								<p className="text-xs text-text-secondary">
-									Click <strong>Generate Invite Link</strong>{' '}
-									to create a direct link (e.g.{' '}
-									<code className="font-mono text-primary font-bold">
-										/join/DEMOS-GDSC-2026
-									</code>
-									) that instantly adds members to your club
-									roster.
-								</p>
-							)}
-						</div>
-
-						{/* Edit Club Profile Form */}
-						<form
-							onSubmit={handleSaveClubSettings}
-							className="space-y-4 text-xs border-t border-border pt-4"
-						>
-							{settingsSuccess && (
-								<div className="text-xs text-success bg-success-bg p-2.5 rounded-lg text-center font-medium">
-									Club settings updated successfully!
-								</div>
-							)}
-
-							<Input
-								label="Club Name"
-								value={settingsName}
-								onChange={(e) =>
-									setSettingsName(e.target.value)
-								}
-							/>
-
-							<Input
-								label="Tagline"
-								value={settingsTagline}
-								onChange={(e) =>
-									setSettingsTagline(e.target.value)
-								}
-							/>
-
-							<div>
-								<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-									Description &amp; Mission
-								</label>
-								<textarea
-									rows={4}
-									value={settingsDesc}
-									onChange={(e) =>
-										setSettingsDesc(e.target.value)
-									}
-									className="w-full rounded-xl border border-border bg-surface p-3 text-xs text-text-primary"
-								/>
-							</div>
-
-							<Input
-								label="Meeting Location"
-								value={settingsLocation}
-								onChange={(e) =>
-									setSettingsLocation(e.target.value)
-								}
-							/>
-
-							{/* Banner Setting */}
-							<div className="rounded-xl border border-border bg-surface-secondary/40 p-3.5 space-y-3">
-								<div className="flex items-center justify-between">
-									<span className="text-[11px] font-bold text-text-primary uppercase tracking-wider">
-										Club Banner
-									</span>
-									<label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
-										<Checkbox
-											checked={settingsEnableCustomBanner}
-											onChange={() =>
-												setSettingsEnableCustomBanner(
-													!settingsEnableCustomBanner,
-												)
-											}
-										/>
-										<span>Upload custom image</span>
-									</label>
-								</div>
-
-								<div className="relative h-24 w-full rounded-lg overflow-hidden border border-border flex items-center justify-center">
-									{settingsEnableCustomBanner &&
-									settingsBannerPreview ? (
-										<>
-											<Image
-												src={settingsBannerPreview}
-												alt="Banner Preview"
-												fill
-												className="object-cover"
-											/>
-											<button
-												type="button"
-												onClick={() =>
-													setSettingsBannerPreview('')
 												}
-												className="absolute top-1 right-1 bg-black/60 text-white rounded px-2 py-0.5 text-[10px]"
-											>
-												Remove
-											</button>
-										</>
-									) : (
-										<div
-											className="w-full h-full flex items-center justify-center text-white font-bold text-xs shadow-inner"
-											style={{
-												background: settingsBannerColor,
 											}}
+											className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-2xs transition-all cursor-pointer"
 										>
-											{settingsName || 'Banner Preview'}
+											{generatedInviteCode
+												? 'Regenerate Invite'
+												: 'Generate Invite Link'}
+										</button>
+										{generatedInviteCode && (
+											<button
+												type="button"
+												onClick={async () => {
+													if (
+														confirm(
+															'Are you sure you want to delete all invite links for this club? Existing codes/links will no longer work.',
+														)
+													) {
+														const res =
+															await deleteClubInvites(
+																id,
+															);
+														if (res.success) {
+															setGeneratedInviteCode(
+																'',
+															);
+														}
+													}
+												}}
+												className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700 shadow-2xs transition-all cursor-pointer"
+											>
+												Delete Link
+											</button>
+										)}
+									</div>
+								</div>
+
+								{generatedInviteCode ? (
+									<div className="space-y-3">
+										{/* Direct 1-Click Link */}
+										<div>
+											<label className="block text-[10px] font-bold text-primary uppercase tracking-wider mb-1 items-center gap-1">
+												<FiLink size={11} /> 1-Click
+												Direct Join Link
+											</label>
+											<div className="flex items-center gap-2">
+												<input
+													readOnly
+													value={
+														typeof window !==
+														'undefined'
+															? `${window.location.origin}/join/${generatedInviteCode}`
+															: `/join/${generatedInviteCode}`
+													}
+													className="grow rounded-lg border border-primary/30 bg-surface px-3 py-2 text-xs font-mono font-bold text-primary"
+												/>
+												<button
+													type="button"
+													onClick={() => {
+														const link = `${window.location.origin}/join/${generatedInviteCode}`;
+														navigator.clipboard.writeText(
+															link,
+														);
+														setCopiedInviteLink(
+															true,
+														);
+														setTimeout(
+															() =>
+																setCopiedInviteLink(
+																	false,
+																),
+															2000,
+														);
+													}}
+													className="rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-primary-hover transition-all cursor-pointer shrink-0 flex items-center gap-1"
+												>
+													<FiLink size={12} />
+													<span>
+														{copiedInviteLink
+															? 'Link Copied!'
+															: 'Copy Link'}
+													</span>
+												</button>
+											</div>
+										</div>
+
+										{/* Raw Code for Explore Clubs */}
+										<div>
+											<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1 items-center gap-1">
+												<FiKey size={11} /> Invite Code
+												(For Explore Clubs Page)
+											</label>
+											<div className="flex items-center gap-2">
+												<input
+													readOnly
+													value={generatedInviteCode}
+													className="grow rounded-lg border border-border bg-surface px-3 py-2 text-xs font-mono font-bold text-text-primary"
+												/>
+												<button
+													type="button"
+													onClick={() => {
+														navigator.clipboard.writeText(
+															generatedInviteCode,
+														);
+														setCopiedInvite(true);
+														setTimeout(
+															() =>
+																setCopiedInvite(
+																	false,
+																),
+															2000,
+														);
+													}}
+													className="rounded-lg border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-all cursor-pointer shrink-0 flex items-center gap-1"
+												>
+													<FiKey size={12} />
+													<span>
+														{copiedInvite
+															? 'Code Copied!'
+															: 'Copy Code'}
+													</span>
+												</button>
+											</div>
+										</div>
+									</div>
+								) : (
+									<p className="text-xs text-text-secondary">
+										Click{' '}
+										<strong>Generate Invite Link</strong> to
+										create a direct link (e.g.{' '}
+										<code className="font-mono text-primary font-bold">
+											/join/DEMOS-GDSC-2026
+										</code>
+										) that instantly adds members to your
+										club roster.
+									</p>
+								)}
+							</div>
+						)}
+
+						{/* Showcase Content */}
+						{!isEditingSettings ? (
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
+								{/* About Info */}
+								<div className="md:col-span-2 space-y-4">
+									<h3 className="text-base font-bold text-text-primary">
+										About the Club
+									</h3>
+									<p className="text-xs sm:text-sm text-text-secondary leading-relaxed whitespace-pre-line">
+										{group.description}
+									</p>
+
+									{group.tags && group.tags.length > 0 && (
+										<div className="pt-2">
+											<h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+												Focus Areas &amp; Activities
+											</h4>
+											<div className="flex flex-wrap gap-1.5">
+												{group.tags.map((t) => (
+													<span
+														key={t}
+														className="bg-primary-light text-primary text-xs font-semibold px-2.5 py-1 rounded-lg"
+													>
+														#{t}
+													</span>
+												))}
+											</div>
 										</div>
 									)}
 								</div>
 
-								{settingsEnableCustomBanner ? (
-									<input
-										type="file"
-										accept="image/*"
-										onChange={(e) => {
-											const file = e.target.files?.[0];
-											if (file) {
-												const reader = new FileReader();
-												reader.onload = () => {
-													setSettingsBannerPreview(
-														reader.result as string,
-													);
-												};
-												reader.readAsDataURL(file);
-											}
-										}}
-										className="block w-full text-xs text-text-secondary file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
-									/>
-								) : (
-									<select
-										value={settingsBannerColor}
-										onChange={(e) =>
-											setSettingsBannerColor(
-												e.target.value,
-											)
-										}
-										className="w-full rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-									>
-										{BANNER_COLOR_PRESETS.map((preset) => (
-											<option
-												key={preset.id}
-												value={preset.value}
-											>
-												{preset.name}
-											</option>
-										))}
-									</select>
+								{/* Club Details Column */}
+								<div className="space-y-4 rounded-xl bg-surface-secondary/40 p-4 border border-border">
+									<h3 className="text-sm font-bold text-text-primary">
+										Quick Facts
+									</h3>
+									<div className="space-y-3 text-xs">
+										<div>
+											<span className="text-text-muted block text-[10px] uppercase font-semibold">
+												Meeting Schedule:
+											</span>
+											<span className="font-semibold text-text-primary mt-0.5 flex items-center gap-1.5">
+												<FiCalendar className="text-primary" />{' '}
+												{group.meetingFrequency}
+											</span>
+										</div>
+										<div>
+											<span className="text-text-muted block text-[10px] uppercase font-semibold">
+												Meeting Room:
+											</span>
+											<span className="font-semibold text-text-primary mt-0.5 flex items-center gap-1.5">
+												<FiMapPin className="text-primary" />{' '}
+												{group.meetingLocation ||
+													'Campus Center'}
+											</span>
+										</div>
+										<div>
+											<span className="text-text-muted block text-[10px] uppercase font-semibold">
+												Category:
+											</span>
+											<span className="font-semibold text-text-primary mt-0.5">
+												{group.category}
+											</span>
+										</div>
+										{(group.discordUrl ||
+											group.instagramUrl ||
+											group.websiteUrl) && (
+											<div className="pt-2 border-t border-border/60 space-y-2">
+												<span className="text-text-muted block text-[10px] uppercase font-semibold mb-1">
+													Social Links &amp; Web
+												</span>
+												{group.discordUrl && (
+													<a
+														href={group.discordUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="font-semibold text-primary hover:underline flex items-center gap-1.5 truncate"
+													>
+														<FaDiscord className="text-primary shrink-0" />{' '}
+														Discord
+													</a>
+												)}
+												{group.instagramUrl && (
+													<a
+														href={
+															group.instagramUrl
+														}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="font-semibold text-primary hover:underline flex items-center gap-1.5 truncate"
+													>
+														<FiInstagram className="text-primary shrink-0" />{' '}
+														Instagram
+													</a>
+												)}
+												{group.websiteUrl && (
+													<a
+														href={group.websiteUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="font-semibold text-primary hover:underline flex items-center gap-1.5 truncate"
+													>
+														<FiGlobe className="text-primary shrink-0" />{' '}
+														Website
+													</a>
+												)}
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+						) : (
+							/* Edit Club Profile Form */
+							<form
+								onSubmit={handleSaveClubSettings}
+								className="space-y-4 text-xs border-t border-border pt-4"
+							>
+								{settingsSuccess && (
+									<div className="text-xs text-success bg-success-bg p-2.5 rounded-lg text-center font-medium">
+										Club settings updated successfully!
+									</div>
 								)}
-							</div>
 
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 								<Input
-									label="Discord URL"
-									value={settingsDiscord}
+									label="Club Name"
+									value={settingsName}
 									onChange={(e) =>
-										setSettingsDiscord(e.target.value)
+										setSettingsName(e.target.value)
 									}
 								/>
-								<Input
-									label="Instagram URL"
-									value={settingsInstagram}
-									onChange={(e) =>
-										setSettingsInstagram(e.target.value)
-									}
-								/>
-								<Input
-									label="Website URL"
-									value={settingsWebsite}
-									onChange={(e) =>
-										setSettingsWebsite(e.target.value)
-									}
-								/>
-							</div>
 
-							<div className="pt-3 flex justify-end">
-								<button
-									type="submit"
-									disabled={updatingSettings}
-									className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50"
-								>
-									{updatingSettings
-										? 'Saving...'
-										: 'Save Club Settings'}
-								</button>
-							</div>
-						</form>
+								<Input
+									label="Tagline"
+									value={settingsTagline}
+									onChange={(e) =>
+										setSettingsTagline(e.target.value)
+									}
+								/>
+
+								<div>
+									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
+										Description &amp; Mission
+									</label>
+									<textarea
+										rows={4}
+										value={settingsDesc}
+										onChange={(e) =>
+											setSettingsDesc(e.target.value)
+										}
+										className="w-full rounded-xl border border-border bg-surface p-3 text-xs text-text-primary"
+									/>
+								</div>
+
+								<Input
+									label="Meeting Location"
+									value={settingsLocation}
+									onChange={(e) =>
+										setSettingsLocation(e.target.value)
+									}
+								/>
+
+								{/* Banner Setting */}
+								<div className="rounded-xl border border-border bg-surface-secondary/40 p-3.5 space-y-3">
+									<div className="flex items-center justify-between">
+										<span className="text-[11px] font-bold text-text-primary uppercase tracking-wider">
+											Club Banner
+										</span>
+										<label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+											<Checkbox
+												checked={
+													settingsEnableCustomBanner
+												}
+												onChange={() =>
+													setSettingsEnableCustomBanner(
+														!settingsEnableCustomBanner,
+													)
+												}
+											/>
+											<span>Upload custom image</span>
+										</label>
+									</div>
+
+									<div className="relative h-24 w-full rounded-lg overflow-hidden border border-border flex items-center justify-center">
+										{settingsEnableCustomBanner &&
+										settingsBannerPreview ? (
+											<>
+												<Image
+													src={settingsBannerPreview}
+													alt="Banner Preview"
+													fill
+													className="object-cover"
+												/>
+												<button
+													type="button"
+													onClick={() =>
+														setSettingsBannerPreview(
+															'',
+														)
+													}
+													className="absolute top-1 right-1 bg-black/60 text-white rounded px-2 py-0.5 text-[10px]"
+												>
+													Remove
+												</button>
+											</>
+										) : (
+											<div
+												className="w-full h-full flex items-center justify-center text-white font-bold text-xs shadow-inner"
+												style={{
+													background:
+														settingsBannerColor,
+												}}
+											>
+												{settingsName ||
+													'Banner Preview'}
+											</div>
+										)}
+									</div>
+
+									{settingsEnableCustomBanner ? (
+										<input
+											type="file"
+											accept="image/*"
+											onChange={(e) => {
+												const file =
+													e.target.files?.[0];
+												if (file) {
+													const reader =
+														new FileReader();
+													reader.onload = () => {
+														setSettingsBannerPreview(
+															reader.result as string,
+														);
+													};
+													reader.readAsDataURL(file);
+												}
+											}}
+											className="block w-full text-xs text-text-secondary file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
+										/>
+									) : (
+										<select
+											value={settingsBannerColor}
+											onChange={(e) =>
+												setSettingsBannerColor(
+													e.target.value,
+												)
+											}
+											className="w-full rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+										>
+											{BANNER_COLOR_PRESETS.map(
+												(preset) => (
+													<option
+														key={preset.id}
+														value={preset.value}
+													>
+														{preset.name}
+													</option>
+												),
+											)}
+										</select>
+									)}
+								</div>
+
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+									<Input
+										label="Discord URL"
+										value={settingsDiscord}
+										onChange={(e) =>
+											setSettingsDiscord(e.target.value)
+										}
+									/>
+									<Input
+										label="Instagram URL"
+										value={settingsInstagram}
+										onChange={(e) =>
+											setSettingsInstagram(e.target.value)
+										}
+									/>
+									<Input
+										label="Website URL"
+										value={settingsWebsite}
+										onChange={(e) =>
+											setSettingsWebsite(e.target.value)
+										}
+									/>
+								</div>
+
+								<div className="pt-3 flex justify-end gap-2">
+									<button
+										type="button"
+										onClick={() =>
+											setIsEditingSettings(false)
+										}
+										className="rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-text-secondary hover:text-text-primary"
+									>
+										Cancel
+									</button>
+									<button
+										type="submit"
+										disabled={updatingSettings}
+										className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50"
+									>
+										{updatingSettings
+											? 'Saving...'
+											: 'Save Club Settings'}
+									</button>
+								</div>
+							</form>
+						)}
 					</div>
 				</main>
 			)}

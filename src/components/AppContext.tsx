@@ -235,12 +235,18 @@ interface AppContextType {
 	generateClubInvite: (
 		groupId: string,
 	) => Promise<{ success: boolean; code?: string; error?: string }>;
+	deleteClubInvites: (
+		groupId: string,
+	) => Promise<{ success: boolean; error?: string }>;
 	joinViaInviteCode: (code: string) => Promise<{
 		groupId?: string;
 		success: boolean;
 		group?: Group;
 		error?: string;
 	}>;
+	isIdle: boolean;
+	fetchGroups: () => Promise<void>;
+	fetchInvites: () => Promise<void>;
 	refreshData: () => Promise<void>;
 
 	// Notifications API
@@ -280,6 +286,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
 	const [theme, setTheme] = useState<Theme>('light');
 	const [hydrated, setHydrated] = useState(false);
+	const [isIdle, setIsIdle] = useState(false);
 
 	/* ─── Service Worker Registration ─── */
 	useEffect(() => {
@@ -296,6 +303,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					console.warn('PWA ServiceWorker registration failed:', err);
 				});
 		}
+	}, []);
+
+	/* ─── Global Idle Detection (3 Minutes) ─── */
+	useEffect(() => {
+		if (typeof window === 'undefined') return;
+		let timeoutId: NodeJS.Timeout;
+		const resetTimer = () => {
+			clearTimeout(timeoutId);
+			setIsIdle(false);
+			timeoutId = setTimeout(() => setIsIdle(true), 3 * 60 * 1000);
+		};
+		const eventsList = ['mousemove', 'keydown', 'click', 'scroll'];
+		eventsList.forEach((e) => window.addEventListener(e, resetTimer));
+		resetTimer();
+		return () => {
+			clearTimeout(timeoutId);
+			eventsList.forEach((e) =>
+				window.removeEventListener(e, resetTimer),
+			);
+		};
 	}, []);
 
 	/* ─── Modular Data Fetchers for Active Tabs / Pages ─── */
@@ -529,7 +556,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	/* ─── Background Sync for Incoming Messages, Attendance & App Data ─── */
 	const knownMessageIdsRef = React.useRef<Set<string>>(new Set());
 	useEffect(() => {
+		let active = true;
+		let timeoutId: NodeJS.Timeout;
+		let isPolling = false;
+
 		async function pollIncomingData() {
+			if (!active || isPolling || isIdle) return;
 			const user = userRef.current;
 			if (!user || typeof window === 'undefined') return;
 
@@ -547,6 +579,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return;
 			}
 
+			isPolling = true;
 			try {
 				const searchParams = new URLSearchParams(window.location.search);
 				const currentTab = searchParams.get('tab') || 'feed';
@@ -556,33 +589,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					if (currentTab === 'attendance') {
 						await Promise.allSettled([fetchEvents(), fetchAttendances()]);
 					} else if (currentTab === 'roster' || currentTab === 'roles') {
-						await Promise.allSettled([fetchGroups(), fetchUsers()]);
+						await fetchUsers();
 					} else if (currentTab === 'settings') {
-						await Promise.allSettled([fetchGroups(), fetchInvites()]);
+						// Groups and invites are loaded once on settings tab mount, not on interval
 					} else if (currentTab === 'feed') {
 						// Feed messages are polled by the active GroupFeedPage directly
 					}
 				} else if (pathname === '/pending') {
-					await Promise.allSettled([fetchRequests(), fetchGroups()]);
+					await fetchRequests();
 				} else if (pathname === '/groups') {
-					await fetchGroups();
+					// Groups list is loaded initially, no interval polling needed
 				} else if (pathname === '/profile') {
-					await Promise.allSettled([fetchUsers(), fetchGroups()]);
+					await fetchUsers();
 				}
 			} catch {
 				// Ignore polling network blips
+			} finally {
+				isPolling = false;
+			}
+		}
+
+		async function pollLoop() {
+			await pollIncomingData();
+			if (active) {
+				timeoutId = setTimeout(pollLoop, 5000);
 			}
 		}
 
 		// Initial check only if not on homepage
 		if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-			pollIncomingData();
+			pollLoop();
+		} else {
+			timeoutId = setTimeout(pollLoop, 5000);
 		}
 
-		// Poll every 5 seconds only when on relevant pages
-		const interval = setInterval(pollIncomingData, 5000);
 		return () => {
-			clearInterval(interval);
+			active = false;
+			clearTimeout(timeoutId);
 		};
 	}, [
 		fetchAttendances,
@@ -591,7 +634,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		fetchInvites,
 		fetchRequests,
 		fetchUsers,
-		groups,
+		isIdle,
 		triggerNotification,
 	]);
 
@@ -904,6 +947,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		},
 		[groups],
+	);
+
+	const deleteClubInvites = useCallback(
+		async (groupId: string) => {
+			try {
+				const res = await fetch(`/api/invites?groupId=${groupId}`, {
+					method: 'DELETE',
+				});
+				const data = await res.json();
+				if (data.success) {
+					setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
+					return { success: true };
+				}
+				return {
+					success: false,
+					error: data.error || 'Failed to delete invite',
+				};
+			} catch (e) {
+				console.error('Failed to delete invites:', e);
+				return {
+					success: false,
+					error: 'Network error deleting invites',
+				};
+			}
+		},
+		[],
 	);
 
 	const joinViaInviteCode = useCallback(
@@ -1539,7 +1608,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				checkInToEvent,
 				updateAttendanceStatus,
 				generateClubInvite,
+				deleteClubInvites,
 				joinViaInviteCode,
+				isIdle,
+				fetchGroups,
+				fetchInvites,
 				refreshData: loadData,
 				triggerNotification,
 				markNotificationAsRead,
