@@ -528,133 +528,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Background Sync for Incoming Messages, Attendance & App Data ─── */
 	const knownMessageIdsRef = React.useRef<Set<string>>(new Set());
-	const isFirstSyncRef = React.useRef(true);
-
 	useEffect(() => {
-		let isMounted = true;
-
 		async function pollIncomingData() {
 			const user = userRef.current;
-			if (!user) return;
+			if (!user || typeof window === 'undefined') return;
+
+			const pathname = window.location.pathname;
+
+			// Do NOT poll any APIs on the homepage or static informational pages
+			if (
+				pathname === '/' ||
+				pathname === '/terms' ||
+				pathname === '/privacy' ||
+				pathname === '/auth/login' ||
+				pathname === '/auth/register' ||
+				pathname === '/join'
+			) {
+				return;
+			}
 
 			try {
-				// Only refresh data relevant to the currently active page/tab
-				if (typeof window !== 'undefined') {
-					const pathname = window.location.pathname;
-					const searchParams = new URLSearchParams(window.location.search);
-					const currentTab = searchParams.get('tab') || 'feed';
+				const searchParams = new URLSearchParams(window.location.search);
+				const currentTab = searchParams.get('tab') || 'feed';
 
-					if (pathname.includes('/group/')) {
-						// Inside a club page: refresh only what matches the active tab
-						if (currentTab === 'attendance') {
-							await Promise.allSettled([fetchEvents(), fetchAttendances()]);
-						} else if (currentTab === 'roster' || currentTab === 'roles') {
-							await Promise.allSettled([fetchGroups(), fetchUsers()]);
-						} else if (currentTab === 'settings') {
-							await Promise.allSettled([fetchGroups(), fetchInvites()]);
-						}
-					} else if (pathname === '/pending') {
-						await Promise.allSettled([fetchRequests(), fetchGroups()]);
-					} else if (pathname === '/groups' || pathname === '/search' || pathname === '/') {
-						await fetchGroups();
-					} else if (pathname === '/profile') {
-						await Promise.allSettled([fetchUsers(), fetchGroups()]);
+				// Only refresh data specifically needed by the current active page/tab
+				if (pathname.includes('/group/')) {
+					if (currentTab === 'attendance') {
+						await Promise.allSettled([fetchEvents(), fetchAttendances()]);
+					} else if (currentTab === 'roster' || currentTab === 'roles') {
+						await Promise.allSettled([fetchGroups(), fetchUsers()]);
+					} else if (currentTab === 'settings') {
+						await Promise.allSettled([fetchGroups(), fetchInvites()]);
+					} else if (currentTab === 'feed') {
+						// Feed messages are polled by the active GroupFeedPage directly
 					}
-				}
-
-				// Refresh feed messages & check for new incoming messages
-				const res = await fetch('/api/feed');
-				const data = await res.json();
-				if (data.messages && isMounted) {
-					const allMsgs: FeedMessage[] = data.messages;
-
-					// If first sync on page load, record all existing message IDs
-					if (isFirstSyncRef.current) {
-						allMsgs.forEach((m) =>
-							knownMessageIdsRef.current.add(m.id),
-						);
-						isFirstSyncRef.current = false;
-						return;
-					}
-
-					// Find new messages sent by OTHER users
-					const newMsgs = allMsgs.filter(
-						(m) =>
-							!knownMessageIdsRef.current.has(m.id) &&
-							m.userId !== user.id,
-					);
-
-					// Record all IDs
-					allMsgs.forEach((m) =>
-						knownMessageIdsRef.current.add(m.id),
-					);
-
-					// Trigger notifications for new incoming messages
-					newMsgs.forEach((m: FeedMessage) => {
-						// If the user is actively looking at this specific club feed, skip in-app notification & chime
-						if (typeof window !== 'undefined') {
-							const currentPath = window.location.pathname;
-							const isViewingCurrentFeed =
-								currentPath.includes(`/group/${m.groupId}`) &&
-								typeof document !== 'undefined' &&
-								document.visibilityState === 'visible';
-
-							if (isViewingCurrentFeed) {
-								return;
-							}
-						}
-
-						const senderName = m.user?.name || 'A member';
-						const targetGroup = groups.find(
-							(g) => g.id === m.groupId,
-						);
-						const groupTitle = targetGroup?.name || 'Club';
-
-						if (m.fileUrl && m.fileName) {
-							triggerNotification({
-								type: 'feed_attachment',
-								title: `New File in ${groupTitle}`,
-								body: `${senderName} shared file "${m.fileName}".`,
-								groupId: m.groupId,
-								groupName: groupTitle,
-								url: `/group/${m.groupId}/feed`,
-							});
-						} else if (
-							m.content.includes('http://') ||
-							m.content.includes('https://')
-						) {
-							triggerNotification({
-								type: 'feed_link',
-								title: `Resource Link in ${groupTitle}`,
-								body: `${senderName} shared a link.`,
-								groupId: m.groupId,
-								groupName: groupTitle,
-								url: `/group/${m.groupId}/feed`,
-							});
-						} else {
-							triggerNotification({
-								type: 'feed_message',
-								title: `${groupTitle} Message`,
-								body: `${senderName}: ${m.content.slice(0, 70)}${m.content.length > 70 ? '...' : ''}`,
-								groupId: m.groupId,
-								groupName: groupTitle,
-								url: `/group/${m.groupId}/feed`,
-							});
-						}
-					});
+				} else if (pathname === '/pending') {
+					await Promise.allSettled([fetchRequests(), fetchGroups()]);
+				} else if (pathname === '/groups') {
+					await fetchGroups();
+				} else if (pathname === '/profile') {
+					await Promise.allSettled([fetchUsers(), fetchGroups()]);
 				}
 			} catch {
 				// Ignore polling network blips
 			}
 		}
 
-		// Initial check
-		pollIncomingData();
+		// Initial check only if not on homepage
+		if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+			pollIncomingData();
+		}
 
-		// Poll every 4 seconds
-		const interval = setInterval(pollIncomingData, 4000);
+		// Poll every 5 seconds only when on relevant pages
+		const interval = setInterval(pollIncomingData, 5000);
 		return () => {
-			isMounted = false;
 			clearInterval(interval);
 		};
 	}, [
