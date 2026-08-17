@@ -521,6 +521,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 					// Trigger notifications for new incoming messages
 					newMsgs.forEach((m: FeedMessage) => {
+						// If the user is actively looking at this specific club feed and the tab is focused, skip notification
+						if (typeof window !== 'undefined') {
+							const currentPath = window.location.pathname;
+							const isViewingCurrentFeed =
+								currentPath === `/group/${m.groupId}/feed` &&
+								document.visibilityState === 'visible' &&
+								document.hasFocus();
+
+							if (isViewingCurrentFeed) {
+								return;
+							}
+						}
+
 						const senderName = m.user?.name || 'A member';
 						const targetGroup = groups.find((g) => g.id === m.groupId);
 						const groupTitle = targetGroup?.name || 'Club';

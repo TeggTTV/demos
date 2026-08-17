@@ -100,18 +100,38 @@ self.addEventListener('push', (event) => {
 		}
 	}
 
+	const targetUrl = data.url || '/';
+
 	const options = {
 		body: data.body,
 		icon: data.icon || '/web-app-manifest-192x192.png',
 		badge: data.badge || '/icon1.png',
 		vibrate: [100, 50, 100],
 		data: {
-			url: data.url || '/',
+			url: targetUrl,
 		},
 		actions: [{ action: 'open', title: 'Open' }],
 	};
 
-	event.waitUntil(self.registration.showNotification(data.title, options));
+	event.waitUntil(
+		clients
+			.matchAll({ type: 'window', includeUncontrolled: true })
+			.then((clientList) => {
+				// If a window is currently focused and looking at the exact target URL, don't interrupt with a popup
+				const isActivelyViewing = clientList.some(
+					(client) =>
+						client.focused &&
+						client.visibilityState === 'visible' &&
+						client.url.includes(targetUrl),
+				);
+
+				if (isActivelyViewing) {
+					return;
+				}
+
+				return self.registration.showNotification(data.title, options);
+			}),
+	);
 });
 
 // Handle notification click to navigate to the relevant url
