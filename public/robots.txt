@@ -1,6 +1,16 @@
 # *
 User-agent: *
 Allow: /
+Disallow: /auth/
+Disallow: /groups
+Disallow: /group/
+Disallow: /pending
+Disallow: /profile
+Disallow: /settings
+Disallow: /search
+Disallow: /join
+Disallow: /api/
+Allow: /
 
 # Host
 Host: https://demosclubhub.vercel.app
