@@ -11,6 +11,10 @@ export const metadata: Metadata = {
 	},
 	openGraph: {
 		url: '/privacy',
+		siteName: 'Demos',
+		title: 'Privacy Policy',
+		description:
+			'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Demos club hub platform.',
 		images: [
 			{
 				url: '/ogimage.png',
