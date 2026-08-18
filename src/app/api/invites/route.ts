@@ -166,13 +166,8 @@ export async function POST(req: NextRequest) {
 		}
 
 		const isLeader = group.leaderId === session.userId;
-		const member = await prisma.groupMember.findFirst({
-			where: { groupId, userId: session.userId },
-		});
-		const isOfficer = member?.role === 'OFFICER';
-
-		if (!isLeader && !isOfficer) {
-			return NextResponse.json({ error: 'Access denied: only leaders or officers can create invites' }, { status: 403 });
+		if (!isLeader) {
+			return NextResponse.json({ error: 'Access denied: only leaders can create invites' }, { status: 403 });
 		}
 
 		// Remove all previous invites for this club
@@ -227,13 +222,8 @@ export async function DELETE(req: NextRequest) {
 		}
 
 		const isLeader = group.leaderId === session.userId;
-		const member = await prisma.groupMember.findFirst({
-			where: { groupId, userId: session.userId },
-		});
-		const isOfficer = member?.role === 'OFFICER';
-
-		if (!isLeader && !isOfficer) {
-			return NextResponse.json({ error: 'Access denied: only leaders or officers can delete invites' }, { status: 403 });
+		if (!isLeader) {
+			return NextResponse.json({ error: 'Access denied: only leaders can delete invites' }, { status: 403 });
 		}
 
 		await prisma.clubInvite.deleteMany({

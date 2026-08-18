@@ -226,14 +226,10 @@ export async function PUT(req: NextRequest) {
 		}
 
 		const isLeader = existingGroup.leaderId === session.userId;
-		const member = await prisma.groupMember.findFirst({
-			where: { groupId, userId: session.userId },
-		});
-		const isOfficer = member?.role === 'OFFICER';
 
-		// Only leaders or officers can modify group settings
-		if (!isLeader && !isOfficer) {
-			return NextResponse.json({ error: 'Access denied: unauthorized group modification attempt' }, { status: 403 });
+		// Only group leaders can modify group settings
+		if (!isLeader) {
+			return NextResponse.json({ error: 'Access denied: only group leaders can modify group settings' }, { status: 403 });
 		}
 
 		// Restrict uploads

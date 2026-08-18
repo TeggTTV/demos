@@ -66,6 +66,14 @@ export default function GroupFeedPage() {
 	} = useAppContext();
 	const router = useRouter();
 
+	const group = groups.find((g) => g.id === id);
+	const isLeader = group?.leaderId === currentUser?.id;
+	const isOfficer = Boolean(
+		group?.officerIds && group.officerIds.includes(currentUser?.id || ''),
+	);
+	const canManage = isLeader || isOfficer;
+
+
 	type FeedTab = 'feed' | 'attendance' | 'roster' | 'roles' | 'settings';
 
 	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
@@ -79,21 +87,19 @@ export default function GroupFeedPage() {
 			const savedTab = localStorage.getItem(
 				`demos_tab_${id}`,
 			) as FeedTab | null;
-			const validTabs: FeedTab[] = [
-				'feed',
-				'attendance',
-				'roster',
-				'roles',
-				'settings',
-			];
+			const validTabs: FeedTab[] = ['feed', 'attendance', 'roster'];
+			if (canManage) validTabs.push('roles');
+			if (isLeader) validTabs.push('settings');
 
 			if (tabParam && validTabs.includes(tabParam)) {
 				setActiveTabState(tabParam);
 			} else if (savedTab && validTabs.includes(savedTab)) {
 				setActiveTabState(savedTab);
+			} else {
+				setActiveTabState('feed');
 			}
 		}
-	}, [id]);
+	}, [id, isLeader, canManage]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const setActiveTab = (tab: FeedTab) => {
@@ -168,12 +174,6 @@ export default function GroupFeedPage() {
 		null,
 	);
 
-	const group = groups.find((g) => g.id === id);
-	const isLeader = group?.leaderId === currentUser?.id;
-	const isOfficer = Boolean(
-		group?.officerIds && group.officerIds.includes(currentUser?.id || ''),
-	);
-	const canManage = isLeader || isOfficer;
 
 	const handlePromoteToOfficer = async (targetUserId: string) => {
 		if (!group || !isLeader) return;
@@ -708,16 +708,18 @@ export default function GroupFeedPage() {
 								🛡️ Member Roles
 							</button>
 						)}
-						<button
-							onClick={() => setActiveTab('settings')}
-							className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-								activeTab === 'settings'
-									? 'border-primary text-primary'
-									: 'border-transparent text-text-muted hover:text-text-primary'
-							}`}
-						>
-							⚙️ Club Settings
-						</button>
+						{isLeader && (
+							<button
+								onClick={() => setActiveTab('settings')}
+								className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+									activeTab === 'settings'
+										? 'border-primary text-primary'
+										: 'border-transparent text-text-muted hover:text-text-primary'
+								}`}
+							>
+								⚙️ Club Settings
+							</button>
+						)}
 					</div>
 				</div>
 			</div>
@@ -2194,7 +2196,7 @@ export default function GroupFeedPage() {
 						</div>
 
 						{/* Invite Link & Code Generator Box */}
-						{canManage && !isEditingSettings && (
+						{isLeader && !isEditingSettings && (
 							<div className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4">
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/15 pb-3">
 									<div>
