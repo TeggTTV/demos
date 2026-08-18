@@ -1,18 +1,50 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToGroupMembers } from '@/utils/serverPush';
+import { getSession } from '@/../utils/auth';
+import { validateBase64Upload } from '@/../utils/validation';
 
-export async function GET(req: Request) {
+
+export async function GET(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId');
+
+		if (!groupId) {
+			return NextResponse.json({ error: 'Missing groupId parameter' }, { status: 400 });
+		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		// Verify Group exists
+		const group = await prisma.group.findUnique({
+			where: { id: groupId },
+		});
+
+		if (!group) {
+			return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+		}
+
+		// Enforce Low-Level Security / Lock Record Access
+		if (group.isPrivate && group.leaderId !== session.userId) {
+			const member = await prisma.groupMember.findFirst({
+				where: { groupId, userId: session.userId },
+			});
+			if (!member) {
+				return NextResponse.json({ error: 'Access denied: private group' }, { status: 403 });
+			}
+		}
+
 		const messages = await prisma.feedMessage.findMany({
-			where: groupId ? { groupId } : undefined,
+			where: { groupId },
 			select: {
 				id: true,
 				groupId: true,
@@ -52,34 +84,80 @@ export async function GET(req: Request) {
 		});
 
 		return NextResponse.json({ messages: messagesWithDownloadUrl });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Feed GET Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
 	try {
-		const { groupId, userId, content, fileName, fileUrl, isAnnouncement, pinned } =
-			await req.json();
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
 
-		if (!groupId || !userId || (!content && !fileUrl)) {
+		const body = await req.json();
+		const { groupId, content, fileName, fileUrl, isAnnouncement, pinned } = body;
+
+		if (!groupId || (!content && !fileUrl)) {
 			return NextResponse.json(
-				{ error: 'Missing required parameters (groupId, userId, content/file)' },
+				{ error: 'Missing required parameters (groupId, content/file)' },
 				{ status: 400 },
 			);
 		}
+
+		// Restrict File Uploads
+		if (fileUrl) {
+			const uploadCheck = validateBase64Upload(
+				fileUrl,
+				['image/', 'application/pdf', 'text/plain'],
+				5
+			);
+			if (!uploadCheck.isValid) {
+				return NextResponse.json({ error: uploadCheck.error }, { status: 400 });
+			}
+		}
+
+
+		// Trim and escape/validate inputs
+		const cleanContent = content ? content.trim() : '';
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		const group = await prisma.group.findUnique({
+			where: { id: groupId },
+		});
+
+		if (!group) {
+			return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+		}
+
+		// Lock record access: user must be the leader or a member to post
+		const isLeader = group.leaderId === session.userId;
+		const member = await prisma.groupMember.findFirst({
+			where: { groupId, userId: session.userId },
+		});
+
+		if (!isLeader && !member) {
+			return NextResponse.json({ error: 'Access denied: not a group member' }, { status: 403 });
+		}
+
+		const isOfficer = member?.role === 'OFFICER';
+
+		// Block field tampering: announcements and pins can only be made by leaders/officers
+		const canManageAnnouncements = isLeader || isOfficer;
+		if ((isAnnouncement || pinned) && !canManageAnnouncements) {
+			return NextResponse.json({ error: 'Access denied: unauthorized to post announcements/pins' }, { status: 403 });
+		}
+
 		const newMessage = await prisma.feedMessage.create({
 			data: {
 				groupId,
-				userId,
-				content: content || '',
+				userId: session.userId, // securely use session userId
+				content: cleanContent,
 				fileName: fileName || null,
 				fileUrl: fileUrl || null,
 				isAnnouncement: Boolean(isAnnouncement),
@@ -95,32 +173,36 @@ export async function POST(req: Request) {
 		const senderName = newMessage.user?.name || 'A member';
 		const groupName = newMessage.group?.name || 'Club';
 		let title = `${groupName} Message`;
-		let body = `${senderName}: ${content || 'New attachment'}`;
+		let bodyText = `${senderName}: ${cleanContent || 'New attachment'}`;
 
 		if (fileUrl && fileName) {
 			title = `New File in ${groupName}`;
-			body = `${senderName} shared "${fileName}".`;
-		} else if (content && (content.includes('http://') || content.includes('https://'))) {
+			bodyText = `${senderName} shared "${fileName}".`;
+		} else if (cleanContent && (cleanContent.includes('http://') || cleanContent.includes('https://'))) {
 			title = `Resource Link in ${groupName}`;
-			body = `${senderName} shared a link.`;
+			bodyText = `${senderName} shared a link.`;
 		}
 
-		sendWebPushToGroupMembers(groupId, userId, {
+		sendWebPushToGroupMembers(groupId, session.userId, {
 			title,
-			body: body.slice(0, 120),
+			body: bodyText.slice(0, 120),
 			url: `/group/${groupId}/feed`,
 		}).catch(() => {});
 
 		return NextResponse.json({ success: true, message: newMessage });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Feed POST Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const { searchParams } = new URL(req.url);
 		const messageId = searchParams.get('messageId');
 
@@ -135,14 +217,37 @@ export async function DELETE(req: Request) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		const message = await prisma.feedMessage.findUnique({
+			where: { id: messageId },
+		});
+
+		if (!message) {
+			return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+		}
+
+		// Authorization lock: only message owner OR group leader/officers can delete
+		const group = await prisma.group.findUnique({
+			where: { id: message.groupId },
+		});
+
+		const isOwner = message.userId === session.userId;
+		const isLeader = group?.leaderId === session.userId;
+		const member = await prisma.groupMember.findFirst({
+			where: { groupId: message.groupId, userId: session.userId },
+		});
+		const isOfficer = member?.role === 'OFFICER';
+
+		if (!isOwner && !isLeader && !isOfficer) {
+			return NextResponse.json({ error: 'Access denied: unauthorized delete attempt' }, { status: 403 });
+		}
+
 		await prisma.feedMessage.delete({
 			where: { id: messageId },
 		});
 
 		return NextResponse.json({ success: true });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Feed DELETE Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }

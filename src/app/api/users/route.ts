@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma } from '@/../utils/prisma';
+import { getSession } from '@/../utils/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const users = await prisma.user.findMany({
 			select: {
 				id: true,

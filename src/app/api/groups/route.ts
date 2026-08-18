@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
+import { getSession } from '@/../utils/auth';
+import { validateBase64Upload } from '@/../utils/validation';
 
-export async function GET() {
+
+export async function GET(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
@@ -40,15 +49,20 @@ export async function GET() {
 		}));
 
 		return NextResponse.json({ groups: formattedGroups });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Groups GET Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const body = await req.json();
 		const {
 			name,
 			tagline,
@@ -64,26 +78,44 @@ export async function POST(req: Request) {
 			instagramUrl,
 			discordUrl,
 			tags,
-			leaderId,
-		} = await req.json();
+		} = body;
 
-		if (!name || !description || !leaderId) {
+		if (!name || !description) {
 			return NextResponse.json(
-				{ error: 'Missing required club details (name, description, leaderId)' },
+				{ error: 'Missing required club details (name, description)' },
 				{ status: 400 },
 			);
 		}
+
+		if (name.trim().length < 2) {
+			return NextResponse.json({ error: 'Group name must be at least 2 characters long' }, { status: 400 });
+		}
+
+		// Restrict uploads
+		if (logoUrl) {
+			const logoCheck = validateBase64Upload(logoUrl, ['image/'], 3);
+			if (!logoCheck.isValid) {
+				return NextResponse.json({ error: `Logo: ${logoCheck.error}` }, { status: 400 });
+			}
+		}
+		if (bannerUrl) {
+			const bannerCheck = validateBase64Upload(bannerUrl, ['image/'], 3);
+			if (!bannerCheck.isValid) {
+				return NextResponse.json({ error: `Banner: ${bannerCheck.error}` }, { status: 400 });
+			}
+		}
+
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
-		// Create Group
+		// Create Group with leaderId strictly bound to session.userId (preventing tampering)
 		const newGroup = await prisma.group.create({
 			data: {
-				name,
+				name: name.trim(),
 				tagline: tagline || null,
-				description,
+				description: description.trim(),
 				category: category || 'Technology & Coding',
 				subject: category || 'General',
 				meetingFrequency: meetingFrequency || 'Weekly',
@@ -99,10 +131,10 @@ export async function POST(req: Request) {
 				discordUrl: discordUrl || null,
 				tags: tags || [],
 				officerIds: [],
-				leaderId,
+				leaderId: session.userId,
 				members: {
 					create: {
-						userId: leaderId,
+						userId: session.userId,
 						role: 'LEADER',
 					},
 				},
@@ -137,15 +169,19 @@ export async function POST(req: Request) {
 		};
 
 		return NextResponse.json({ success: true, group: formatted });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Groups POST Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const body = await req.json();
 		const {
 			groupId,
@@ -180,9 +216,48 @@ export async function PUT(req: Request) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		// Authorization Check
+		const existingGroup = await prisma.group.findUnique({
+			where: { id: groupId },
+		});
+
+		if (!existingGroup) {
+			return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+		}
+
+		const isLeader = existingGroup.leaderId === session.userId;
+		const member = await prisma.groupMember.findFirst({
+			where: { groupId, userId: session.userId },
+		});
+		const isOfficer = member?.role === 'OFFICER';
+
+		// Only leaders or officers can modify group settings
+		if (!isLeader && !isOfficer) {
+			return NextResponse.json({ error: 'Access denied: unauthorized group modification attempt' }, { status: 403 });
+		}
+
+		// Restrict uploads
+		if (logoUrl) {
+			const logoCheck = validateBase64Upload(logoUrl, ['image/'], 3);
+			if (!logoCheck.isValid) {
+				return NextResponse.json({ error: `Logo: ${logoCheck.error}` }, { status: 400 });
+			}
+		}
+		if (bannerUrl) {
+			const bannerCheck = validateBase64Upload(bannerUrl, ['image/'], 3);
+			if (!bannerCheck.isValid) {
+				return NextResponse.json({ error: `Banner: ${bannerCheck.error}` }, { status: 400 });
+			}
+		}
+
+
+		// Block field tampering: only leaders can manage officer promotions or kick members
+		if ((officerIds !== undefined || kickUserId !== undefined) && !isLeader) {
+			return NextResponse.json({ error: 'Access denied: only group leaders can change roles or kick members' }, { status: 403 });
+		}
+
 		// 1. Kick user if requested
 		if (kickUserId) {
-			const targetGroup = await prisma.group.findUnique({ where: { id: groupId } });
 			await prisma.groupMember.deleteMany({
 				where: {
 					groupId,
@@ -195,12 +270,11 @@ export async function PUT(req: Request) {
 					userId: kickUserId,
 				},
 			});
-			const existing = await prisma.group.findUnique({ where: { id: groupId } });
-			if (existing && existing.officerIds.includes(kickUserId)) {
+			if (existingGroup.officerIds.includes(kickUserId)) {
 				await prisma.group.update({
 					where: { id: groupId },
 					data: {
-						officerIds: existing.officerIds.filter((id) => id !== kickUserId),
+						officerIds: existingGroup.officerIds.filter((id) => id !== kickUserId),
 					},
 				});
 			}
@@ -208,36 +282,33 @@ export async function PUT(req: Request) {
 			// Push notify kicked member
 			sendWebPushToUsers([kickUserId], {
 				title: 'Club Membership Update',
-				body: `You were removed from "${targetGroup?.name || 'Club'}".`,
+				body: `You were removed from "${existingGroup.name}".`,
 				url: '/groups',
 			}).catch(() => {});
 		}
 
 		// 2. Officer promotion/demotion push notification
 		if (officerIds !== undefined) {
-			const existing = await prisma.group.findUnique({ where: { id: groupId } });
-			if (existing) {
-				const oldOfficers = existing.officerIds || [];
-				const newOfficers = officerIds || [];
+			const oldOfficers = existingGroup.officerIds || [];
+			const newOfficers = officerIds || [];
 
-				const promoted = newOfficers.filter((id: string) => !oldOfficers.includes(id));
-				const demoted = oldOfficers.filter((id: string) => !newOfficers.includes(id));
+			const promoted = newOfficers.filter((id: string) => !oldOfficers.includes(id));
+			const demoted = oldOfficers.filter((id: string) => !newOfficers.includes(id));
 
-				if (promoted.length > 0) {
-					sendWebPushToUsers(promoted, {
-						title: 'Congratulations! You are an Officer',
-						body: `You were promoted to Officer in "${existing.name}".`,
-						url: `/group/${groupId}/feed`,
-					}).catch(() => {});
-				}
+			if (promoted.length > 0) {
+				sendWebPushToUsers(promoted, {
+					title: 'Congratulations! You are an Officer',
+					body: `You were promoted to Officer in "${existingGroup.name}".`,
+					url: `/group/${groupId}/feed`,
+				}).catch(() => {});
+			}
 
-				if (demoted.length > 0) {
-					sendWebPushToUsers(demoted, {
-						title: 'Club Role Update',
-						body: `Your role in "${existing.name}" was changed to Member.`,
-						url: `/group/${groupId}/feed`,
-					}).catch(() => {});
-				}
+			if (demoted.length > 0) {
+				sendWebPushToUsers(demoted, {
+					title: 'Club Role Update',
+					body: `Your role in "${existingGroup.name}" was changed to Member.`,
+					url: `/group/${groupId}/feed`,
+				}).catch(() => {});
 			}
 		}
 
@@ -307,15 +378,19 @@ export async function PUT(req: Request) {
 		};
 
 		return NextResponse.json({ success: true, group: formatted });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Groups PUT Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId');
 
@@ -330,14 +405,27 @@ export async function DELETE(req: Request) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		// Authorization Check
+		const group = await prisma.group.findUnique({
+			where: { id: groupId },
+		});
+
+		if (!group) {
+			return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+		}
+
+		// Only group leaders can delete groups
+		if (group.leaderId !== session.userId) {
+			return NextResponse.json({ error: 'Access denied: only group leaders can delete groups' }, { status: 403 });
+		}
+
 		await prisma.group.delete({
 			where: { id: groupId },
 		});
 
 		return NextResponse.json({ success: true });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Groups DELETE Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }

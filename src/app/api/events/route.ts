@@ -1,14 +1,38 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToGroupMembers } from '@/utils/serverPush';
+import { getSession } from '@/../utils/auth';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId');
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+		}
+
+		if (groupId) {
+			const group = await prisma.group.findUnique({
+				where: { id: groupId },
+			});
+			if (!group) {
+				return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+			}
+			if (group.isPrivate && group.leaderId !== session.userId) {
+				const member = await prisma.groupMember.findFirst({
+					where: { groupId, userId: session.userId },
+				});
+				if (!member) {
+					return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+				}
+			}
 		}
 
 		const events = await prisma.meetingEvent.findMany({
@@ -17,35 +41,49 @@ export async function GET(req: Request) {
 		});
 
 		return NextResponse.json({ events });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Events GET Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
 	try {
-		const {
-			groupId,
-			title,
-			description,
-			date,
-			time,
-			location,
-			checkInCode,
-			createdById,
-		} = await req.json();
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
 
-		if (!groupId || !title || !date || !time || !createdById) {
+		const body = await req.json();
+		const { groupId, title, description, date, time, location, checkInCode } = body;
+
+		if (!groupId || !title || !date || !time) {
 			return NextResponse.json(
-				{ error: 'Missing required parameters (groupId, title, date, time, createdById)' },
+				{ error: 'Missing required parameters' },
 				{ status: 400 },
 			);
 		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+		}
+
+		const group = await prisma.group.findUnique({
+			where: { id: groupId },
+		});
+
+		if (!group) {
+			return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+		}
+
+		const isLeader = group.leaderId === session.userId;
+		const member = await prisma.groupMember.findFirst({
+			where: { groupId, userId: session.userId },
+		});
+		const isOfficer = member?.role === 'OFFICER';
+
+		if (!isLeader && !isOfficer) {
+			return NextResponse.json({ error: 'Access denied: only leaders or officers can create events' }, { status: 403 });
 		}
 
 		const newEvent = await prisma.meetingEvent.create({
@@ -58,33 +96,36 @@ export async function POST(req: Request) {
 				location: location || '',
 				checkInCode: checkInCode || `DEMO-${Math.floor(1000 + Math.random() * 9000)}`,
 				isActive: true,
-				createdById,
+				createdById: session.userId, // use secure session userId
 			},
 			include: {
 				group: { select: { name: true } },
 			},
 		});
 
-		// Trigger background Web Push to club members
 		const groupName = newEvent.group?.name || 'Club';
-		sendWebPushToGroupMembers(groupId, createdById, {
+		sendWebPushToGroupMembers(groupId, session.userId, {
 			title: `Attendance Open: ${title}`,
 			body: `Meeting check-in opened for "${groupName}" at ${time}. PIN: ${newEvent.checkInCode}`,
 			url: `/group/${groupId}/feed`,
 		}).catch(() => {});
 
 		return NextResponse.json({ success: true, event: newEvent });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Events POST Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
 	try {
-		const { eventId, isActive, title, description, date, time, location } =
-			await req.json();
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const body = await req.json();
+		const { eventId, isActive, title, description, date, time, location } = body;
 
 		if (!eventId) {
 			return NextResponse.json(
@@ -95,6 +136,28 @@ export async function PUT(req: Request) {
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+		}
+
+		const existingEvent = await prisma.meetingEvent.findUnique({
+			where: { id: eventId },
+		});
+
+		if (!existingEvent) {
+			return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+		}
+
+		const group = await prisma.group.findUnique({
+			where: { id: existingEvent.groupId },
+		});
+
+		const isLeader = group?.leaderId === session.userId;
+		const member = await prisma.groupMember.findFirst({
+			where: { groupId: existingEvent.groupId, userId: session.userId },
+		});
+		const isOfficer = member?.role === 'OFFICER';
+
+		if (!isLeader && !isOfficer) {
+			return NextResponse.json({ error: 'Access denied: unauthorized to edit event' }, { status: 403 });
 		}
 
 		const updated = await prisma.meetingEvent.update({
@@ -126,15 +189,19 @@ export async function PUT(req: Request) {
 		}
 
 		return NextResponse.json({ success: true, event: updated });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Events PUT Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const { searchParams } = new URL(req.url);
 		const eventId = searchParams.get('eventId');
 
@@ -149,6 +216,28 @@ export async function DELETE(req: Request) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		const existingEvent = await prisma.meetingEvent.findUnique({
+			where: { id: eventId },
+		});
+
+		if (!existingEvent) {
+			return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+		}
+
+		const group = await prisma.group.findUnique({
+			where: { id: existingEvent.groupId },
+		});
+
+		const isLeader = group?.leaderId === session.userId;
+		const member = await prisma.groupMember.findFirst({
+			where: { groupId: existingEvent.groupId, userId: session.userId },
+		});
+		const isOfficer = member?.role === 'OFFICER';
+
+		if (!isLeader && !isOfficer) {
+			return NextResponse.json({ error: 'Access denied: unauthorized to delete event' }, { status: 403 });
+		}
+
 		await prisma.attendanceRecord.deleteMany({
 			where: { eventId },
 		});
@@ -158,9 +247,8 @@ export async function DELETE(req: Request) {
 		});
 
 		return NextResponse.json({ success: true });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Events DELETE Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }

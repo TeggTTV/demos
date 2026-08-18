@@ -1,24 +1,42 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { getSession } from '@/../utils/auth';
+import { validateBase64Upload } from '@/../utils/validation';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
 	try {
-		const { email, name, avatarUrl, bio, major, year } = await req.json();
-		if (!email) {
-			return NextResponse.json(
-				{ error: 'Missing required email parameter' },
-				{ status: 400 },
-			);
+		// 1. Enforce Server-Side Auth
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const body = await req.json();
+		const { name, avatarUrl, bio, major, year } = body;
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database connection offline' }, { status: 503 });
 		}
 
+		// 2. Input Validation
+		if (name !== undefined && name.trim().length < 2) {
+			return NextResponse.json({ error: 'Name must be at least 2 characters long' }, { status: 400 });
+		}
+
+		// 3. Restrict Avatar Uploads
+		if (avatarUrl !== undefined) {
+			const avatarCheck = validateBase64Upload(avatarUrl, ['image/'], 2);
+			if (!avatarCheck.isValid) {
+				return NextResponse.json({ error: avatarCheck.error }, { status: 400 });
+			}
+		}
+
+		// 4. Update User securely based on session.userId (preventing profile tampering)
 		const user = await prisma.user.update({
-			where: { email },
+			where: { id: session.userId },
 			data: {
-				name: name !== undefined ? name : undefined,
+				name: name !== undefined ? name.trim() : undefined,
 				avatarUrl: avatarUrl !== undefined ? avatarUrl : undefined,
 				bio: bio !== undefined ? bio : undefined,
 				major: major !== undefined ? major : undefined,
@@ -38,9 +56,8 @@ export async function POST(req: Request) {
 		});
 
 		return NextResponse.json({ success: true, user });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Auth API Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }

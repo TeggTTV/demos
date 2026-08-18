@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
+import { getSession } from '@/../utils/auth';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const { searchParams } = new URL(req.url);
 		const eventId = searchParams.get('eventId');
 		const groupId = searchParams.get('groupId');
@@ -12,43 +19,137 @@ export async function GET(req: Request) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		// Enforce Low-Level Security / Lock Record Access
+		let canAccessAll = false;
+
+		if (groupId) {
+			const group = await prisma.group.findUnique({
+				where: { id: groupId },
+			});
+			if (group) {
+				const isLeader = group.leaderId === session.userId;
+				const member = await prisma.groupMember.findFirst({
+					where: { groupId, userId: session.userId },
+				});
+				const isOfficer = member?.role === 'OFFICER';
+				canAccessAll = isLeader || isOfficer;
+			}
+		} else if (eventId) {
+			const event = await prisma.meetingEvent.findUnique({
+				where: { id: eventId },
+			});
+			if (event) {
+				const group = await prisma.group.findUnique({
+					where: { id: event.groupId },
+				});
+				if (group) {
+					const isLeader = group.leaderId === session.userId;
+					const member = await prisma.groupMember.findFirst({
+						where: { groupId: event.groupId, userId: session.userId },
+					});
+					const isOfficer = member?.role === 'OFFICER';
+					canAccessAll = isLeader || isOfficer;
+				}
+			}
+		}
+
+		// If user is not leader/officer, they can only view their own attendance records
 		const attendances = await prisma.attendanceRecord.findMany({
 			where: {
 				...(eventId ? { eventId } : {}),
 				...(groupId ? { groupId } : {}),
+				...(!canAccessAll ? { userId: session.userId } : {}),
 			},
 			orderBy: { timestamp: 'desc' },
 		});
 
 		return NextResponse.json({ attendances });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Attendance GET Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
 	try {
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const body = await req.json();
 		const {
 			eventId,
-			groupId,
-			userId,
-			userName,
-			userEmail,
+			userId: targetUserId,
 			status,
 			checkInMethod,
-		} = await req.json();
+			code,
+		} = body;
 
-		if (!eventId || !userId) {
+		if (!eventId) {
 			return NextResponse.json(
-				{ error: 'Missing required parameters (eventId, userId)' },
+				{ error: 'Missing required parameter: eventId' },
 				{ status: 400 },
 			);
 		}
 
+		const userId = targetUserId || session.userId;
+
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+		}
+
+		const event = await prisma.meetingEvent.findUnique({
+			where: { id: eventId },
+		});
+
+		if (!event) {
+			return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+		}
+
+		const group = await prisma.group.findUnique({
+			where: { id: event.groupId },
+		});
+
+		if (!group) {
+			return NextResponse.json({ error: 'Group associated with event not found' }, { status: 404 });
+		}
+
+		const isLeader = group.leaderId === session.userId;
+		const officerMember = await prisma.groupMember.findFirst({
+			where: { groupId: event.groupId, userId: session.userId },
+		});
+		const isOfficer = officerMember?.role === 'OFFICER';
+
+		// If user is trying to check in someone else
+		if (userId !== session.userId) {
+			// Must be leader or officer
+			if (!isLeader && !isOfficer) {
+				return NextResponse.json({ error: 'Access denied: only leaders or officers can record attendance for others' }, { status: 403 });
+			}
+		} else {
+			// Self check-in: must verify check-in code if code check-in method is used and user is not leader/officer
+			if (!isLeader && !isOfficer) {
+				if (!event.isActive) {
+					return NextResponse.json({ error: 'Check-in is currently closed for this event' }, { status: 400 });
+				}
+				if (checkInMethod === 'MANUAL') {
+					return NextResponse.json({ error: 'Cannot manually check in. Must use code check-in' }, { status: 403 });
+				}
+				if (!code || code !== event.checkInCode) {
+					return NextResponse.json({ error: 'Invalid check-in code' }, { status: 400 });
+				}
+			}
+		}
+
+		// Retrieve target user details
+		const targetUser = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { name: true, email: true },
+		});
+
+		if (!targetUser) {
+			return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
 		}
 
 		const record = await prisma.attendanceRecord.upsert({
@@ -65,10 +166,10 @@ export async function POST(req: Request) {
 			},
 			create: {
 				eventId,
-				groupId: groupId || '',
+				groupId: event.groupId,
 				userId,
-				userName: userName || null,
-				userEmail: userEmail || null,
+				userName: targetUser.name || null,
+				userEmail: targetUser.email || null,
 				status: status || 'PRESENT',
 				checkInMethod: checkInMethod || 'CODE',
 			},
@@ -79,18 +180,17 @@ export async function POST(req: Request) {
 		});
 
 		// If attendance was manually verified by an officer, notify the student
-		if (checkInMethod === 'MANUAL') {
+		if (checkInMethod === 'MANUAL' && userId !== session.userId) {
 			sendWebPushToUsers([userId], {
 				title: `Attendance Updated: ${status || 'PRESENT'}`,
 				body: `You are marked ${status || 'PRESENT'} for "${record.event.title}" (${record.group.name}).`,
-				url: `/group/${groupId}/feed`,
+				url: `/group/${event.groupId}/feed`,
 			}).catch(() => {});
 		}
 
 		return NextResponse.json({ success: true, record });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Attendance POST Error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }

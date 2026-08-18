@@ -778,7 +778,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		[],
 	);
 
-	const logoutUser = useCallback(() => {
+	const logoutUser = useCallback(async () => {
+		try {
+			await fetch('/api/auth/logout', { method: 'POST' });
+		} catch (e) {
+			console.error('Logout API failed:', e);
+		}
 		setCurrentUser(null);
 		localStorage.removeItem('demos_current_user');
 	}, []);
