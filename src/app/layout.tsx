@@ -46,7 +46,6 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: 'website',
 		locale: 'en_US',
-		url: 'https://demosclubhub.vercel.app/',
 		siteName: 'Demos',
 		title: 'Demos - Clubs, Recruitment & Attendance Tracking',
 		description:

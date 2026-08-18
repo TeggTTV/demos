@@ -5,7 +5,7 @@ export const metadata: Metadata = {
 	description: 'Manage and access your registered student organizations, join codes, and administrative tools.',
 	robots: {
 		index: false,
-		follow: false,
+		follow: true,
 	},
 };
 

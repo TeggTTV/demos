@@ -4,7 +4,7 @@ export const metadata: Metadata = {
 	title: 'Pending Roster Requests',
 	robots: {
 		index: false,
-		follow: false,
+		follow: true,
 	},
 };
 

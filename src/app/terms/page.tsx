@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
 	title: 'Terms of Service',
-	description: 'Terms of Service and usage guidelines for the Demos club hub platform.',
+	description: 'Read the terms of service and usage guidelines for student organizations, members, and officers using the Demos campus club hub platform.',
 	alternates: {
 		canonical: '/terms',
 	},

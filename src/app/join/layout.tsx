@@ -4,7 +4,7 @@ export const metadata: Metadata = {
 	title: 'Join Organization',
 	robots: {
 		index: false,
-		follow: false,
+		follow: true,
 	},
 };
 

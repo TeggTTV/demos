@@ -4,7 +4,7 @@ export const metadata: Metadata = {
 	title: 'App Settings',
 	robots: {
 		index: false,
-		follow: false,
+		follow: true,
 	},
 };
 

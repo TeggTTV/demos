@@ -4,7 +4,7 @@ export const metadata: Metadata = {
 	title: 'Profile Settings',
 	robots: {
 		index: false,
-		follow: false,
+		follow: true,
 	},
 };
 
