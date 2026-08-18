@@ -6,6 +6,9 @@ export const metadata: Metadata = {
 	alternates: {
 		canonical: '/search',
 	},
+	openGraph: {
+		url: '/search',
+	},
 };
 
 export default function SearchLayout({

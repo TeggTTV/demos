@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { decryptPassword } from '@/../utils/encryption';
 
 export async function POST(req: Request) {
 	try {
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
 			where: { email },
 		});
 
-		if (!user || user.password !== password) {
+		if (!user || decryptPassword(user.password) !== password) {
 			return NextResponse.json(
 				{ error: 'Invalid email or password' },
 				{ status: 401 },

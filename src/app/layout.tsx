@@ -47,6 +47,7 @@ export const metadata: Metadata = {
 		type: 'website',
 		locale: 'en_US',
 		siteName: 'Demos',
+		url: '/',
 		title: 'Demos - Clubs, Recruitment & Attendance Tracking',
 		description:
 			'Promote your club, recruit members, collaborate in hubs, and track meeting attendance seamlessly.',

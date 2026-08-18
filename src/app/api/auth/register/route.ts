@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { encryptPassword } from '@/../utils/encryption';
 
 export async function POST(req: Request) {
 	try {
@@ -28,12 +29,14 @@ export async function POST(req: Request) {
 			);
 		}
 
+		const encryptedPassword = encryptPassword(password);
+
 		// Create User in MongoDB
 		const user = await prisma.user.create({
 			data: {
 				email,
 				name,
-				password,
+				password: encryptedPassword,
 				role,
 				avatarUrl: avatarUrl || null,
 				bio: bio || null,
