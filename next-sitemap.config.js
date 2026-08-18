@@ -12,6 +12,8 @@ module.exports = {
 	},
 	exclude: [
 		'/auth/*',
+		'/search/',
+		'/search/*',
 		'/join',
 		'/join/*',
 		'/pending',
