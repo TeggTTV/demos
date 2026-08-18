@@ -36,18 +36,37 @@ export default function PrivacyPage() {
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							1. Information We Collect
+							1. User Data We Collect
 						</h2>
 						<p>
 							We collect information necessary to support club
-							operations, including your name, campus email,
-							display avatar, club memberships, meeting attendance
-							check-in records, and messages shared within club
-							hubs.
+							operations and user interaction, including:
 						</p>
+						<ul className="list-disc pl-5 space-y-1">
+							<li><strong>Account Profiles:</strong> Your name, campus email address, and profile picture (avatar).</li>
+							<li><strong>Club Membership:</strong> Your status as an officer or member, applications, notes, and direct invites.</li>
+							<li><strong>Attendance Logs:</strong> Verification records when you check in to club meetings or events.</li>
+							<li><strong>Communications:</strong> Message feeds, announcements, shared links, and uploaded files.</li>
+							<li><strong>System Details:</strong> Web push credentials if you opt in to browser notifications.</li>
+						</ul>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							2. How Information is Used
+							2. Third-Party Data Collection
+						</h2>
+						<p>
+							We integrate third-party services to enhance and monitor site performance:
+						</p>
+						<ul className="list-disc pl-5 space-y-1">
+							<li>
+								<strong>Analytics:</strong> We use Vercel Analytics to track website performance, popular pages, and general traffic behavior. This data helps us improve user experience and includes device type, browser, location (at a country/region level), and interaction logs.
+							</li>
+							<li>
+								<strong>Hosting &amp; Storage:</strong> Our platform uses database infrastructure (like MongoDB and Prisma) to store user and application records securely.
+							</li>
+						</ul>
+
+						<h2 className="text-lg font-bold text-text-primary pt-2">
+							3. How Information is Used
 						</h2>
 						<p>
 							Your information is utilized solely to facilitate
@@ -57,12 +76,20 @@ export default function PrivacyPage() {
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							3. Data Security &amp; Sharing
+							4. Data Security &amp; Sharing
 						</h2>
 						<p>
 							We do not sell or rent your personal data to third
 							parties. Attendance records are only accessible to
 							designated club officers and leaders.
+						</p>
+
+						<h2 className="text-lg font-bold text-text-primary pt-2">
+							5. Your Rights &amp; Consent
+						</h2>
+						<p>
+							By using Demos, you consent to our data collection policies.
+							You have the right to request deletion of your account and related participation history at any time.
 						</p>
 					</div>
 				</div>
@@ -71,3 +98,4 @@ export default function PrivacyPage() {
 		</div>
 	);
 }
+

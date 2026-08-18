@@ -4,6 +4,7 @@ import './globals.css';
 import { AppProvider } from '@/components/AppContext';
 import { Analytics } from '@vercel/analytics/react';
 import PwaInstallBanner from '@/components/PwaInstallBanner';
+import DataConsentBanner from '@/components/DataConsentBanner';
 
 export const viewport: Viewport = {
 	width: 'device-width',
@@ -121,9 +122,11 @@ export default function RootLayout({
 				<AppProvider>
 					{children}
 					<PwaInstallBanner />
+					<DataConsentBanner />
 				</AppProvider>
 				<Analytics />
 			</body>
 		</html>
 	);
 }
+

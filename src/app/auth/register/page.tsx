@@ -6,6 +6,7 @@ import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/Input';
+import { Checkbox } from '@/components/ui/Checkbox';
 import Link from 'next/link';
 import Image from 'next/image';
 import { compressImage } from '@/utils/imageCompression';
@@ -24,10 +25,15 @@ function RegisterContent() {
 
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+	const [agreed, setAgreed] = useState(false);
 	const router = useRouter();
 
 	const handleRegister = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!agreed) {
+			setError('You must agree to the Terms of Service and Privacy Policy to continue.');
+			return;
+		}
 		setLoading(true);
 		setError('');
 
@@ -151,6 +157,38 @@ function RegisterContent() {
 								}
 							}}
 							className="block w-full text-xs text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
+						/>
+					</div>
+
+					<div className="py-1">
+						<Checkbox
+							id="agree-terms"
+							checked={agreed}
+							onChange={(e) => setAgreed(e.target.checked)}
+							required
+							label={
+								<span className="text-text-secondary leading-tight">
+									I agree to the{' '}
+									<Link
+										href="/terms"
+										target="_blank"
+										className="text-primary font-semibold hover:underline"
+										onClick={(e) => e.stopPropagation()}
+									>
+										Terms of Service
+									</Link>{' '}
+									and{' '}
+									<Link
+										href="/privacy"
+										target="_blank"
+										className="text-primary font-semibold hover:underline"
+										onClick={(e) => e.stopPropagation()}
+									>
+										Privacy Policy
+									</Link>
+									.
+								</span>
+							}
 						/>
 					</div>
 

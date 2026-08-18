@@ -7,7 +7,7 @@ interface CheckboxProps extends Omit<
 	React.InputHTMLAttributes<HTMLInputElement>,
 	'type'
 > {
-	label?: string;
+	label?: React.ReactNode;
 }
 
 export function Checkbox({
