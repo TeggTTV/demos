@@ -11,6 +11,14 @@ export const metadata: Metadata = {
 	},
 	openGraph: {
 		url: '/terms',
+		images: [
+			{
+				url: '/ogimage.png',
+				width: 1200,
+				height: 630,
+				alt: 'Demos Club Platform',
+			},
+		],
 	},
 };
 

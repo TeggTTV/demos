@@ -11,6 +11,14 @@ export const metadata: Metadata = {
 	},
 	openGraph: {
 		url: '/privacy',
+		images: [
+			{
+				url: '/ogimage.png',
+				width: 1200,
+				height: 630,
+				alt: 'Demos Club Platform',
+			},
+		],
 	},
 };
 
@@ -43,25 +51,53 @@ export default function PrivacyPage() {
 							operations and user interaction, including:
 						</p>
 						<ul className="list-disc pl-5 space-y-1">
-							<li><strong>Account Profiles:</strong> Your name, campus email address, and profile picture (avatar).</li>
-							<li><strong>Club Membership:</strong> Your status as an officer or member, applications, notes, and direct invites.</li>
-							<li><strong>Attendance Logs:</strong> Verification records when you check in to club meetings or events.</li>
-							<li><strong>Communications:</strong> Message feeds, announcements, shared links, and uploaded files.</li>
-							<li><strong>System Details:</strong> Web push credentials if you opt in to browser notifications.</li>
+							<li>
+								<strong>Account Profiles:</strong> Your name,
+								campus email address, and profile picture
+								(avatar).
+							</li>
+							<li>
+								<strong>Club Membership:</strong> Your status as
+								an officer or member, applications, notes, and
+								direct invites.
+							</li>
+							<li>
+								<strong>Attendance Logs:</strong> Verification
+								records when you check in to club meetings or
+								events.
+							</li>
+							<li>
+								<strong>Communications:</strong> Message feeds,
+								announcements, shared links, and uploaded files.
+							</li>
+							<li>
+								<strong>System Details:</strong> Web push
+								credentials if you opt in to browser
+								notifications.
+							</li>
 						</ul>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
 							2. Third-Party Data Collection
 						</h2>
 						<p>
-							We integrate third-party services to enhance and monitor site performance:
+							We integrate third-party services to enhance and
+							monitor site performance:
 						</p>
 						<ul className="list-disc pl-5 space-y-1">
 							<li>
-								<strong>Analytics:</strong> We use Vercel Analytics to track website performance, popular pages, and general traffic behavior. This data helps us improve user experience and includes device type, browser, location (at a country/region level), and interaction logs.
+								<strong>Analytics:</strong> We use Vercel
+								Analytics to track website performance, popular
+								pages, and general traffic behavior. This data
+								helps us improve user experience and includes
+								device type, browser, location (at a
+								country/region level), and interaction logs.
 							</li>
 							<li>
-								<strong>Hosting &amp; Storage:</strong> Our platform uses database infrastructure (like MongoDB and Prisma) to store user and application records securely.
+								<strong>Hosting &amp; Storage:</strong> Our
+								platform uses database infrastructure (like
+								MongoDB and Prisma) to store user and
+								application records securely.
 							</li>
 						</ul>
 
@@ -88,8 +124,10 @@ export default function PrivacyPage() {
 							5. Your Rights &amp; Consent
 						</h2>
 						<p>
-							By using Demos, you consent to our data collection policies.
-							You have the right to request deletion of your account and related participation history at any time.
+							By using Demos, you consent to our data collection
+							policies. You have the right to request deletion of
+							your account and related participation history at
+							any time.
 						</p>
 					</div>
 				</div>
@@ -98,4 +136,3 @@ export default function PrivacyPage() {
 		</div>
 	);
 }
-
