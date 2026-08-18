@@ -48,7 +48,7 @@ export async function middleware(req: NextRequest) {
 	}
 
 	if (isAuthRoute && session) {
-		return NextResponse.redirect(new URL('/groups', req.url));
+		return NextResponse.redirect(new URL('/', req.url));
 	}
 
 	// 2. Set Security Headers

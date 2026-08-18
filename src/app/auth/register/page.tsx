@@ -14,7 +14,7 @@ import { compressImage } from '@/utils/imageCompression';
 function RegisterContent() {
 	const { registerUser } = useAppContext();
 	const searchParams = useSearchParams();
-	const redirectUrl = searchParams.get('redirect') || '/groups';
+	const redirectUrl = searchParams.get('redirect') || '/';
 
 	const [email, setEmail] = useState('');
 	const [name, setName] = useState('');

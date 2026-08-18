@@ -12,7 +12,7 @@ import Image from 'next/image';
 function LoginContent() {
 	const { loginUser } = useAppContext();
 	const searchParams = useSearchParams();
-	const redirectUrl = searchParams.get('redirect') || '/groups';
+	const redirectUrl = searchParams.get('redirect') || '/';
 
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
