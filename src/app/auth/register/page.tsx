@@ -139,10 +139,14 @@ function RegisterContent() {
 								const file = e.target.files?.[0];
 								if (file) {
 									try {
-										const compressedDataUrl = await compressImage(file);
+										const compressedDataUrl =
+											await compressImage(file);
 										setAvatarUrl(compressedDataUrl);
 									} catch (err) {
-										console.error('Image compression failed:', err);
+										console.error(
+											'Image compression failed:',
+											err,
+										);
 									}
 								}
 							}}

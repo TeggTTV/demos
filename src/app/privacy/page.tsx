@@ -4,7 +4,8 @@ import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
 	title: 'Privacy Policy',
-	description: 'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Demos club hub platform.',
+	description:
+		'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Demos club hub platform.',
 	alternates: {
 		canonical: '/privacy',
 	},
@@ -25,9 +26,10 @@ export default function PrivacyPage() {
 
 					<div className="space-y-4 text-sm text-text-secondary leading-relaxed">
 						<p>
-							At Demos, we take the privacy of student club members and
-							leaders seriously. This Privacy Policy describes how we
-							collect, store, and protect your information.
+							At Demos, we take the privacy of student club
+							members and leaders seriously. This Privacy Policy
+							describes how we collect, store, and protect your
+							information.
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
@@ -35,18 +37,20 @@ export default function PrivacyPage() {
 						</h2>
 						<p>
 							We collect information necessary to support club
-							operations, including your name, campus email, display
-							avatar, club memberships, meeting attendance check-in
-							records, and messages shared within club hubs.
+							operations, including your name, campus email,
+							display avatar, club memberships, meeting attendance
+							check-in records, and messages shared within club
+							hubs.
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
 							2. How Information is Used
 						</h2>
 						<p>
-							Your information is utilized solely to facilitate club
-							communication, verify meeting attendance for club officers,
-							and enable student organization discovery across campus.
+							Your information is utilized solely to facilitate
+							club communication, verify meeting attendance for
+							club officers, and enable student organization
+							discovery across campus.
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
@@ -54,8 +58,8 @@ export default function PrivacyPage() {
 						</h2>
 						<p>
 							We do not sell or rent your personal data to third
-							parties. Attendance records are only accessible to designated
-							club officers and leaders.
+							parties. Attendance records are only accessible to
+							designated club officers and leaders.
 						</p>
 					</div>
 				</div>

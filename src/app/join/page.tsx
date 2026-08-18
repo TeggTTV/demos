@@ -33,7 +33,9 @@ function JoinContent() {
 		if (!clean) return;
 
 		if (!currentUser) {
-			router.push(`/auth/login?redirect=/join/${encodeURIComponent(clean)}`);
+			router.push(
+				`/auth/login?redirect=/join/${encodeURIComponent(clean)}`,
+			);
 			return;
 		}
 
@@ -61,7 +63,8 @@ function JoinContent() {
 						Join a Campus Club
 					</h1>
 					<p className="text-xs text-text-muted max-w-xs mx-auto">
-						Enter an invite code or direct link to instantly join any student organization on Demos.
+						Enter an invite code or direct link to instantly join
+						any student organization on Demos.
 					</p>
 				</div>
 
@@ -91,7 +94,11 @@ function JoinContent() {
 						disabled={loading || !code.trim()}
 						className="w-full rounded-xl bg-primary py-3 text-xs font-semibold text-white hover:bg-primary-hover shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
 					>
-						<span>{loading ? 'Joining Club...' : 'Join Club Instantly'}</span>
+						<span>
+							{loading
+								? 'Joining Club...'
+								: 'Join Club Instantly'}
+						</span>
 						<FiArrowRight size={14} />
 					</button>
 				</form>
@@ -114,7 +121,15 @@ export default function JoinPage() {
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
-			<Suspense fallback={<div className="flex-1 flex items-center justify-center p-8"><h1 className="text-xs text-text-muted font-normal">Loading...</h1></div>}>
+			<Suspense
+				fallback={
+					<div className="flex-1 flex items-center justify-center p-8">
+						<h1 className="text-xs text-text-muted font-normal">
+							Loading...
+						</h1>
+					</div>
+				}
+			>
 				<JoinContent />
 			</Suspense>
 			<Footer />
