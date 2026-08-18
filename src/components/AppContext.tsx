@@ -396,12 +396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			fetchUsers(),
 			fetchInvites(),
 		]);
-	}, [
-		fetchGroups,
-		fetchInvites,
-		fetchRequests,
-		fetchUsers,
-	]);
+	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers]);
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
@@ -584,7 +579,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 			isPolling = true;
 			try {
-				const searchParams = new URLSearchParams(window.location.search);
+				const searchParams = new URLSearchParams(
+					window.location.search,
+				);
 				const currentTab = searchParams.get('tab') || 'feed';
 
 				// Only refresh data specifically needed by the current active page/tab
@@ -595,9 +592,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 							(e) => e.groupId === groupId && e.isActive,
 						);
 						if (hasActiveEvent) {
-							await Promise.allSettled([fetchEvents(), fetchAttendances()]);
+							await Promise.allSettled([
+								fetchEvents(),
+								fetchAttendances(),
+							]);
 						}
-					} else if (currentTab === 'roster' || currentTab === 'roles') {
+					} else if (
+						currentTab === 'roster' ||
+						currentTab === 'roles'
+					) {
 						await fetchUsers();
 					} else if (currentTab === 'settings') {
 						// Groups and invites are loaded once on settings tab mount, not on interval
@@ -963,31 +966,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		[groups],
 	);
 
-	const deleteClubInvites = useCallback(
-		async (groupId: string) => {
-			try {
-				const res = await fetch(`/api/invites?groupId=${groupId}`, {
-					method: 'DELETE',
-				});
-				const data = await res.json();
-				if (data.success) {
-					setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
-					return { success: true };
-				}
-				return {
-					success: false,
-					error: data.error || 'Failed to delete invite',
-				};
-			} catch (e) {
-				console.error('Failed to delete invites:', e);
-				return {
-					success: false,
-					error: 'Network error deleting invites',
-				};
+	const deleteClubInvites = useCallback(async (groupId: string) => {
+		try {
+			const res = await fetch(`/api/invites?groupId=${groupId}`, {
+				method: 'DELETE',
+			});
+			const data = await res.json();
+			if (data.success) {
+				setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
+				return { success: true };
 			}
-		},
-		[],
-	);
+			return {
+				success: false,
+				error: data.error || 'Failed to delete invite',
+			};
+		} catch (e) {
+			console.error('Failed to delete invites:', e);
+			return {
+				success: false,
+				error: 'Network error deleting invites',
+			};
+		}
+	}, []);
 
 	const joinViaInviteCode = useCallback(
 		async (code: string) => {

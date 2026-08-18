@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
 		const messagesWithDownloadUrl = messages.map((msg) => {
 			const user = msg.user;
 			let avatarUrl = user?.avatarUrl;
-			if (avatarUrl && avatarUrl.startsWith('data:')) {
+			if (user && avatarUrl && avatarUrl.startsWith('data:')) {
 				avatarUrl = `/api/users/avatar?userId=${user.id}`;
 			}
 			return {
