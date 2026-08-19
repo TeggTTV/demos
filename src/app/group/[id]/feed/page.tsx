@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAppContext } from '@/components/AppContext';
+import { useAppContext, User } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import {
@@ -26,6 +26,13 @@ import {
 	FiSearch,
 	FiLink,
 	FiKey,
+	FiEye,
+	FiMail,
+	FiEdit2,
+	FiUpload,
+	FiX,
+	FiChevronUp,
+	FiChevronDown,
 } from 'react-icons/fi';
 import { FaDiscord } from 'react-icons/fa';
 import { Input } from '@/components/ui/Input';
@@ -173,7 +180,138 @@ export default function GroupFeedPage() {
 	const [roleChangeSuccess, setRoleChangeSuccess] = useState<string | null>(
 		null,
 	);
+	const [memberRosterFilter, setMemberRosterFilter] = useState<'all' | 'active' | 'inactive' | 'officers' | 'leader'>('all');
+	const [memberSortOrder, setMemberSortOrder] = useState<'asc' | 'desc'>('asc');
 
+	const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+	const [addMemberEmailInput, setAddMemberEmailInput] = useState('');
+	const [addMemberSuccessMsg, setAddMemberSuccessMsg] = useState('');
+	const [addMemberErrorMsg, setAddMemberErrorMsg] = useState('');
+	const [isAddingMember, setIsAddingMember] = useState(false);
+
+	const [showImportModal, setShowImportModal] = useState(false);
+	const [importSuccessMsg, setImportSuccessMsg] = useState('');
+	const [importErrorMsg, setImportErrorMsg] = useState('');
+	const [isImporting, setIsImporting] = useState(false);
+
+	const [viewingProfileUser, setViewingProfileUser] = useState<User | null>(null);
+	const [editingRoleUser, setEditingRoleUser] = useState<User | null>(null);
+
+
+	const [importEmailsText, setImportEmailsText] = useState('');
+
+	const formatLastActive = (dateString?: string) => {
+		if (!dateString) return 'Never';
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMs / 3600000);
+		const diffDays = Math.floor(diffMs / 86400000);
+		
+		if (diffMins < 1) return 'Just now';
+		if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+		if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+		if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+		return date.toLocaleDateString();
+	};
+
+	const exportRosterToCSV = () => {
+		if (!group) return;
+		const headers = ['Name', 'Email', 'Major/Program', 'Phone', 'Role', 'Last Active'];
+		const rows = group.memberIds.map(mId => {
+			const mem = users.find(u => u.id === mId);
+			const isMemLeader = group.leaderId === mId;
+			const isMemOfficer = Boolean(group.officerIds && group.officerIds.includes(mId));
+			const role = isMemLeader ? 'Leader' : isMemOfficer ? 'Officer' : 'Member';
+			const lastActiveStr = mem?.lastActive ? new Date(mem.lastActive).toLocaleString() : 'Never';
+			return [
+				mem?.name || 'Club Member',
+				mem?.email || '',
+				mem?.major || '',
+				mem?.phone || '',
+				role,
+				lastActiveStr
+			];
+		});
+		const csvString = [headers.join(','), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+		const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.setAttribute("href", url);
+		link.setAttribute("download", `${group.name.replace(/\s+/g, '_')}_roster.csv`);
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	};
+
+	const handleAddMember = async (email: string) => {
+		if (!group || !email.trim()) return;
+		setIsAddingMember(true);
+		setAddMemberErrorMsg('');
+		setAddMemberSuccessMsg('');
+		try {
+			const res = await fetch('/api/groups', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					groupId: group.id,
+					addMemberEmails: [email.trim()]
+				})
+			});
+			const data = await res.json();
+			if (data.error) {
+				setAddMemberErrorMsg(data.error);
+			} else {
+				setAddMemberSuccessMsg(`Successfully added member: ${email}`);
+				setAddMemberEmailInput('');
+				await fetchGroups(); // refresh groups
+			}
+		} catch (e) {
+			setAddMemberErrorMsg('Failed to add member due to network error.');
+		} finally {
+			setIsAddingMember(false);
+		}
+	};
+
+	const handleImportCSV = async (text: string) => {
+		if (!group || !text.trim()) return;
+		setIsImporting(true);
+		setImportErrorMsg('');
+		setImportSuccessMsg('');
+		
+		const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+		const emails = Array.from(new Set(text.match(emailRegex) || []));
+		
+		if (emails.length === 0) {
+			setImportErrorMsg('No valid email addresses found.');
+			setIsImporting(false);
+			return;
+		}
+		
+		try {
+			const res = await fetch('/api/groups', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					groupId: group.id,
+					addMemberEmails: emails
+				})
+			});
+			const data = await res.json();
+			if (data.error) {
+				setImportErrorMsg(data.error);
+			} else {
+				setImportSuccessMsg(`Import complete! Successfully requested adding ${emails.length} member(s).`);
+				setImportEmailsText('');
+				await fetchGroups(); // refresh groups
+			}
+		} catch (e) {
+			setImportErrorMsg('Failed to import members due to network error.');
+		} finally {
+			setIsImporting(false);
+		}
+	};
 
 	const handlePromoteToOfficer = async (targetUserId: string) => {
 		if (!group || !isLeader) return;
@@ -576,6 +714,54 @@ export default function GroupFeedPage() {
 		users.find((u) => u.id === uid)?.avatarUrl;
 	const getUserName = (uid: string) =>
 		users.find((u) => u.id === uid)?.name || 'Member';
+
+	const filteredAndSortedMemberIds = group.memberIds
+		.filter((mId) => {
+			const mem = users.find((u) => u.id === mId);
+			if (!mem) return false;
+			
+			// Search filter
+			const q = memberSearchQuery.toLowerCase().trim();
+			const matchesSearch = !q || 
+				mem.name?.toLowerCase().includes(q) ||
+				mem.email?.toLowerCase().includes(q) ||
+				mem.major?.toLowerCase().includes(q) ||
+				(mem.phone && mem.phone.toLowerCase().includes(q));
+				
+			if (!matchesSearch) return false;
+			
+			// Status/Role filter
+			if (memberRosterFilter === 'all') return true;
+			if (memberRosterFilter === 'officers') {
+				return group.officerIds?.includes(mId) && group.leaderId !== mId;
+			}
+			if (memberRosterFilter === 'leader') {
+				return group.leaderId === mId;
+			}
+			if (memberRosterFilter === 'active') {
+				if (!mem.lastActive) return false;
+				const diffDays = (new Date().getTime() - new Date(mem.lastActive).getTime()) / 86400000;
+				return diffDays <= 7;
+			}
+			if (memberRosterFilter === 'inactive') {
+				if (!mem.lastActive) return true;
+				const diffDays = (new Date().getTime() - new Date(mem.lastActive).getTime()) / 86400000;
+				return diffDays > 7;
+			}
+			return true;
+		})
+		.sort((aId, bId) => {
+			const aMem = users.find((u) => u.id === aId);
+			const bMem = users.find((u) => u.id === bId);
+			const aName = aMem?.name || '';
+			const bName = bMem?.name || '';
+			
+			if (memberSortOrder === 'asc') {
+				return aName.localeCompare(bName);
+			} else {
+				return bName.localeCompare(aName);
+			}
+		});
 
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
@@ -1907,30 +2093,49 @@ export default function GroupFeedPage() {
 
 			{/* ═══════════ Tab 5: Member Roles ═══════════ */}
 			{activeTab === 'roles' && canManage && (
-				<main className="grow mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+				<main className="grow mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 					<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-6">
-						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+						{/* Title Header */}
+						<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
 							<div>
 								<h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-									<FiShield className="text-primary" /> Member
-									Roles
+									<FiShield className="text-primary" /> Members
 								</h2>
 								<p className="text-xs text-text-muted mt-0.5">
-									{isLeader
-										? 'Promote members to Officer, revoke officer privileges, or manage club membership.'
-										: 'View active club members and officer role assignments.'}
+									View and manage all members, roles, and activity.
 								</p>
 							</div>
-							<div className="flex items-center gap-2">
-								<span className="text-xs font-semibold bg-primary-light text-primary px-3 py-1 rounded-full border border-primary/20">
-									{group.officerIds?.length || 0} Officers
-								</span>
-								<span className="text-xs font-semibold bg-surface-secondary border border-border text-text-secondary px-3 py-1 rounded-full">
-									{group.memberIds.length} Members
-								</span>
+							<div className="flex flex-wrap items-center gap-2">
+								{/* Export / Import / Add Member Buttons */}
+								<button
+									onClick={exportRosterToCSV}
+									className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface hover:bg-surface-secondary text-text-secondary hover:text-text-primary px-3 py-1.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+								>
+									<FiDownload size={12} />
+									<span>Export Members</span>
+								</button>
+								{isLeader && (
+									<>
+										<button
+											onClick={() => setShowImportModal(true)}
+											className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface hover:bg-surface-secondary text-text-secondary hover:text-text-primary px-3 py-1.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+										>
+											<FiUpload size={12} />
+											<span>Import Members</span>
+										</button>
+										<button
+											onClick={() => setShowAddMemberModal(true)}
+											className="inline-flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white px-3 py-1.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+										>
+											<FiPlus size={13} />
+											<span>Add Member</span>
+										</button>
+									</>
+								)}
 							</div>
 						</div>
 
+						{/* Notification Success Toast */}
 						{roleChangeSuccess && (
 							<div className="text-xs text-success bg-success-bg border border-success/20 p-3 rounded-xl flex items-center gap-2 font-medium">
 								<FiCheckCircle className="shrink-0" />
@@ -1938,194 +2143,490 @@ export default function GroupFeedPage() {
 							</div>
 						)}
 
-						{/* Search filter for members */}
-						<div className="relative">
-							<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs" />
-							<input
-								type="text"
-								placeholder="Search members by name, email, or major..."
-								value={memberSearchQuery}
-								onChange={(e) =>
-									setMemberSearchQuery(e.target.value)
-								}
-								className="w-full rounded-xl border border-border bg-surface-secondary pl-8 pr-3.5 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:text-text-muted"
-							/>
+						{/* Search & Filters */}
+						<div className="flex flex-col sm:flex-row gap-3">
+							<div className="relative grow">
+								<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs" />
+								<input
+									type="text"
+									placeholder="Search members by name, email, or major..."
+									value={memberSearchQuery}
+									onChange={(e) => setMemberSearchQuery(e.target.value)}
+									className="w-full rounded-xl border border-border bg-surface-secondary pl-8 pr-3.5 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:text-text-muted"
+								/>
+							</div>
+							<div className="w-full sm:w-48 shrink-0">
+								<select
+									value={memberRosterFilter}
+									onChange={(e) => setMemberRosterFilter(e.target.value as any)}
+									className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none cursor-pointer"
+								>
+									<option value="all">All Members</option>
+									<option value="active">Active (Recent)</option>
+									<option value="inactive">Inactive</option>
+									<option value="officers">Officers Only</option>
+									<option value="leader">Leader Only</option>
+								</select>
+							</div>
 						</div>
 
-						{/* Member List */}
-						<div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
-							{group.memberIds
-								.filter((mId) => {
-									const mem = users.find((u) => u.id === mId);
-									const q = memberSearchQuery
-										.toLowerCase()
-										.trim();
-									if (!q) return true;
-									return (
-										mem?.name?.toLowerCase().includes(q) ||
-										mem?.email?.toLowerCase().includes(q) ||
-										mem?.major?.toLowerCase().includes(q)
-									);
-								})
-								.map((mId) => {
-									const mem = users.find((u) => u.id === mId);
-									const isMemLeader = group.leaderId === mId;
-									const isMemOfficer = Boolean(
-										group.officerIds &&
-										group.officerIds.includes(mId),
-									);
-									const isUpdating = roleUpdatingId === mId;
+						{/* Premium Member Table */}
+						<div className="border border-border rounded-2xl bg-surface overflow-hidden shadow-2xs">
+							<div className="overflow-x-auto">
+								<table className="w-full text-left border-collapse min-w-[700px]">
+									<thead>
+										<tr className="bg-surface-secondary/70 border-b border-border text-[11px] font-bold text-text-muted uppercase tracking-wider select-none">
+											<th 
+												onClick={() => setMemberSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+												className="py-3.5 px-4 cursor-pointer hover:text-text-primary transition-colors flex items-center gap-1.5"
+											>
+												<span>Name</span>
+												{memberSortOrder === 'asc' ? <FiChevronUp size={12} /> : <FiChevronDown size={12} />}
+											</th>
+											<th className="py-3.5 px-4">Email</th>
+											<th className="py-3.5 px-4">Major / Program</th>
+											<th className="py-3.5 px-4">Phone</th>
+											<th className="py-3.5 px-4">Role</th>
+											<th className="py-3.5 px-4">Last Active</th>
+											<th className="py-3.5 px-4 text-right">Actions</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-border text-xs">
+										{(() => {
+											const filteredIds = filteredAndSortedMemberIds;
+											if (filteredIds.length === 0) {
+												return (
+													<tr>
+														<td colSpan={7} className="py-8 text-center text-text-muted italic">
+															No club members found matching filters.
+														</td>
+													</tr>
+												);
+											}
+											return filteredIds.map((mId) => {
+												const mem = users.find((u) => u.id === mId);
+												const isMemLeader = group.leaderId === mId;
+												const isMemOfficer = Boolean(
+													group.officerIds &&
+													group.officerIds.includes(mId),
+												);
+												const isUpdating = roleUpdatingId === mId;
 
-									return (
-										<div
-											key={mId}
-											className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-surface-secondary/40 transition-colors"
-										>
-											{/* Member Details */}
-											<div className="flex items-center gap-3 min-w-0">
-												{mem?.avatarUrl ? (
-													<Image
-														src={mem.avatarUrl}
-														alt=""
-														width={36}
-														height={36}
-														className="h-9 w-9 rounded-full object-cover border border-border shrink-0"
-														unoptimized
-													/>
-												) : (
-													<div className="h-9 w-9 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-bold shrink-0">
-														{mem?.name?.[0] || 'M'}
-													</div>
-												)}
-												<div className="min-w-0">
-													<div className="flex items-center gap-2">
-														<span className="text-xs font-bold text-text-primary truncate">
-															{mem?.name ||
-																'Club Member'}
-														</span>
-														{isMemLeader ? (
-															<span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
-																<FiShield
-																	size={10}
-																/>{' '}
-																Leader
-															</span>
-														) : isMemOfficer ? (
-															<span className="text-[10px] font-bold bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20 flex items-center gap-1">
-																<FiUserCheck
-																	size={10}
-																/>{' '}
-																Officer
-															</span>
-														) : (
-															<span className="text-[10px] font-medium bg-surface-secondary text-text-muted px-2 py-0.5 rounded-full border border-border">
-																Member
-															</span>
-														)}
-													</div>
-													<span className="text-[11px] text-text-muted block truncate mt-0.5">
-														{mem?.email}{' '}
-														{mem?.major
-															? `• ${mem.major}`
-															: ''}
-													</span>
-												</div>
-											</div>
+												return (
+													<tr 
+														key={mId} 
+														className="hover:bg-surface-secondary/20 transition-colors"
+													>
+														{/* Name */}
+														<td className="py-3 px-4 font-semibold text-text-primary">
+															<div className="flex items-center gap-3">
+																{mem?.avatarUrl ? (
+																	<Image
+																		src={mem.avatarUrl}
+																		alt=""
+																		width={32}
+																		height={32}
+																		className="h-8 w-8 rounded-full object-cover border border-border shrink-0"
+																		unoptimized
+																	/>
+																) : (
+																	<div className="h-8 w-8 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-bold shrink-0">
+																		{mem?.name?.[0] || 'M'}
+																	</div>
+																)}
+																<span className="truncate max-w-[150px]">{mem?.name || 'Club Member'}</span>
+															</div>
+														</td>
 
-											{/* Role Actions */}
-											<div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-												{isMemLeader ? (
-													<span className="text-[11px] font-semibold text-text-muted italic px-2 py-1">
-														Club Creator
-													</span>
-												) : isLeader ? (
-													<>
-														{isMemOfficer ? (
-															<button
-																type="button"
-																disabled={
-																	isUpdating
-																}
-																onClick={() =>
-																	handleDemoteOfficer(
-																		mId,
-																	)
-																}
-																className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-all cursor-pointer disabled:opacity-50"
-																title="Demote Officer to Member"
+														{/* Email */}
+														<td className="py-3 px-4 text-text-secondary">
+															<a 
+																href={`mailto:${mem?.email}`}
+																className="text-primary hover:underline font-medium block truncate max-w-[180px]"
 															>
-																<FiUserMinus
-																	size={12}
-																	className="text-warning"
-																/>
-																<span>
-																	Demote to
-																	Member
+																{mem?.email}
+															</a>
+														</td>
+
+														{/* Major */}
+														<td className="py-3 px-4 text-text-secondary truncate max-w-[150px]">
+															{mem?.major || '-'}
+														</td>
+
+														{/* Phone */}
+														<td className="py-3 px-4 text-text-secondary whitespace-nowrap">
+															{mem?.phone || '-'}
+														</td>
+
+														{/* Role */}
+														<td className="py-3 px-4">
+															{isMemLeader ? (
+																<span className="inline-flex items-center gap-1 text-[9px] font-bold bg-purple-900/40 text-purple-200 border border-purple-800/40 px-2 py-0.5 rounded-full shadow-2xs">
+																	<FiShield size={9} />
+																	Leader
 																</span>
-															</button>
-														) : (
-															<button
-																type="button"
-																disabled={
-																	isUpdating
-																}
-																onClick={() =>
-																	handlePromoteToOfficer(
-																		mId,
-																	)
-																}
-																className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-																title="Promote Member to Officer"
-															>
-																<FiUserCheck
-																	size={12}
-																/>
-																<span>
-																	Promote to
+															) : isMemOfficer ? (
+																<span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-900/40 text-amber-200 border border-amber-800/40 px-2 py-0.5 rounded-full shadow-2xs">
+																	<FiUserCheck size={9} />
 																	Officer
 																</span>
-															</button>
-														)}
+															) : (
+																<span className="text-[10px] text-text-muted font-medium bg-surface-secondary border border-border px-2 py-0.5 rounded-full">
+																	Member
+																</span>
+															)}
+														</td>
 
-														<button
-															type="button"
-															disabled={
-																isUpdating
-															}
-															onClick={() =>
-																handleKickMember(
-																	mId,
-																	mem?.name ||
-																		'Member',
-																)
-															}
-															className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger-bg transition-colors cursor-pointer disabled:opacity-50"
-															title="Remove member from club"
-														>
-															<FiTrash2
-																size={14}
-															/>
-														</button>
-													</>
+														{/* Last Active */}
+														<td className="py-3 px-4 text-text-secondary whitespace-nowrap">
+															{formatLastActive(mem?.lastActive)}
+														</td>
+
+														{/* Actions */}
+														<td className="py-3 px-4 text-right whitespace-nowrap">
+															<div className="inline-flex items-center gap-1.5">
+																<button
+																	type="button"
+																	onClick={() => setViewingProfileUser(mem || null)}
+																	className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
+																	title="View Profile Details"
+																>
+																	<FiEye size={13} />
+																</button>
+																{mem?.email && (
+																	<a
+																		href={`mailto:${mem.email}`}
+																		className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors inline-block"
+																		title="Send Email"
+																	>
+																		<FiMail size={13} />
+																	</a>
+																)}
+																{isLeader && !isMemLeader && (
+																	<>
+																		<button
+																			type="button"
+																			disabled={isUpdating}
+																			onClick={() => setEditingRoleUser(mem || null)}
+																			className="p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-primary-light transition-colors cursor-pointer disabled:opacity-50"
+																			title="Edit Role / Permissions"
+																		>
+																			<FiEdit2 size={13} />
+																		</button>
+																		<button
+																			type="button"
+																			disabled={isUpdating}
+																			onClick={() => handleKickMember(mId, mem?.name || 'Member')}
+																			className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger-bg transition-colors cursor-pointer disabled:opacity-50"
+																			title="Remove from Club"
+																		>
+																			<FiTrash2 size={13} />
+																		</button>
+																	</>
+																)}
+															</div>
+														</td>
+													</tr>
+												);
+											});
+										})()}
+									</tbody>
+								</table>
+							</div>
+
+							{/* Table Footer / Pagination stats */}
+							<div className="bg-surface-secondary/70 border-t border-border px-4 py-3 text-[11px] text-text-muted font-medium flex items-center justify-between">
+								<span>
+									Showing 1 to {filteredAndSortedMemberIds.length} of {filteredAndSortedMemberIds.length} results
+								</span>
+								<span className="italic">
+									Toon {filteredAndSortedMemberIds.length} van {filteredAndSortedMemberIds.length} resultaten
+								</span>
+							</div>
+						</div>
+					</div>
+
+					{/* Modals definitions */}
+					{/* 1. View Profile Modal */}
+					{viewingProfileUser && (
+						<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+							<div className="bg-surface border border-border w-full max-w-md rounded-2xl shadow-xl overflow-hidden relative">
+								<button
+									onClick={() => setViewingProfileUser(null)}
+									className="absolute top-4 right-4 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
+								>
+									<FiX size={16} />
+								</button>
+								<div className="p-6 space-y-6">
+									<div className="flex items-center gap-4">
+										{viewingProfileUser.avatarUrl ? (
+											<Image
+												src={viewingProfileUser.avatarUrl}
+												alt=""
+												width={64}
+												height={64}
+												className="h-16 w-16 rounded-full object-cover border border-border shrink-0"
+												unoptimized
+											/>
+										) : (
+											<div className="h-16 w-16 rounded-full bg-primary-light text-primary flex items-center justify-center text-xl font-bold shrink-0">
+												{viewingProfileUser.name?.[0] || 'U'}
+											</div>
+										)}
+										<div>
+											<h3 className="text-lg font-bold text-text-primary">{viewingProfileUser.name}</h3>
+											<p className="text-xs text-text-muted">{viewingProfileUser.email}</p>
+											<div className="mt-1.5">
+												{group.leaderId === viewingProfileUser.id ? (
+													<span className="inline-flex items-center gap-1 text-[9px] font-bold bg-purple-900/40 text-purple-200 border border-purple-800/40 px-2 py-0.5 rounded-full shadow-2xs">
+														<FiShield size={9} />
+														Leader
+													</span>
+												) : group.officerIds?.includes(viewingProfileUser.id) ? (
+													<span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-900/40 text-amber-200 border border-amber-800/40 px-2 py-0.5 rounded-full shadow-2xs">
+														<FiUserCheck size={9} />
+														Officer
+													</span>
 												) : (
-													<span className="text-[11px] text-text-muted">
-														{isMemOfficer
-															? 'Officer Role'
-															: 'Active Member'}
+													<span className="inline-flex text-[9px] text-text-muted font-medium bg-surface-secondary border border-border px-2 py-0.5 rounded-full">
+														Member
 													</span>
 												)}
 											</div>
 										</div>
-									);
-								})}
+									</div>
+									
+									<div className="grid grid-cols-2 gap-4 text-xs border-t border-border pt-4">
+										<div>
+											<span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Major / Program</span>
+											<span className="text-text-primary font-medium">{viewingProfileUser.major || 'Not specified'}</span>
+										</div>
+										<div>
+											<span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Class / Year</span>
+											<span className="text-text-primary font-medium">{viewingProfileUser.year || 'Not specified'}</span>
+										</div>
+										<div>
+											<span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Phone Number</span>
+											<span className="text-text-primary font-medium">{viewingProfileUser.phone || 'Not specified'}</span>
+										</div>
+										<div>
+											<span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Last Active</span>
+											<span className="text-text-primary font-medium">
+												{viewingProfileUser.lastActive ? new Date(viewingProfileUser.lastActive).toLocaleString() : 'Never'}
+											</span>
+										</div>
+									</div>
+
+									<div className="border-t border-border pt-4 text-xs">
+										<span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Bio & Interests</span>
+										<p className="text-text-secondary bg-surface-secondary p-3 rounded-xl border border-border min-h-[60px] whitespace-pre-line leading-relaxed">
+											{viewingProfileUser.bio || 'This user has not written a bio yet.'}
+										</p>
+									</div>
+								</div>
+							</div>
 						</div>
-						{!isLeader && (
-							<p className="text-[11px] text-text-muted italic text-center pt-1">
-								Note: Only the Club Leader can modify Officer
-								roles and permissions.
-							</p>
-						)}
-					</div>
+					)}
+
+					{/* 2. Add Member Modal */}
+					{showAddMemberModal && (
+						<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+							<div className="bg-surface border border-border w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative">
+								<button
+									onClick={() => {
+										setShowAddMemberModal(false);
+										setAddMemberErrorMsg('');
+										setAddMemberSuccessMsg('');
+										setAddMemberEmailInput('');
+									}}
+									className="absolute top-4 right-4 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
+								>
+									<FiX size={16} />
+								</button>
+								<form 
+									onSubmit={(e) => { 
+										e.preventDefault(); 
+										handleAddMember(addMemberEmailInput); 
+									}} 
+									className="p-6 space-y-4"
+								>
+									<div>
+										<h3 className="text-sm font-bold text-text-primary">Add Member to Club</h3>
+										<p className="text-[11px] text-text-muted mt-0.5">Add an existing student directly by email.</p>
+									</div>
+
+									<div className="space-y-1.5">
+										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Email Address</label>
+										<input
+											type="email"
+											required
+											placeholder="student@example.com"
+											value={addMemberEmailInput}
+											onChange={(e) => setAddMemberEmailInput(e.target.value)}
+											className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+										/>
+									</div>
+
+									{addMemberErrorMsg && (
+										<p className="text-[11px] font-medium text-danger bg-danger-bg border border-danger/10 p-2.5 rounded-lg">{addMemberErrorMsg}</p>
+									)}
+									{addMemberSuccessMsg && (
+										<p className="text-[11px] font-medium text-success bg-success-bg border border-success/10 p-2.5 rounded-lg">{addMemberSuccessMsg}</p>
+									)}
+
+									<button
+										type="submit"
+										disabled={isAddingMember}
+										className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-primary hover:bg-primary-hover text-white py-2 text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+									>
+										{isAddingMember ? 'Adding...' : 'Add Student'}
+									</button>
+								</form>
+							</div>
+						</div>
+					)}
+
+					{/* 3. Import Members Modal */}
+					{showImportModal && (
+						<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+							<div className="bg-surface border border-border w-full max-w-md rounded-2xl shadow-xl overflow-hidden relative">
+								<button
+									onClick={() => {
+										setShowImportModal(false);
+										setImportErrorMsg('');
+										setImportSuccessMsg('');
+										setImportEmailsText('');
+									}}
+									className="absolute top-4 right-4 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
+								>
+									<FiX size={16} />
+								</button>
+								<div className="p-6 space-y-4 text-xs">
+									<div>
+										<h3 className="text-sm font-bold text-text-primary">Import Members</h3>
+										<p className="text-[11px] text-text-muted mt-0.5">Upload a CSV/text file or paste emails below.</p>
+									</div>
+
+									<div className="space-y-1.5">
+										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">CSV/Text File Roster</label>
+										<input
+											type="file"
+											accept=".csv,.txt"
+											onChange={(e) => {
+												const file = e.target.files?.[0];
+												if (file) {
+													const reader = new FileReader();
+													reader.onload = (event) => {
+														const text = event.target?.result as string;
+														setImportEmailsText(text);
+													};
+													reader.readAsText(file);
+												}
+											}}
+											className="block w-full text-xs text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
+										/>
+									</div>
+
+									<div className="space-y-1.5">
+										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Or Paste Email List</label>
+										<textarea
+											rows={5}
+											placeholder="Paste student emails separated by commas or lines here..."
+											value={importEmailsText}
+											onChange={(e) => setImportEmailsText(e.target.value)}
+											className="w-full rounded-xl border border-border bg-surface p-2.5 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+										/>
+									</div>
+
+									{importErrorMsg && (
+										<p className="text-[11px] font-medium text-danger bg-danger-bg border border-danger/10 p-2.5 rounded-lg">{importErrorMsg}</p>
+									)}
+									{importSuccessMsg && (
+										<p className="text-[11px] font-medium text-success bg-success-bg border border-success/10 p-2.5 rounded-lg">{importSuccessMsg}</p>
+									)}
+
+									<button
+										onClick={() => handleImportCSV(importEmailsText)}
+										disabled={isImporting || !importEmailsText.trim()}
+										className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-primary hover:bg-primary-hover text-white py-2 text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+									>
+										{isImporting ? 'Importing...' : 'Import Members'}
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* 4. Edit Role Modal */}
+					{editingRoleUser && (
+						<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+							<div className="bg-surface border border-border w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative">
+								<button
+									onClick={() => setEditingRoleUser(null)}
+									className="absolute top-4 right-4 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
+								>
+									<FiX size={16} />
+								</button>
+								<div className="p-6 space-y-4">
+									<div>
+										<h3 className="text-sm font-bold text-text-primary">Change Member Role</h3>
+										<p className="text-[11px] text-text-muted mt-0.5">
+											Update {editingRoleUser.name}'s permissions in {group.name}.
+										</p>
+									</div>
+
+									<div className="flex items-center gap-3 bg-surface-secondary p-3 rounded-xl border border-border">
+										{editingRoleUser.avatarUrl ? (
+											<Image
+												src={editingRoleUser.avatarUrl}
+												alt=""
+												width={36}
+												height={36}
+												className="h-9 w-9 rounded-full object-cover border border-border shrink-0"
+												unoptimized
+											/>
+										) : (
+											<div className="h-9 w-9 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-bold shrink-0">
+												{editingRoleUser.name?.[0] || 'M'}
+											</div>
+										)}
+										<div>
+											<span className="block font-bold text-text-primary text-xs">{editingRoleUser.name}</span>
+											<span className="text-[10px] text-text-muted block">{editingRoleUser.email}</span>
+										</div>
+									</div>
+
+									<div className="space-y-2 border-t border-border pt-4">
+										{group.officerIds?.includes(editingRoleUser.id) ? (
+											<button
+												onClick={async () => {
+													await handleDemoteOfficer(editingRoleUser.id);
+													setEditingRoleUser(null);
+												}}
+												disabled={roleUpdatingId === editingRoleUser.id}
+												className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-surface hover:bg-surface-secondary text-text-secondary hover:text-text-primary py-2.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+											>
+												<FiUserMinus size={13} className="text-warning" />
+												<span>Demote to Member</span>
+											</button>
+										) : (
+											<button
+												onClick={async () => {
+													await handlePromoteToOfficer(editingRoleUser.id);
+													setEditingRoleUser(null);
+												}}
+												disabled={roleUpdatingId === editingRoleUser.id}
+												className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white py-2.5 text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+											>
+												<FiUserCheck size={13} />
+												<span>Promote to Officer</span>
+											</button>
+										)}
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
 				</main>
 			)}
 

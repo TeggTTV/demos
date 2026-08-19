@@ -103,6 +103,8 @@ export async function POST(req: Request) {
 				bio: bio || null,
 				major: major || null,
 				year: year || null,
+				phone: null,
+				lastActive: new Date(),
 			},
 		});
 
@@ -115,6 +117,8 @@ export async function POST(req: Request) {
 			bio: user.bio,
 			major: user.major,
 			year: user.year,
+			phone: user.phone,
+			lastActive: user.lastActive,
 		};
 
 		const token = await signToken({

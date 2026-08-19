@@ -10,6 +10,16 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
+		// Update calling user's lastActive timestamp
+		try {
+			await prisma.user.update({
+				where: { id: session.userId },
+				data: { lastActive: new Date() },
+			});
+		} catch (err) {
+			console.error('Failed to update lastActive:', err);
+		}
+
 		const users = await prisma.user.findMany({
 			select: {
 				id: true,
@@ -20,6 +30,8 @@ export async function GET(req: NextRequest) {
 				bio: true,
 				major: true,
 				year: true,
+				phone: true,
+				lastActive: true,
 				createdAt: true,
 			},
 		});

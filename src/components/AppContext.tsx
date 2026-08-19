@@ -28,6 +28,8 @@ export interface User {
 	bio?: string;
 	major?: string;
 	year?: string;
+	phone?: string;
+	lastActive?: string;
 }
 
 export interface Group {
@@ -166,6 +168,7 @@ interface AppContextType {
 		bio?: string,
 		major?: string,
 		year?: string,
+		phone?: string,
 	) => Promise<void>;
 	fetchFeedMessages: (groupId: string) => Promise<void>;
 	createGroup: (groupData: {
@@ -1142,6 +1145,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			bio?: string,
 			major?: string,
 			year?: string,
+			phone?: string,
 		) => {
 			if (!currentUser) return;
 			const updatedUser: User = {
@@ -1151,6 +1155,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				bio: bio ?? currentUser.bio,
 				major: major ?? currentUser.major,
 				year: year ?? currentUser.year,
+				phone: phone ?? currentUser.phone,
 			};
 
 			try {

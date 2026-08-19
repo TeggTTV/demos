@@ -22,6 +22,8 @@ model User {
   bio            String?
   major          String?
   year           String?
+  phone          String?
+  lastActive     DateTime?          @default(now())
   createdAt      DateTime           @default(now())
 
   // Relations

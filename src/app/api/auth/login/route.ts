@@ -69,22 +69,30 @@ export async function POST(req: Request) {
 			);
 		}
 
+		// Update user's lastActive timestamp on login
+		const updatedUser = await prisma.user.update({
+			where: { id: user.id },
+			data: { lastActive: new Date() },
+		});
+
 		// 5. Trim Response & Generate JWT
 		const formattedUser = {
-			id: user.id,
-			email: user.email,
-			name: user.name,
-			avatarUrl: user.avatarUrl,
-			role: user.role,
-			bio: user.bio,
-			major: user.major,
-			year: user.year,
+			id: updatedUser.id,
+			email: updatedUser.email,
+			name: updatedUser.name,
+			avatarUrl: updatedUser.avatarUrl,
+			role: updatedUser.role,
+			bio: updatedUser.bio,
+			major: updatedUser.major,
+			year: updatedUser.year,
+			phone: updatedUser.phone,
+			lastActive: updatedUser.lastActive,
 		};
 
 		const token = await signToken({
-			userId: user.id,
-			email: user.email,
-			role: user.role,
+			userId: updatedUser.id,
+			email: updatedUser.email,
+			role: updatedUser.role,
 		});
 
 		const response = NextResponse.json({ success: true, user: formattedUser });

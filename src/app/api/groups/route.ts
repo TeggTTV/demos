@@ -203,6 +203,7 @@ export async function PUT(req: NextRequest) {
 			kickUserId,
 			deleteLinkId,
 			deleteFileId,
+			addMemberEmails,
 		} = body;
 
 		if (!groupId) {
@@ -305,6 +306,55 @@ export async function PUT(req: NextRequest) {
 					body: `Your role in "${existingGroup.name}" was changed to Member.`,
 					url: `/group/${groupId}/feed`,
 				}).catch(() => {});
+			}
+		}
+
+		// 2.5 Add/Import members by email list if requested
+		if (addMemberEmails && Array.isArray(addMemberEmails)) {
+			// Find all users with these emails
+			const usersToAdd = await prisma.user.findMany({
+				where: {
+					email: {
+						in: addMemberEmails.map((email: string) => email.trim().toLowerCase()),
+					},
+				},
+			});
+
+			for (const u of usersToAdd) {
+				// Check if user is already a member
+				const isAlreadyMember = await prisma.groupMember.findUnique({
+					where: {
+						groupId_userId: {
+							groupId,
+							userId: u.id,
+						},
+					},
+				});
+
+				if (!isAlreadyMember) {
+					await prisma.groupMember.create({
+						data: {
+							groupId,
+							userId: u.id,
+							role: 'MEMBER',
+						},
+					});
+
+					// Delete any existing pending join request
+					await prisma.joinRequest.deleteMany({
+						where: {
+							groupId,
+							userId: u.id,
+						},
+					});
+
+					// Send push notification to user
+					sendWebPushToUsers([u.id], {
+						title: 'Added to Club',
+						body: `You have been added to the club "${existingGroup.name}".`,
+						url: `/group/${groupId}/feed`,
+					}).catch(() => {});
+				}
 			}
 		}
 
