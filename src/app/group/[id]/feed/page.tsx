@@ -1399,7 +1399,13 @@ export default function GroupFeedPage() {
 										className="hidden"
 										onChange={(e) => {
 											if (e.target.files?.[0]) {
-												setFileInput(e.target.files[0]);
+												const file = e.target.files[0];
+												if (file.size > 200000) {
+													alert('File size must be less than 200 KB (200,000 bytes).');
+													e.target.value = '';
+													return;
+												}
+												setFileInput(file);
 											}
 										}}
 									/>
@@ -2932,6 +2938,11 @@ export default function GroupFeedPage() {
 												const file =
 													e.target.files?.[0];
 												if (file) {
+													if (file.size > 200000) {
+														alert('File size must be less than 200 KB (200,000 bytes).');
+														e.target.value = '';
+														return;
+													}
 													const reader =
 														new FileReader();
 													reader.onload = (event) => {
@@ -3550,6 +3561,11 @@ export default function GroupFeedPage() {
 												const file =
 													e.target.files?.[0];
 												if (file) {
+													if (file.size > 200000) {
+														alert('File size must be less than 200 KB (200,000 bytes).');
+														e.target.value = '';
+														return;
+													}
 													const reader =
 														new FileReader();
 													reader.onload = () => {

@@ -144,6 +144,11 @@ function RegisterContent() {
 							onChange={async (e) => {
 								const file = e.target.files?.[0];
 								if (file) {
+									if (file.size > 200000) {
+										alert('File size must be less than 200 KB (200,000 bytes).');
+										e.target.value = '';
+										return;
+									}
 									try {
 										const compressedDataUrl =
 											await compressImage(file);
