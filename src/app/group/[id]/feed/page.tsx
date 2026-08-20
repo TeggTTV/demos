@@ -152,7 +152,40 @@ export default function GroupFeedPage() {
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 
 	// Attendance State
-	const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+	const [selectedEventId, setSelectedEventIdState] = useState<string | null>(null);
+	const [activeSubTab, setActiveSubTabState] = useState<'roster' | 'info'>('roster');
+
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const sessionParam = params.get('session');
+		if (sessionParam) {
+			setSelectedEventIdState(sessionParam);
+		}
+		const subParam = params.get('sub');
+		if (subParam === 'info' || subParam === 'roster') {
+			setActiveSubTabState(subParam);
+		}
+	}, []);
+
+	const setSelectedEventId = (id: string | null) => {
+		setSelectedEventIdState(id);
+		const url = new URL(window.location.href);
+		if (id) {
+			url.searchParams.set('session', id);
+			url.searchParams.set('sub', activeSubTab);
+		} else {
+			url.searchParams.delete('session');
+			url.searchParams.delete('sub');
+		}
+		window.history.replaceState(null, '', url.pathname + url.search);
+	};
+
+	const setActiveSubTab = (tab: 'roster' | 'info') => {
+		setActiveSubTabState(tab);
+		const url = new URL(window.location.href);
+		url.searchParams.set('sub', tab);
+		window.history.replaceState(null, '', url.pathname + url.search);
+	};
 	const [checkInInput, setCheckInInput] = useState('');
 	const [checkInResult, setCheckInResult] = useState<{
 		success?: boolean;
@@ -1848,8 +1881,34 @@ export default function GroupFeedPage() {
 											)}
 										</div>
 
-										{/* Big Check-in PIN Display (Officers Only) / Check-in Form */}
-										{canManage ? (
+										{/* Sub-tab Navigation */}
+										<div className="flex border-b border-border gap-4 pb-0.5 mt-2">
+											<button
+												onClick={() => setActiveSubTab('roster')}
+												className={`pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+													activeSubTab === 'roster'
+														? 'border-primary text-primary font-bold'
+														: 'border-transparent text-text-muted hover:text-text-primary'
+												}`}
+											>
+												👥 Roster & Check-In
+											</button>
+											<button
+												onClick={() => setActiveSubTab('info')}
+												className={`pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+													activeSubTab === 'info'
+														? 'border-primary text-primary font-bold'
+														: 'border-transparent text-text-muted hover:text-text-primary'
+												}`}
+											>
+												ℹ️ Session Details
+											</button>
+										</div>
+
+										{activeSubTab === 'roster' && (
+											<>
+												{/* Big Check-in PIN Display (Officers Only) / Check-in Form */}
+												{canManage ? (
 											<div className="rounded-xl bg-primary-light/50 border border-primary/20 p-4 flex flex-col justify-between">
 												<div>
 													<span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
@@ -2161,8 +2220,66 @@ export default function GroupFeedPage() {
 												</table>
 											</div>
 										</div>
+									</>
+								)}
+
+						{activeSubTab === 'info' && (
+							<div className="space-y-4 pt-2">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
+										<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+											Time & Location
+										</span>
+										<div className="text-xs text-text-secondary space-y-2">
+											<p className="flex items-center gap-2">
+												📅 <strong>Date:</strong> {currentSelectedEvent.date}
+											</p>
+											<p className="flex items-center gap-2">
+												⏰ <strong>Start Time:</strong> {currentSelectedEvent.time}
+											</p>
+											{currentSelectedEvent.endDate && (
+												<p className="flex items-center gap-2">
+													📅 <strong>End Date:</strong> {currentSelectedEvent.endDate}
+												</p>
+											)}
+											<p className="flex items-center gap-2">
+												📍 <strong>Location:</strong> {currentSelectedEvent.location || 'Campus Center'}
+											</p>
+										</div>
+									</div>
+
+									<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
+										<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+											Session Status & Cost
+										</span>
+										<div className="text-xs text-text-secondary space-y-2">
+											<p className="flex items-center gap-2">
+												💵 <strong>Price:</strong> {currentSelectedEvent.price ? `$${currentSelectedEvent.price}` : 'Free'}
+											</p>
+											<p className="flex items-center gap-2">
+												🔔 <strong>Status:</strong> {currentSelectedEvent.status === 'CLOSED' ? 'Closed' : currentSelectedEvent.status === 'PUBLISHED' ? 'Published' : 'Draft / Not sent'}
+											</p>
+											<p className="flex items-center gap-2">
+												👤 <strong>Created By:</strong> {getUserName(currentSelectedEvent.createdById)}
+											</p>
+										</div>
+									</div>
+								</div>
+
+								{currentSelectedEvent.description && (
+									<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-2">
+										<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+											Description
+										</span>
+										<p className="text-xs text-text-secondary whitespace-pre-wrap">
+											{currentSelectedEvent.description}
+										</p>
 									</div>
 								)}
+							</div>
+						)}
+					</div>
+				)}
 							</div>
 						</motion.div>
 					)}

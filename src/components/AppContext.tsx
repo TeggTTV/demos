@@ -619,11 +619,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 				// Only refresh data specifically needed by the current active page/tab
 				if (pathname.includes('/group/')) {
-					if (currentTab === 'attendance' || pathname.endsWith('/activities')) {
-						await Promise.allSettled([
-							fetchEvents(),
-							fetchAttendances(groupId),
-						]);
+					const groupId = pathname.split('/')[2];
+					if (
+						currentTab === 'attendance' ||
+						pathname.endsWith('/activities')
+					) {
+						const sessionId = searchParams.get('session');
+						if (sessionId) {
+							await Promise.allSettled([
+								fetchEvents(),
+								fetchAttendances(groupId),
+							]);
+						} else {
+							await fetchEvents();
+						}
 					} else if (
 						currentTab === 'roster' ||
 						currentTab === 'roles'
