@@ -1401,7 +1401,9 @@ export default function GroupFeedPage() {
 											if (e.target.files?.[0]) {
 												const file = e.target.files[0];
 												if (file.size > 200000) {
-													alert('File size must be less than 200 KB (200,000 bytes).');
+													alert(
+														'File size must be less than 200 KB (200,000 bytes).',
+													);
 													e.target.value = '';
 													return;
 												}
@@ -1633,8 +1635,16 @@ export default function GroupFeedPage() {
 					</div>
 
 					{/* Active / Selected Event Card */}
-					{clubEvents.length === 0 ? (
-						<div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
+					<AnimatePresence mode="wait">
+						{clubEvents.length === 0 ? (
+							<motion.div
+								key="empty"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: 10 }}
+								transition={{ duration: 0.2 }}
+								className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center"
+							>
 							<div className="mx-auto h-12 w-12 rounded-full bg-primary-light flex items-center justify-center text-primary mb-3">
 								<FiClock size={24} />
 							</div>
@@ -1668,9 +1678,16 @@ export default function GroupFeedPage() {
 									Create First Session
 								</button>
 							)}
-						</div>
+						</motion.div>
 					) : !currentSelectedEvent ? (
-						<div className="space-y-4 animate-in fade-in duration-200">
+						<motion.div
+							key="list"
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 10 }}
+							transition={{ duration: 0.2 }}
+							className="space-y-4"
+						>
 							<div className="flex items-center justify-between">
 								<h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
 									All Meeting Sessions ({clubEvents.length})
@@ -1736,9 +1753,16 @@ export default function GroupFeedPage() {
 									);
 								})}
 							</div>
-						</div>
+						</motion.div>
 					) : (
-						<div className="space-y-4 animate-in fade-in duration-200">
+						<motion.div
+							key="detail"
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 10 }}
+							transition={{ duration: 0.2 }}
+							className="space-y-4"
+						>
 							<div className="mb-4">
 								<button
 									onClick={() => setSelectedEventId(null)}
@@ -2140,8 +2164,9 @@ export default function GroupFeedPage() {
 									</div>
 								)}
 							</div>
-						</div>
+						</motion.div>
 					)}
+				</AnimatePresence>
 				</main>
 			)}
 
@@ -2939,7 +2964,9 @@ export default function GroupFeedPage() {
 													e.target.files?.[0];
 												if (file) {
 													if (file.size > 200000) {
-														alert('File size must be less than 200 KB (200,000 bytes).');
+														alert(
+															'File size must be less than 200 KB (200,000 bytes).',
+														);
 														e.target.value = '';
 														return;
 													}
@@ -3562,7 +3589,9 @@ export default function GroupFeedPage() {
 													e.target.files?.[0];
 												if (file) {
 													if (file.size > 200000) {
-														alert('File size must be less than 200 KB (200,000 bytes).');
+														alert(
+															'File size must be less than 200 KB (200,000 bytes).',
+														);
 														e.target.value = '';
 														return;
 													}

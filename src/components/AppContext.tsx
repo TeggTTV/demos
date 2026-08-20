@@ -619,17 +619,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 				// Only refresh data specifically needed by the current active page/tab
 				if (pathname.includes('/group/')) {
-					if (currentTab === 'attendance') {
-						const groupId = pathname.split('/')[2];
-						const hasActiveEvent = eventsRef.current.some(
-							(e) => e.groupId === groupId && e.isActive,
-						);
-						if (hasActiveEvent) {
-							await Promise.allSettled([
-								fetchEvents(),
-								fetchAttendances(groupId),
-							]);
-						}
+					if (currentTab === 'attendance' || pathname.endsWith('/activities')) {
+						await Promise.allSettled([
+							fetchEvents(),
+							fetchAttendances(groupId),
+						]);
 					} else if (
 						currentTab === 'roster' ||
 						currentTab === 'roles'
@@ -1364,7 +1358,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return { success: false, error: 'Must be logged in' };
 
 			const targetGroup = groups.find((g) => g.id === groupId);
-			const randomCode = `DEMO-${Math.floor(1000 + Math.random() * 9000)}`;
+			const randomCode = `${Math.floor(100000 + Math.random() * 900000)}`;
 
 			try {
 				const res = await fetch('/api/events', {
@@ -1494,9 +1488,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			const event = events.find((e) => e.id === eventId);
 			if (!event) return { success: false, error: 'Event not found' };
 
-			const eventDateTime = new Date(`${event.date}T${event.time || '00:00'}`);
+			const eventDateTime = new Date(
+				`${event.date}T${event.time || '00:00'}`,
+			);
 			const isTimeReached = new Date() >= eventDateTime;
-			const isEventActive = event.isActive || (event.status !== 'CLOSED' && event.status !== 'NOT_SENT' && isTimeReached);
+			const isEventActive =
+				event.isActive ||
+				(event.status !== 'CLOSED' &&
+					event.status !== 'NOT_SENT' &&
+					isTimeReached);
 
 			if (!isEventActive) {
 				return {
