@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
 				date,
 				time,
 				location: location || '',
-				checkInCode: checkInCode || `DEMO-${Math.floor(1000 + Math.random() * 9000)}`,
+				checkInCode: checkInCode || `${Math.floor(100000 + Math.random() * 900000)}`,
 				isActive: initialIsActive,
 				createdById: session.userId, // use secure session userId
 				endDate: endDate || null,

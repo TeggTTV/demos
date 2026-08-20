@@ -126,7 +126,14 @@ export interface AttendanceRecord {
 	userId: string;
 	userName?: string;
 	userEmail?: string;
-	status: 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT' | 'RSVP_YES' | 'RSVP_NO' | 'RSVP_MAYBE';
+	status:
+		| 'PRESENT'
+		| 'LATE'
+		| 'EXCUSED'
+		| 'ABSENT'
+		| 'RSVP_YES'
+		| 'RSVP_NO'
+		| 'RSVP_MAYBE';
 	checkInMethod: 'CODE' | 'MANUAL' | 'QR';
 	timestamp: string;
 }
@@ -267,7 +274,7 @@ interface AppContextType {
 	fetchGroups: () => Promise<void>;
 	fetchInvites: () => Promise<void>;
 	fetchEvents: () => Promise<void>;
-	fetchAttendances: () => Promise<void>;
+	fetchAttendances: (groupId?: string, eventId?: string) => Promise<void>;
 	refreshData: () => Promise<void>;
 
 	// Notifications API
@@ -387,15 +394,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
-	const fetchAttendances = useCallback(async () => {
-		try {
-			const res = await fetch('/api/attendance');
-			const data = await res.json();
-			if (data.attendances) setAttendances(data.attendances);
-		} catch (e) {
-			console.error('fetchAttendances failed:', e);
-		}
-	}, []);
+	const fetchAttendances = useCallback(
+		async (groupId?: string, eventId?: string) => {
+			try {
+				const params = new URLSearchParams();
+				if (groupId) params.append('groupId', groupId);
+				if (eventId) params.append('eventId', eventId);
+				const url = `/api/attendance${params.toString() ? `?${params.toString()}` : ''}`;
+				const res = await fetch(url);
+				const data = await res.json();
+				if (data.attendances) setAttendances(data.attendances);
+			} catch (e) {
+				console.error('fetchAttendances failed:', e);
+			}
+		},
+		[],
+	);
 
 	const fetchInvites = useCallback(async () => {
 		try {
@@ -613,7 +627,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						if (hasActiveEvent) {
 							await Promise.allSettled([
 								fetchEvents(),
-								fetchAttendances(),
+								fetchAttendances(groupId),
 							]);
 						}
 					} else if (
@@ -1480,21 +1494,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			const event = events.find((e) => e.id === eventId);
 			if (!event) return { success: false, error: 'Event not found' };
 
-			if (!event.isActive) {
+			const eventDateTime = new Date(`${event.date}T${event.time || '00:00'}`);
+			const isTimeReached = new Date() >= eventDateTime;
+			const isEventActive = event.isActive || (event.status !== 'CLOSED' && event.status !== 'NOT_SENT' && isTimeReached);
+
+			if (!isEventActive) {
 				return {
 					success: false,
 					error: 'Attendance check-in for this event is closed',
 				};
 			}
 
-			const cleanInput = code.trim().toUpperCase().replace(/\s+/g, '');
-			const cleanTarget = event.checkInCode
-				.trim()
-				.toUpperCase()
-				.replace(/\s+/g, '');
-			const cleanTargetNum = cleanTarget.replace('DEMO-', '');
+			const cleanInput = code.trim().toUpperCase();
+			const cleanTarget = event.checkInCode.trim().toUpperCase();
 
-			if (cleanInput !== cleanTarget && cleanInput !== cleanTargetNum) {
+			if (cleanInput !== cleanTarget) {
 				return {
 					success: false,
 					error: 'Invalid check-in code. Please ask an officer.',
@@ -1513,6 +1527,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						userEmail: currentUser.email,
 						status: 'PRESENT',
 						checkInMethod: 'CODE',
+						code: cleanInput,
 					}),
 				});
 				const data = await res.json();

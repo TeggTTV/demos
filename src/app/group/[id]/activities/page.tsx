@@ -46,8 +46,8 @@ export default function GroupActivitiesPage() {
 	useEffect(() => {
 		fetchGroups();
 		fetchEvents();
-		fetchAttendances();
-	}, [fetchGroups, fetchEvents, fetchAttendances]);
+		fetchAttendances(id);
+	}, [fetchGroups, fetchEvents, fetchAttendances, id]);
 
 	if (!hydrated) {
 		return (
@@ -160,7 +160,7 @@ export default function GroupActivitiesPage() {
 			if (data.success) {
 				setRsvpSuccess('RSVP updated successfully!');
 				setTimeout(() => setRsvpSuccess(null), 2500);
-				fetchAttendances(); // Refresh counts
+				fetchAttendances(id); // Refresh counts
 			}
 		} catch (e) {
 			console.error('RSVP failed:', e);

@@ -559,9 +559,9 @@ export default function GroupFeedPage() {
 	useEffect(() => {
 		if (activeTab === 'attendance') {
 			fetchEvents();
-			fetchAttendances();
+			fetchAttendances(id);
 		}
-	}, [activeTab, fetchEvents, fetchAttendances]);
+	}, [activeTab, id, fetchEvents, fetchAttendances]);
 
 	useEffect(() => {
 		if (!id || isIdle) return;
@@ -1267,11 +1267,11 @@ export default function GroupFeedPage() {
 														{authorName}
 													</span>
 													{authorIsLeader ? (
-														<span className="text-[9px] font-bold bg-primary-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs">
+														<span className="text-[9px] font-bold bg-primary text-white px-1.5 py-0.5 rounded-full shadow-2xs">
 															Leader
 														</span>
 													) : authorIsOfficer ? (
-														<span className="text-[9px] font-bold bg-primary-light text-primary px-1.5 py-0.2 rounded-full border border-primary/20">
+														<span className="text-[9px] font-bold bg-primary-light text-primary px-1.5 py-0.5 rounded-full border border-primary/20">
 															Officer
 														</span>
 													) : null}
@@ -3743,7 +3743,7 @@ export default function GroupFeedPage() {
 										checkInMethod: 'MANUAL',
 									}),
 								});
-								fetchAttendances();
+								fetchAttendances(id);
 							} catch (e) {
 								console.error(e);
 							}

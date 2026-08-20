@@ -8,7 +8,10 @@ export async function GET(req: NextRequest) {
 	try {
 		const session = await getSession(req);
 		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+			return NextResponse.json(
+				{ error: 'Unauthorized' },
+				{ status: 401 },
+			);
 		}
 
 		const { searchParams } = new URL(req.url);
@@ -16,7 +19,10 @@ export async function GET(req: NextRequest) {
 		const groupId = searchParams.get('groupId');
 
 		if (!(await isDbConnected())) {
-			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+			return NextResponse.json(
+				{ error: 'Database unavailable' },
+				{ status: 503 },
+			);
 		}
 
 		// Enforce Low-Level Security / Lock Record Access
@@ -45,7 +51,10 @@ export async function GET(req: NextRequest) {
 				if (group) {
 					const isLeader = group.leaderId === session.userId;
 					const member = await prisma.groupMember.findFirst({
-						where: { groupId: event.groupId, userId: session.userId },
+						where: {
+							groupId: event.groupId,
+							userId: session.userId,
+						},
 					});
 					const isOfficer = member?.role === 'OFFICER';
 					canAccessAll = isLeader || isOfficer;
@@ -66,7 +75,10 @@ export async function GET(req: NextRequest) {
 		return NextResponse.json({ attendances });
 	} catch (error) {
 		console.error('Attendance GET Error:', error);
-		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+		return NextResponse.json(
+			{ error: 'Internal Server Error' },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -74,7 +86,10 @@ export async function POST(req: NextRequest) {
 	try {
 		const session = await getSession(req);
 		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+			return NextResponse.json(
+				{ error: 'Unauthorized' },
+				{ status: 401 },
+			);
 		}
 
 		const body = await req.json();
@@ -96,7 +111,10 @@ export async function POST(req: NextRequest) {
 		const userId = targetUserId || session.userId;
 
 		if (!(await isDbConnected())) {
-			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+			return NextResponse.json(
+				{ error: 'Database unavailable' },
+				{ status: 503 },
+			);
 		}
 
 		const event = await prisma.meetingEvent.findUnique({
@@ -104,7 +122,10 @@ export async function POST(req: NextRequest) {
 		});
 
 		if (!event) {
-			return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+			return NextResponse.json(
+				{ error: 'Event not found' },
+				{ status: 404 },
+			);
 		}
 
 		const group = await prisma.group.findUnique({
@@ -112,7 +133,10 @@ export async function POST(req: NextRequest) {
 		});
 
 		if (!group) {
-			return NextResponse.json({ error: 'Group associated with event not found' }, { status: 404 });
+			return NextResponse.json(
+				{ error: 'Group associated with event not found' },
+				{ status: 404 },
+			);
 		}
 
 		const isLeader = group.leaderId === session.userId;
@@ -125,22 +149,49 @@ export async function POST(req: NextRequest) {
 		if (userId !== session.userId) {
 			// Must be leader or officer
 			if (!isLeader && !isOfficer) {
-				return NextResponse.json({ error: 'Access denied: only leaders or officers can record attendance for others' }, { status: 403 });
+				return NextResponse.json(
+					{
+						error: 'Access denied: only leaders or officers can record attendance for others',
+					},
+					{ status: 403 },
+				);
 			}
 		} else {
 			// Self check-in: must verify check-in code if code check-in method is used and user is not leader/officer
 			if (!isLeader && !isOfficer) {
-				const eventDateTime = new Date(`${event.date}T${event.time || '00:00'}`);
+				const eventDateTime = new Date(
+					`${event.date}T${event.time || '00:00'}`,
+				);
 				const isTimeReached = new Date() >= eventDateTime;
-				const isEventActive = event.isActive || (event.status !== 'CLOSED' && event.status !== 'NOT_SENT' && isTimeReached);
+				const isEventActive =
+					event.isActive ||
+					(event.status !== 'CLOSED' &&
+						event.status !== 'NOT_SENT' &&
+						isTimeReached);
 				if (!isEventActive) {
-					return NextResponse.json({ error: 'Check-in is currently closed for this event' }, { status: 400 });
+					return NextResponse.json(
+						{
+							error: 'Check-in is currently closed for this event',
+						},
+						{ status: 400 },
+					);
 				}
 				if (checkInMethod === 'MANUAL') {
-					return NextResponse.json({ error: 'Cannot manually check in. Must use code check-in' }, { status: 403 });
+					return NextResponse.json(
+						{
+							error: 'Cannot manually check in. Must use code check-in',
+						},
+						{ status: 403 },
+					);
 				}
-				if (!code || code !== event.checkInCode) {
-					return NextResponse.json({ error: 'Invalid check-in code' }, { status: 400 });
+				const cleanInput = (code || '').trim().toUpperCase();
+				const cleanTarget = event.checkInCode.trim().toUpperCase();
+				if (cleanInput !== cleanTarget) {
+					console.log(code, event.checkInCode);
+					return NextResponse.json(
+						{ error: 'Invalid check-in code' },
+						{ status: 400 },
+					);
 				}
 			}
 		}
@@ -152,7 +203,10 @@ export async function POST(req: NextRequest) {
 		});
 
 		if (!targetUser) {
-			return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+			return NextResponse.json(
+				{ error: 'Target user not found' },
+				{ status: 404 },
+			);
 		}
 
 		const record = await prisma.attendanceRecord.upsert({
@@ -194,6 +248,9 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ success: true, record });
 	} catch (error) {
 		console.error('Attendance POST Error:', error);
-		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+		return NextResponse.json(
+			{ error: 'Internal Server Error' },
+			{ status: 500 },
+		);
 	}
 }
