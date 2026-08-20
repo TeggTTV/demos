@@ -26,6 +26,7 @@ function RegisterContent() {
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [agreed, setAgreed] = useState(false);
+	const [fileSizeError, setFileSizeError] = useState('');
 	const router = useRouter();
 
 	const handleRegister = async (e: React.FormEvent) => {
@@ -137,6 +138,22 @@ function RegisterContent() {
 						<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider">
 							Profile Avatar (Optional)
 						</label>
+						{fileSizeError && (
+							<div className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
+								<span className="shrink-0 mt-0.5">⚠️</span>
+								<span>
+									{fileSizeError}{' '}
+									<a
+										href="https://joeyjazwinski.com/developer-tools/image-compressor"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="underline font-semibold hover:text-danger/80 transition-colors"
+									>
+										Compress your image here →
+									</a>
+								</span>
+							</div>
+						)}
 						<input
 							autoCorrect="off"
 							type="file"
@@ -145,19 +162,16 @@ function RegisterContent() {
 								const file = e.target.files?.[0];
 								if (file) {
 									if (file.size > 200000) {
-										alert('File size must be less than 200 KB (200,000 bytes).');
+										setFileSizeError('Image is too large (max 200 KB).');
 										e.target.value = '';
 										return;
 									}
+									setFileSizeError('');
 									try {
-										const compressedDataUrl =
-											await compressImage(file);
+										const compressedDataUrl = await compressImage(file);
 										setAvatarUrl(compressedDataUrl);
 									} catch (err) {
-										console.error(
-											'Image compression failed:',
-											err,
-										);
+										console.error('Image compression failed:', err);
 									}
 								}
 							}}

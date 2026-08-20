@@ -2,6 +2,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 
 interface ScheduleMeetingModalProps {
 	isOpen: boolean;
@@ -142,20 +144,13 @@ export default function ScheduleMeetingModal({
 								/>
 							</div>
 
-							<div>
-								<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-									Description / Agenda
-								</label>
-								<textarea
-									rows={3}
-									value={meetingDesc}
-									onChange={(e) =>
-										setMeetingDesc(e.target.value)
-									}
-									className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none resize-none"
-									placeholder="Agenda or notes for this meeting..."
-								/>
-							</div>
+							<Textarea
+								label="Description / Agenda"
+								rows={3}
+								value={meetingDesc}
+								onChange={(e) => setMeetingDesc(e.target.value)}
+								placeholder="Agenda or notes for this meeting..."
+							/>
 
 							<div className="grid grid-cols-2 gap-3">
 								<div>
@@ -174,25 +169,14 @@ export default function ScheduleMeetingModal({
 									/>
 								</div>
 
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Status
-									</label>
-									<select
-										value={meetingStatus}
-										onChange={(e) =>
-											setMeetingStatus(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none cursor-pointer"
-									>
-										<option value="PUBLISHED">
-											Published / Open
-										</option>
-										<option value="NOT_SENT">
-											Draft / Closed
-										</option>
-									</select>
-								</div>
+								<Select
+									label="Status"
+									value={meetingStatus}
+									onChange={(e) => setMeetingStatus(e.target.value)}
+								>
+									<option value="PUBLISHED">Published / Open</option>
+									<option value="NOT_SENT">Draft / Closed</option>
+								</Select>
 							</div>
 
 							<div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-2">

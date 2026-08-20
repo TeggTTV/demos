@@ -7,6 +7,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { FiKey, FiArrowRight, FiCompass } from 'react-icons/fi';
 import Link from 'next/link';
+import { Input } from '@/components/ui/Input';
 
 function JoinContent() {
 	const searchParams = useSearchParams();
@@ -75,19 +76,14 @@ function JoinContent() {
 						</div>
 					)}
 
-					<div>
-						<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-							Invite Code or Link
-						</label>
-						<input
-							type="text"
-							placeholder="e.g. DEMOS-GDSC-2026 or https://.../join/CODE"
-							value={code}
-							onChange={(e) => setCode(e.target.value)}
-							required
-							className="w-full rounded-xl border border-border bg-surface-secondary px-4 py-3 text-sm font-mono font-bold text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:text-text-muted placeholder:font-sans placeholder:font-normal"
-						/>
-					</div>
+					<Input
+						label="Invite Code or Link"
+						type="text"
+						placeholder="e.g. DEMOS-GDSC-2026 or https://.../join/CODE"
+						value={code}
+						onChange={(e) => setCode(e.target.value)}
+						required
+					/>
 
 					<button
 						type="submit"

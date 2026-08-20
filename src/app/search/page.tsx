@@ -24,6 +24,8 @@ import { ClipLoader } from 'react-spinners';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 const parseGroupFrequency = (freq: string) => {
 	const daysMap: Record<string, boolean> = {
@@ -717,12 +719,11 @@ function SearchContent() {
 										<label className="block text-xs font-bold text-text-primary">
 											Apply to Join {selectedClub.name}
 										</label>
-										<textarea
+										<Textarea
 											rows={2}
 											placeholder="Introduce yourself (major, graduation year, or what you hope to learn)..."
 											value={joinMessage}
 											onChange={(e) => setJoinMessage(e.target.value)}
-											className="w-full rounded-xl border border-border bg-surface p-3 text-xs text-text-primary placeholder-text-muted focus:ring-2 focus:ring-primary/30 focus:outline-none"
 										/>
 										{joinSuccess && (
 											<div className="text-xs text-success bg-success-bg p-2 rounded-lg text-center font-medium">
@@ -792,21 +793,14 @@ function SearchContent() {
 									</div>
 								)}
 
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-										Invite Code or Direct Link
-									</label>
-									<input
+									<Input
+										label="Invite Code or Direct Link"
 										type="text"
 										required
 										placeholder="e.g. DEMOS-GDSC-2026 or https://.../join/CODE"
 										value={inviteCodeInput}
-										onChange={(e) =>
-											setInviteCodeInput(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface-secondary px-3.5 py-2.5 text-xs font-mono font-bold text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:font-sans placeholder:font-normal placeholder:text-text-muted"
+										onChange={(e) => setInviteCodeInput(e.target.value)}
 									/>
-								</div>
 
 								<div className="flex justify-end gap-2 pt-2">
 									<button

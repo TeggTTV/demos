@@ -5,6 +5,7 @@ import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { compressImage } from '@/utils/imageCompression';
@@ -19,6 +20,7 @@ export default function ProfilePage() {
 	const [phone, setPhone] = useState('');
 	const [birthday, setBirthday] = useState('');
 	const [success, setSuccess] = useState(false);
+	const [fileSizeError, setFileSizeError] = useState('');
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
@@ -135,23 +137,38 @@ export default function ProfilePage() {
 							onChange={(e) => setBirthday(e.target.value)}
 						/>
 
-						<div>
-							<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-								Bio &amp; Interests
-							</label>
-							<textarea
-								rows={3}
-								value={bio}
-								onChange={(e) => setBio(e.target.value)}
-								className="w-full rounded-xl border border-border bg-surface p-2.5 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-							/>
-						</div>
+						<Textarea
+							label="Bio & Interests"
+							rows={3}
+							value={bio}
+							onChange={(e) => setBio(e.target.value)}
+						/>
 
 						{/* File upload */}
 						<div className="space-y-1.5 pt-2">
 							<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider">
 								Upload Profile Avatar
 							</label>
+							{fileSizeError && (
+								<motion.div
+									initial={{ opacity: 0, y: -4 }}
+									animate={{ opacity: 1, y: 0 }}
+									className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium"
+								>
+									<span className="shrink-0 mt-0.5">⚠️</span>
+									<span>
+										{fileSizeError}{' '}
+										<a
+											href="https://joeyjazwinski.com/developer-tools/image-compressor"
+											target="_blank"
+											rel="noopener noreferrer"
+											className="underline font-semibold hover:text-danger/80 transition-colors"
+										>
+											Compress your image here →
+										</a>
+									</span>
+								</motion.div>
+							)}
 							<input
 								type="file"
 								accept="image/*"
@@ -159,10 +176,11 @@ export default function ProfilePage() {
 									const file = e.target.files?.[0];
 									if (file) {
 										if (file.size > 200000) {
-											alert('File size must be less than 200 KB (200,000 bytes).');
+											setFileSizeError('Image is too large (max 200 KB).');
 											e.target.value = '';
 											return;
 										}
+										setFileSizeError('');
 										try {
 											const compressedDataUrl = await compressImage(file);
 											setAvatarUrl(compressedDataUrl);

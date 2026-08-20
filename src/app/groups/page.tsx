@@ -17,9 +17,12 @@ import {
 	FiShield,
 } from 'react-icons/fi';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Checkbox } from '@/components/ui/Checkbox';
+
 
 export const BANNER_COLOR_PRESETS = [
 	{
@@ -94,6 +97,7 @@ export default function GroupsPage() {
 	const [tagsInput, setTagsInput] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
+	const [fileSizeError, setFileSizeError] = useState('');
 
 	// Redeem Invite state
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -567,39 +571,23 @@ export default function GroupsPage() {
 									onChange={(e) => setTagline(e.target.value)}
 								/>
 
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Category
-									</label>
-									<select
-										value={category}
-										onChange={(e) =>
-											setCategory(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface p-2.5 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-									>
-										{categoriesList.map((cat) => (
-											<option key={cat} value={cat}>
-												{cat}
-											</option>
-										))}
-									</select>
-								</div>
+								<Select
+									label="Category"
+									value={category}
+									onChange={(e) => setCategory(e.target.value)}
+								>
+									{categoriesList.map((cat) => (
+										<option key={cat} value={cat}>{cat}</option>
+									))}
+								</Select>
 
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Mission &amp; Description
-									</label>
-									<textarea
-										required
-										rows={3}
-										value={description}
-										onChange={(e) =>
-											setDescription(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface p-2.5 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-									/>
-								</div>
+								<Textarea
+									label="Mission & Description"
+									required
+									rows={3}
+									value={description}
+									onChange={(e) => setDescription(e.target.value)}
+								/>
 
 								<Input
 									label="Meeting Location / Room"
@@ -675,6 +663,22 @@ export default function GroupsPage() {
 											<label className="block text-[10px] font-semibold text-text-muted uppercase">
 												Select Image File
 											</label>
+											{fileSizeError && (
+												<div className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
+													<span className="shrink-0 mt-0.5">⚠️</span>
+													<span>
+														{fileSizeError}{' '}
+														<a
+															href="https://joeyjazwinski.com/developer-tools/image-compressor"
+															target="_blank"
+															rel="noopener noreferrer"
+															className="underline font-semibold hover:text-danger/80 transition-colors"
+														>
+															Compress your image here →
+														</a>
+													</span>
+												</div>
+											)}
 											<input
 												type="file"
 												accept="image/*"
@@ -683,10 +687,11 @@ export default function GroupsPage() {
 														e.target.files?.[0];
 													if (file) {
 														if (file.size > 200000) {
-															alert('File size must be less than 200 KB (200,000 bytes).');
+															setFileSizeError('Image is too large (max 200 KB).');
 															e.target.value = '';
 															return;
 														}
+														setFileSizeError('');
 														const reader =
 															new FileReader();
 														reader.onload = () => {
@@ -703,31 +708,15 @@ export default function GroupsPage() {
 											/>
 										</div>
 									) : (
-										<div className="space-y-1">
-											<label className="block text-[10px] font-semibold text-text-muted uppercase">
-												Color Theme Preset
-											</label>
-											<select
+											<Select
+												label="Color Theme Preset"
 												value={selectedBannerColor}
-												onChange={(e) =>
-													setSelectedBannerColor(
-														e.target.value,
-													)
-												}
-												className="w-full rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+												onChange={(e) => setSelectedBannerColor(e.target.value)}
 											>
-												{BANNER_COLOR_PRESETS.map(
-													(preset) => (
-														<option
-															key={preset.id}
-															value={preset.value}
-														>
-															{preset.name}
-														</option>
-													),
-												)}
-											</select>
-										</div>
+												{BANNER_COLOR_PRESETS.map((preset) => (
+													<option key={preset.id} value={preset.value}>{preset.name}</option>
+												))}
+											</Select>
 									)}
 								</div>
 
@@ -785,43 +774,22 @@ export default function GroupsPage() {
 													</button>
 												))}
 											</div>
-											<div className="flex items-center gap-2">
-												<span className="text-text-muted">
-													At time:
-												</span>
-												<input
+												<Input
 													type="time"
 													value={customTime}
-													onChange={(e) =>
-														setCustomTime(
-															e.target.value,
-														)
-													}
-													className="rounded-lg border border-border bg-surface px-2 py-1 text-xs text-text-primary"
+													onChange={(e) => setCustomTime(e.target.value)}
 												/>
-											</div>
 										</div>
 									) : (
-										<select
+										<Select
 											value={frequency}
-											onChange={(e) =>
-												setFrequency(e.target.value)
-											}
-											className="w-full rounded-lg border border-border bg-surface p-2 text-xs text-text-primary"
+											onChange={(e) => setFrequency(e.target.value)}
 										>
-											<option value="Weekly">
-												Weekly
-											</option>
-											<option value="Bi-weekly">
-												Bi-weekly
-											</option>
-											<option value="Fortnightly">
-												Fortnightly
-											</option>
-											<option value="Monthly">
-												Monthly
-											</option>
-										</select>
+											<option value="Weekly">Weekly</option>
+											<option value="Bi-weekly">Bi-weekly</option>
+											<option value="Fortnightly">Fortnightly</option>
+											<option value="Monthly">Monthly</option>
+										</Select>
 									)}
 								</div>
 

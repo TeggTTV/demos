@@ -11,6 +11,8 @@ import {
 	FiChevronDown,
 } from 'react-icons/fi';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
 
 interface CreateEventModalProps {
@@ -632,68 +634,23 @@ export default function CreateEventModal({
 											</span>
 										</div>
 
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												Visibility
-											</label>
-											<select
-												value={activityStatus}
-												onChange={(e) =>
-													setActivityStatus(
-														e.target.value,
-													)
-												}
-												className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none cursor-pointer focus:ring-1 focus:ring-primary"
-											>
-												<option value="PUBLISHED">
-													Published / Open
-												</option>
-												<option value="NOT_SENT">
-													Draft / Closed
-												</option>
-											</select>
-										</div>
+										<Select
+											label="Visibility"
+											value={activityStatus}
+											onChange={(e) => setActivityStatus(e.target.value)}
+										>
+											<option value="PUBLISHED">Published / Open</option>
+											<option value="NOT_SENT">Draft / Closed</option>
+										</Select>
 									</div>
 
-									<div>
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											Description / Notes
-										</label>
-										<motion.div
-											animate={{
-												scale: descFocused ? 1.01 : 1,
-												boxShadow: descFocused
-													? '0 4px 12px rgba(79, 70, 229, 0.08)'
-													: '0 0px 0px rgba(0,0,0,0)',
-											}}
-											transition={{
-												type: 'spring',
-												stiffness: 400,
-												damping: 25,
-											}}
-											className={`rounded-xl border bg-surface-secondary px-3 py-2 transition-colors ${
-												descFocused
-													? 'border-primary/50 ring-2 ring-primary/10'
-													: 'border-border'
-											}`}
-										>
-											<textarea
-												rows={3}
-												value={eventDesc}
-												onChange={(e) =>
-													setEventDesc(e.target.value)
-												}
-												onFocus={() =>
-													setDescFocused(true)
-												}
-												onBlur={() =>
-													setDescFocused(false)
-												}
-												className="w-full bg-transparent text-xs text-text-primary focus:outline-none resize-none"
-												placeholder="Provide brief details about this activity..."
-											/>
-										</motion.div>
-									</div>
+									<Textarea
+										label="Description / Notes"
+										rows={3}
+										value={eventDesc}
+										onChange={(e) => setEventDesc(e.target.value)}
+										placeholder="Provide brief details about this activity..."
+									/>
 								</div>
 							)}
 
@@ -887,64 +844,20 @@ export default function CreateEventModal({
 											Custom message sent to members when
 											this activity is published.
 										</span>
-										<motion.div
-											animate={{
-												scale: inviteMsgFocused
-													? 1.01
-													: 1,
-												boxShadow: inviteMsgFocused
-													? '0 4px 12px rgba(79, 70, 229, 0.12)'
-													: '0 0px 0px rgba(0,0,0,0)',
-											}}
-											transition={{
-												type: 'spring',
-												stiffness: 400,
-												damping: 25,
-											}}
-											className={`rounded-xl border bg-surface-secondary px-3 py-2 transition-colors ${
-												inviteMsgFocused
-													? 'border-primary/50 ring-2 ring-primary/10'
-													: 'border-border'
-											}`}
-										>
-											<textarea
-												rows={4}
-												value={activityInviteMessage}
-												onChange={(e) =>
-													setActivityInviteMessage(
-														e.target.value,
-													)
-												}
-												onFocus={() =>
-													setInviteMsgFocused(true)
-												}
-												onBlur={() =>
-													setInviteMsgFocused(false)
-												}
-												className="w-full bg-transparent text-xs text-text-primary focus:outline-none resize-none"
-												placeholder="e.g. Hey team, hope you can join us for this exciting workshop!..."
-											/>
-										</motion.div>
+										<Textarea
+											rows={4}
+											value={activityInviteMessage}
+											onChange={(e) => setActivityInviteMessage(e.target.value)}
+											placeholder="e.g. Hey team, hope you can join us for this exciting workshop!..."
+										/>
 									</div>
 
 									<div>
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											Remembrance days in advance
-										</label>
-										<span className="block text-[10px] text-text-muted mb-1">
-											Number of days for this activity
-											that non-responders receive a
-											reminder. Use 0 to disable.
-										</span>
-										<input
+										<Input
+											label="Reminder days in advance"
 											type="number"
 											value={activityInviteReminderDays}
-											onChange={(e) =>
-												setActivityInviteReminderDays(
-													e.target.value,
-												)
-											}
-											className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+											onChange={(e) => setActivityInviteReminderDays(e.target.value)}
 										/>
 									</div>
 								</div>

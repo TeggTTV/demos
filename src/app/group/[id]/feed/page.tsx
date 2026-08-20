@@ -43,6 +43,8 @@ import {
 } from 'react-icons/fi';
 import { FaDiscord } from 'react-icons/fa';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { BANNER_COLOR_PRESETS } from '@/app/groups/page';
 import { ClipLoader } from 'react-spinners';
@@ -246,6 +248,9 @@ export default function GroupFeedPage() {
 	// Settings & Invites State
 	const [isEditingSettings, setIsEditingSettings] = useState(false);
 	const [settingsName, setSettingsName] = useState('');
+	const [fileSizeErrorFeed, setFileSizeErrorFeed] = useState('');
+	const [fileSizeErrorImport, setFileSizeErrorImport] = useState('');
+	const [fileSizeErrorSettings, setFileSizeErrorSettings] = useState('');
 	const [settingsTagline, setSettingsTagline] = useState('');
 	const [settingsDesc, setSettingsDesc] = useState('');
 	const [settingsLocation, setSettingsLocation] = useState('');
@@ -1393,10 +1398,9 @@ export default function GroupFeedPage() {
 							)}
 						</div>
 
-						{/* Chat Input Bar */}
 						<form
 							onSubmit={handlePost}
-							className="border-t border-border p-3 bg-surface space-y-2"
+							className="border-t border-border p-3 bg-surface space-y-2 relative"
 						>
 							{fileInput && (
 								<div className="flex items-center justify-between p-2 rounded-lg bg-primary-light text-xs text-primary">
@@ -1428,6 +1432,33 @@ export default function GroupFeedPage() {
 									className="grow rounded-xl border border-border bg-surface-secondary px-3.5 py-2.5 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
 								/>
 
+								{fileSizeErrorFeed && (
+									<div className="absolute bottom-full mb-2 left-0 right-0 z-10 flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
+										<span className="shrink-0 mt-0.5">
+											⚠️
+										</span>
+										<span className="grow">
+											{fileSizeErrorFeed}{' '}
+											<a
+												href="https://joeyjazwinski.com/developer-tools/image-compressor"
+												target="_blank"
+												rel="noopener noreferrer"
+												className="underline font-semibold hover:text-danger/80 transition-colors"
+											>
+												Compress images here →
+											</a>
+										</span>
+										<button
+											type="button"
+											onClick={() =>
+												setFileSizeErrorFeed('')
+											}
+											className="text-danger hover:text-danger-hover font-bold px-1"
+										>
+											✕
+										</button>
+									</div>
+								)}
 								<label
 									className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-secondary cursor-pointer transition-colors"
 									title="Attach File or Flyer"
@@ -1440,12 +1471,13 @@ export default function GroupFeedPage() {
 											if (e.target.files?.[0]) {
 												const file = e.target.files[0];
 												if (file.size > 200000) {
-													alert(
-														'File size must be less than 200 KB (200,000 bytes).',
+													setFileSizeErrorFeed(
+														'File is too large (max 200 KB).',
 													);
 													e.target.value = '';
 													return;
 												}
+												setFileSizeErrorFeed('');
 												setFileInput(file);
 											}
 										}}
@@ -2649,27 +2681,25 @@ export default function GroupFeedPage() {
 
 						{/* Search & Filters */}
 						<div className="flex flex-col sm:flex-row gap-3">
-							<div className="relative grow">
-								<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs" />
-								<input
+							<div className="grow">
+								<Input
+									icon={FiSearch}
 									type="text"
 									placeholder="Search members by name, email, or major..."
 									value={memberSearchQuery}
 									onChange={(e) =>
 										setMemberSearchQuery(e.target.value)
 									}
-									className="w-full rounded-xl border border-border bg-surface-secondary pl-8 pr-3.5 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:text-text-muted"
 								/>
 							</div>
 							<div className="w-full sm:w-48 shrink-0">
-								<select
+								<Select
 									value={memberRosterFilter}
 									onChange={(e) =>
 										setMemberRosterFilter(
 											e.target.value as any,
 										)
 									}
-									className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none cursor-pointer"
 								>
 									<option value="all">All Members</option>
 									<option value="active">
@@ -2680,7 +2710,7 @@ export default function GroupFeedPage() {
 										Officers Only
 									</option>
 									<option value="leader">Leader Only</option>
-								</select>
+								</Select>
 							</div>
 						</div>
 
@@ -3174,6 +3204,24 @@ export default function GroupFeedPage() {
 										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">
 											CSV/Text File Roster
 										</label>
+										{fileSizeErrorImport && (
+											<div className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
+												<span className="shrink-0 mt-0.5">
+													⚠️
+												</span>
+												<span>
+													{fileSizeErrorImport}{' '}
+													<a
+														href="https://joeyjazwinski.com/developer-tools/image-compressor"
+														target="_blank"
+														rel="noopener noreferrer"
+														className="underline font-semibold hover:text-danger/80 transition-colors"
+													>
+														Compress here →
+													</a>
+												</span>
+											</div>
+										)}
 										<input
 											type="file"
 											accept=".csv,.txt"
@@ -3182,12 +3230,13 @@ export default function GroupFeedPage() {
 													e.target.files?.[0];
 												if (file) {
 													if (file.size > 200000) {
-														alert(
-															'File size must be less than 200 KB (200,000 bytes).',
+														setFileSizeErrorImport(
+															'File is too large (max 200 KB).',
 														);
 														e.target.value = '';
 														return;
 													}
+													setFileSizeErrorImport('');
 													const reader =
 														new FileReader();
 													reader.onload = (event) => {
@@ -3205,22 +3254,15 @@ export default function GroupFeedPage() {
 										/>
 									</div>
 
-									<div className="space-y-1.5">
-										<label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">
-											Or Paste Email List
-										</label>
-										<textarea
-											rows={5}
-											placeholder="Paste student emails separated by commas or lines here..."
-											value={importEmailsText}
-											onChange={(e) =>
-												setImportEmailsText(
-													e.target.value,
-												)
-											}
-											className="w-full rounded-xl border border-border bg-surface p-2.5 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-										/>
-									</div>
+									<Textarea
+										label="Or Paste Email List"
+										rows={5}
+										placeholder="Paste student emails separated by commas or lines here..."
+										value={importEmailsText}
+										onChange={(e) =>
+											setImportEmailsText(e.target.value)
+										}
+									/>
 
 									{importErrorMsg && (
 										<p className="text-[11px] font-medium text-danger bg-danger-bg border border-danger/10 p-2.5 rounded-lg">
@@ -3719,19 +3761,14 @@ export default function GroupFeedPage() {
 									}
 								/>
 
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Description &amp; Mission
-									</label>
-									<textarea
-										rows={4}
-										value={settingsDesc}
-										onChange={(e) =>
-											setSettingsDesc(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface p-3 text-xs text-text-primary"
-									/>
-								</div>
+								<Textarea
+									label="Description & Mission"
+									rows={4}
+									value={settingsDesc}
+									onChange={(e) =>
+										setSettingsDesc(e.target.value)
+									}
+								/>
 
 								<Input
 									label="Meeting Location"
@@ -3799,41 +3836,67 @@ export default function GroupFeedPage() {
 									</div>
 
 									{settingsEnableCustomBanner ? (
-										<input
-											type="file"
-											accept="image/*"
-											onChange={(e) => {
-												const file =
-													e.target.files?.[0];
-												if (file) {
-													if (file.size > 200000) {
-														alert(
-															'File size must be less than 200 KB (200,000 bytes).',
+										<div className="space-y-1.5">
+											{fileSizeErrorSettings && (
+												<div className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
+													<span className="shrink-0 mt-0.5">
+														⚠️
+													</span>
+													<span>
+														{fileSizeErrorSettings}{' '}
+														<a
+															href="https://joeyjazwinski.com/developer-tools/image-compressor"
+															target="_blank"
+															rel="noopener noreferrer"
+															className="underline font-semibold hover:text-danger/80 transition-colors"
+														>
+															Compress here →
+														</a>
+													</span>
+												</div>
+											)}
+											<input
+												type="file"
+												accept="image/*"
+												onChange={(e) => {
+													const file =
+														e.target.files?.[0];
+													if (file) {
+														if (
+															file.size > 200000
+														) {
+															setFileSizeErrorSettings(
+																'Image is too large (max 200 KB).',
+															);
+															e.target.value = '';
+															return;
+														}
+														setFileSizeErrorSettings(
+															'',
 														);
-														e.target.value = '';
-														return;
+														const reader =
+															new FileReader();
+														reader.onload = () => {
+															setSettingsBannerPreview(
+																reader.result as string,
+															);
+														};
+														reader.readAsDataURL(
+															file,
+														);
 													}
-													const reader =
-														new FileReader();
-													reader.onload = () => {
-														setSettingsBannerPreview(
-															reader.result as string,
-														);
-													};
-													reader.readAsDataURL(file);
-												}
-											}}
-											className="block w-full text-xs text-text-secondary file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
-										/>
+												}}
+												className="block w-full text-xs text-text-secondary file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
+											/>
+										</div>
 									) : (
-										<select
+										<Select
 											value={settingsBannerColor}
 											onChange={(e) =>
 												setSettingsBannerColor(
 													e.target.value,
 												)
 											}
-											className="w-full rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
 										>
 											{BANNER_COLOR_PRESETS.map(
 												(preset) => (
@@ -3845,7 +3908,7 @@ export default function GroupFeedPage() {
 													</option>
 												),
 											)}
-										</select>
+										</Select>
 									)}
 								</div>
 
