@@ -23,6 +23,7 @@ model User {
   major          String?
   year           String?
   phone          String?
+  birthday       String?
   lastActive     DateTime?          @default(now())
   createdAt      DateTime           @default(now())
 
@@ -132,6 +133,17 @@ model MeetingEvent {
   date        String             // YYYY-MM-DD
   time        String             // e.g. "18:00"
   location    String?            @default("Main Hall")
+  endDate     String?
+  price       String?
+  status      String?            @default("NOT_SENT")
+  locationType       String?
+  allDay             Boolean            @default(false)
+  endTime            String?
+  regRequired        Boolean            @default(false)
+  regCapacity        Int?
+  regDeadline        String?
+  inviteMessage      String?
+  inviteReminderDays Int?               @default(0)
   checkInCode String             // 4-6 character alphanumeric code
   isActive    Boolean            @default(true)
   createdById String             @db.ObjectId

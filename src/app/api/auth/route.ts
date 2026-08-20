@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 		}
 
 		const body = await req.json();
-		const { name, avatarUrl, bio, major, year, phone } = body;
+		const { name, avatarUrl, bio, major, year, phone, birthday } = body;
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database connection offline' }, { status: 503 });
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
 				major: major !== undefined ? major : undefined,
 				year: year !== undefined ? year : undefined,
 				phone: phone !== undefined ? phone.trim() : undefined,
+				birthday: birthday !== undefined ? birthday : undefined,
 			},
 			select: {
 				id: true,
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
 				major: true,
 				year: true,
 				phone: true,
+				birthday: true,
 				lastActive: true,
 				createdAt: true,
 			},

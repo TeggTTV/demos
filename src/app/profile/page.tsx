@@ -17,6 +17,7 @@ export default function ProfilePage() {
 	const [major, setMajor] = useState('');
 	const [year, setYear] = useState('');
 	const [phone, setPhone] = useState('');
+	const [birthday, setBirthday] = useState('');
 	const [success, setSuccess] = useState(false);
 
 	/* eslint-disable react-hooks/set-state-in-effect */
@@ -28,13 +29,14 @@ export default function ProfilePage() {
 			setMajor(currentUser.major || '');
 			setYear(currentUser.year || '');
 			setPhone(currentUser.phone || '');
+			setBirthday(currentUser.birthday || '');
 		}
 	}, [currentUser]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		updateProfile(name, avatarUrl, bio, major, year, phone);
+		updateProfile(name, avatarUrl, bio, major, year, phone, birthday);
 		setSuccess(true);
 		setTimeout(() => setSuccess(false), 3000);
 	};
@@ -124,6 +126,13 @@ export default function ProfilePage() {
 							placeholder="+31 6 12345678"
 							value={phone}
 							onChange={(e) => setPhone(e.target.value)}
+						/>
+
+						<Input
+							type="date"
+							label="Birthday"
+							value={birthday}
+							onChange={(e) => setBirthday(e.target.value)}
 						/>
 
 						<div>

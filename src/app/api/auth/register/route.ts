@@ -104,6 +104,7 @@ export async function POST(req: Request) {
 				major: major || null,
 				year: year || null,
 				phone: null,
+				birthday: null,
 				lastActive: new Date(),
 			},
 		});
@@ -118,6 +119,7 @@ export async function POST(req: Request) {
 			major: user.major,
 			year: user.year,
 			phone: user.phone,
+			birthday: user.birthday,
 			lastActive: user.lastActive,
 		};
 

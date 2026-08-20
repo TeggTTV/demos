@@ -86,6 +86,7 @@ export async function POST(req: Request) {
 			major: updatedUser.major,
 			year: updatedUser.year,
 			phone: updatedUser.phone,
+			birthday: updatedUser.birthday,
 			lastActive: updatedUser.lastActive,
 		};
 

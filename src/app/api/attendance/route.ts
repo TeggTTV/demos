@@ -130,7 +130,10 @@ export async function POST(req: NextRequest) {
 		} else {
 			// Self check-in: must verify check-in code if code check-in method is used and user is not leader/officer
 			if (!isLeader && !isOfficer) {
-				if (!event.isActive) {
+				const eventDateTime = new Date(`${event.date}T${event.time || '00:00'}`);
+				const isTimeReached = new Date() >= eventDateTime;
+				const isEventActive = event.isActive || (event.status !== 'CLOSED' && event.status !== 'NOT_SENT' && isTimeReached);
+				if (!isEventActive) {
 					return NextResponse.json({ error: 'Check-in is currently closed for this event' }, { status: 400 });
 				}
 				if (checkInMethod === 'MANUAL') {

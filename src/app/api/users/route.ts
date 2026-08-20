@@ -7,7 +7,10 @@ export async function GET(req: NextRequest) {
 	try {
 		const session = await getSession(req);
 		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+			return NextResponse.json(
+				{ error: 'Unauthorized' },
+				{ status: 401 },
+			);
 		}
 
 		// Update calling user's lastActive timestamp
@@ -31,6 +34,7 @@ export async function GET(req: NextRequest) {
 				major: true,
 				year: true,
 				phone: true,
+				birthday: true,
 				lastActive: true,
 				createdAt: true,
 			},

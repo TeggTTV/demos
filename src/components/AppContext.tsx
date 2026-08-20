@@ -29,6 +29,7 @@ export interface User {
 	major?: string;
 	year?: string;
 	phone?: string;
+	birthday?: string;
 	lastActive?: string;
 }
 
@@ -105,6 +106,17 @@ export interface MeetingEvent {
 	isActive: boolean;
 	createdById: string;
 	createdAt: string;
+	endDate?: string;
+	price?: string;
+	status?: string;
+	locationType?: string;
+	allDay?: boolean;
+	endTime?: string;
+	regRequired?: boolean;
+	regCapacity?: number;
+	regDeadline?: string;
+	inviteMessage?: string;
+	inviteReminderDays?: number;
 }
 
 export interface AttendanceRecord {
@@ -114,7 +126,7 @@ export interface AttendanceRecord {
 	userId: string;
 	userName?: string;
 	userEmail?: string;
-	status: 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT';
+	status: 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT' | 'RSVP_YES' | 'RSVP_NO' | 'RSVP_MAYBE';
 	checkInMethod: 'CODE' | 'MANUAL' | 'QR';
 	timestamp: string;
 }
@@ -169,6 +181,7 @@ interface AppContextType {
 		major?: string,
 		year?: string,
 		phone?: string,
+		birthday?: string,
 	) => Promise<void>;
 	fetchFeedMessages: (groupId: string) => Promise<void>;
 	createGroup: (groupData: {
@@ -219,6 +232,9 @@ interface AppContextType {
 			date: string;
 			time: string;
 			location?: string;
+			endDate?: string;
+			price?: string;
+			status?: string;
 		},
 	) => Promise<{ success: boolean; event?: MeetingEvent; error?: string }>;
 	toggleEventActive: (
@@ -1146,6 +1162,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			major?: string,
 			year?: string,
 			phone?: string,
+			birthday?: string,
 		) => {
 			if (!currentUser) return;
 			const updatedUser: User = {
@@ -1156,6 +1173,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				major: major ?? currentUser.major,
 				year: year ?? currentUser.year,
 				phone: phone ?? currentUser.phone,
+				birthday: birthday ?? currentUser.birthday,
 			};
 
 			try {
@@ -1323,6 +1341,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				date: string;
 				time: string;
 				location?: string;
+				endDate?: string;
+				price?: string;
+				status?: string;
 			},
 		) => {
 			if (!currentUser)
