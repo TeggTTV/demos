@@ -423,11 +423,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Hydrate pure from API ─── */
 	const loadData = useCallback(async () => {
+		const isPendingPage = typeof window !== 'undefined' && window.location.pathname === '/pending';
 		await Promise.allSettled([
 			fetchGroups(),
 			fetchRequests(),
 			fetchUsers(),
-			fetchInvites(),
+			isPendingPage ? fetchInvites() : Promise.resolve(),
 		]);
 	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers]);
 
@@ -644,7 +645,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						// Feed messages are polled by the active GroupFeedPage directly
 					}
 				} else if (pathname === '/pending') {
-					await fetchRequests();
+					await Promise.allSettled([
+						fetchRequests(),
+						fetchInvites(),
+					]);
 				} else if (pathname === '/groups') {
 					// Groups list is loaded initially, no interval polling needed
 				} else if (pathname === '/profile') {

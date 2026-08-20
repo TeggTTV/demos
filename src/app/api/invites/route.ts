@@ -44,7 +44,21 @@ export async function GET(req: NextRequest) {
 		}
 
 		if (!groupId) {
-			return NextResponse.json({ error: 'Missing groupId or code' }, { status: 400 });
+			const groups = await prisma.group.findMany({
+				where: {
+					OR: [
+						{ leaderId: session.userId },
+						{ officerIds: { has: session.userId } },
+					],
+				},
+			});
+			const groupIds = groups.map((g) => g.id);
+
+			const invites = await prisma.clubInvite.findMany({
+				where: { groupId: { in: groupIds } },
+				orderBy: { createdAt: 'desc' },
+			});
+			return NextResponse.json({ invites });
 		}
 
 		// Authorization lock: only group leaders/officers can list invites for a group

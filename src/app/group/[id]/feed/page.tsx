@@ -5,6 +5,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAppContext, User } from '@/components/AppContext';
+import ScheduleMeetingModal from '@/components/group/ScheduleMeetingModal';
+import CreateEventModal from '@/components/group/CreateEventModal';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import {
@@ -152,8 +154,12 @@ export default function GroupFeedPage() {
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 
 	// Attendance State
-	const [selectedEventId, setSelectedEventIdState] = useState<string | null>(null);
-	const [activeSubTab, setActiveSubTabState] = useState<'roster' | 'info'>('roster');
+	const [selectedEventId, setSelectedEventIdState] = useState<string | null>(
+		null,
+	);
+	const [activeSubTab, setActiveSubTabState] = useState<'roster' | 'info'>(
+		'roster',
+	);
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -1633,7 +1639,7 @@ export default function GroupFeedPage() {
 						</div>
 
 						<div className="flex items-center gap-2">
-							{currentSelectedEvent && (
+							{canManage && currentSelectedEvent && (
 								<button
 									onClick={exportAttendanceCSV}
 									className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary shadow-2xs"
@@ -1678,612 +1684,707 @@ export default function GroupFeedPage() {
 								transition={{ duration: 0.2 }}
 								className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center"
 							>
-							<div className="mx-auto h-12 w-12 rounded-full bg-primary-light flex items-center justify-center text-primary mb-3">
-								<FiClock size={24} />
-							</div>
-							<h3 className="text-base font-bold text-text-primary">
-								No meeting sessions scheduled yet
-							</h3>
-							<p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-								Officers and Leaders can create a meeting
-								session to enable link attendance check-in for
-								members.
-							</p>
-							{canManage && (
-								<button
-									onClick={() => {
-										setMeetingTitle('');
-										setMeetingDesc('');
-										setMeetingDate(
-											new Date()
-												.toISOString()
-												.split('T')[0],
-										);
-										setMeetingTime('18:00');
-										setMeetingLocation('');
-										setMeetingEndDate('');
-										setMeetingPrice('');
-										setMeetingStatus('PUBLISHED');
-										setCreateMeetingModal(true);
-									}}
-									className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white cursor-pointer"
-								>
-									Create First Session
-								</button>
-							)}
-						</motion.div>
-					) : !currentSelectedEvent ? (
-						<motion.div
-							key="list"
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: 10 }}
-							transition={{ duration: 0.2 }}
-							className="space-y-4"
-						>
-							<div className="flex items-center justify-between">
-								<h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-									All Meeting Sessions ({clubEvents.length})
+								<div className="mx-auto h-12 w-12 rounded-full bg-primary-light flex items-center justify-center text-primary mb-3">
+									<FiClock size={24} />
+								</div>
+								<h3 className="text-base font-bold text-text-primary">
+									No meeting sessions scheduled yet
 								</h3>
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-								{clubEvents.map((evt) => {
-									const evtTurnout = attendances.filter(
-										(a) => a.eventId === evt.id,
-									).length;
-
-									return (
-										<button
-											key={evt.id}
-											onClick={() =>
-												setSelectedEventId(evt.id)
-											}
-											className="w-full text-left p-5 rounded-2xl border border-border bg-surface hover:border-primary hover:shadow-md transition-all cursor-pointer space-y-3 group"
-										>
-											<div className="flex items-center justify-between">
-												<span className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate">
-													{evt.title}
-												</span>
-												{evt.isActive ? (
-													<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-success-bg text-success border border-success/20 animate-pulse">
-														● Active
-													</span>
-												) : (
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-secondary text-text-muted border border-border">
-														Closed
-													</span>
-												)}
-											</div>
-
-											<div className="flex items-center gap-2 text-xs text-text-muted">
-												<FiCalendar
-													size={12}
-													className="text-primary shrink-0"
-												/>
-												<span>
-													{evt.date} at {evt.time}
-												</span>
-											</div>
-
-											{evt.description && (
-												<p className="text-xs text-text-muted line-clamp-2 mt-1">
-													{evt.description}
-												</p>
-											)}
-
-											<div className="flex items-center justify-between text-xs text-text-muted border-t border-border/40 pt-2 mt-2">
-												<span>
-													👥 {evtTurnout} Attendees
-												</span>
-												{canManage && (
-													<span className="font-mono font-semibold text-primary">
-														Code: {evt.checkInCode}
-													</span>
-												)}
-											</div>
-										</button>
-									);
-								})}
-							</div>
-						</motion.div>
-					) : (
-						<motion.div
-							key="detail"
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: 10 }}
-							transition={{ duration: 0.2 }}
-							className="space-y-4"
-						>
-							<div className="mb-4">
-								<button
-									onClick={() => setSelectedEventId(null)}
-									className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary/40 shadow-2xs cursor-pointer transition-colors"
-								>
-									<FiArrowLeft size={13} /> Back to all
-									sessions
-								</button>
-							</div>
-
-							<div className="w-full space-y-6">
-								{currentSelectedEvent && (
-									<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-5">
-										<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-border pb-4">
-											<div>
-												<div className="flex items-center gap-2">
-													<span
-														className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-															currentSelectedEvent.isActive
-																? 'bg-success-bg text-success border border-success/20'
-																: 'bg-surface-secondary text-text-muted border border-border'
-														}`}
-													>
-														{currentSelectedEvent.isActive
-															? '● Check-in Open'
-															: 'Check-in Closed'}
-													</span>
-													<span className="text-xs text-text-muted">
-														{
-															currentSelectedEvent.date
-														}{' '}
-														at{' '}
-														{
-															currentSelectedEvent.time
-														}
-													</span>
-												</div>
-												<h3 className="text-lg font-bold text-text-primary mt-1.5">
-													{currentSelectedEvent.title}
-												</h3>
-												{currentSelectedEvent.description && (
-													<p className="text-xs text-text-secondary mt-1">
-														{
-															currentSelectedEvent.description
-														}
-													</p>
-												)}
-											</div>
-
-											{canManage && (
-												<div className="flex items-center gap-2 shrink-0">
-													<button
-														onClick={() =>
-															toggleEventActive(
-																currentSelectedEvent.id,
-																!currentSelectedEvent.isActive,
-															)
-														}
-														className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary"
-													>
-														{currentSelectedEvent.isActive
-															? 'Close Check-in'
-															: 'Re-open Check-in'}
-													</button>
-													<button
-														onClick={() => {
-															if (
-																confirm(
-																	'Are you sure you want to delete this meeting session?',
-																)
-															) {
-																deleteMeetingEvent(
-																	currentSelectedEvent.id,
-																);
-															}
-														}}
-														className="text-text-muted hover:text-danger p-1.5 cursor-pointer"
-														title="Delete meeting session"
-													>
-														<FiTrash2 size={16} />
-													</button>
-												</div>
-											)}
-										</div>
-
-										{/* Sub-tab Navigation */}
-										<div className="flex border-b border-border gap-4 pb-0.5 mt-2">
-											<button
-												onClick={() => setActiveSubTab('roster')}
-												className={`pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-													activeSubTab === 'roster'
-														? 'border-primary text-primary font-bold'
-														: 'border-transparent text-text-muted hover:text-text-primary'
-												}`}
-											>
-												👥 Roster & Check-In
-											</button>
-											<button
-												onClick={() => setActiveSubTab('info')}
-												className={`pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-													activeSubTab === 'info'
-														? 'border-primary text-primary font-bold'
-														: 'border-transparent text-text-muted hover:text-text-primary'
-												}`}
-											>
-												ℹ️ Session Details
-											</button>
-										</div>
-
-										{activeSubTab === 'roster' && (
-											<>
-												{/* Big Check-in PIN Display (Officers Only) / Check-in Form */}
-												{canManage ? (
-											<div className="rounded-xl bg-primary-light/50 border border-primary/20 p-4 flex flex-col justify-between">
-												<div>
-													<span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
-														Meeting Check-In Code
-													</span>
-													<p className="text-xs text-text-muted mt-0.5">
-														Project this code on
-														screen for attendees.
-													</p>
-												</div>
-												<div className="my-3 text-center">
-													<span className="text-3xl sm:text-4xl font-extrabold tracking-widest font-mono text-primary select-all">
-														{
-															currentSelectedEvent.checkInCode
-														}
-													</span>
-												</div>
-												<button
-													onClick={() => {
-														navigator.clipboard.writeText(
-															currentSelectedEvent.checkInCode,
-														);
-														setCopiedPin(true);
-														setTimeout(
-															() =>
-																setCopiedPin(
-																	false,
-																),
-															2000,
-														);
-													}}
-													className="w-full rounded-lg bg-primary py-1.5 text-xs font-semibold text-white shadow-2xs cursor-pointer hover:bg-primary-hover transition-all"
-												>
-													{copiedPin
-														? 'Copied Code!'
-														: 'Copy Code'}
-												</button>
-											</div>
-										) : (
-											/* Member-Only Self Check-in Form (No Code Visible) */
-											<div className="rounded-2xl border border-border bg-surface-secondary/30 p-5 space-y-4">
-												<div>
-													<span className="text-xs font-bold text-text-primary uppercase tracking-wider block">
-														Self Check-In
-													</span>
-													<p className="text-xs text-text-muted mt-0.5">
-														Enter the check-in PIN
-														displayed by club
-														officers on the screen
-														to verify your
-														attendance.
-													</p>
-												</div>
-
-												{userIsCheckedIn ? (
-													<div className="py-4 text-center rounded-xl bg-success-bg border border-success/20">
-														<span className="text-sm font-bold text-success flex items-center justify-center gap-2">
-															<FiCheckCircle
-																size={20}
-															/>
-															You are checked into
-															this meeting!
-														</span>
-													</div>
-												) : (
-													<form
-														onSubmit={
-															handleSelfCheckIn
-														}
-														className="space-y-3 max-w-md"
-													>
-														{checkInResult?.error && (
-															<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-2.5 rounded-xl text-center font-medium">
-																{
-																	checkInResult.error
-																}
-															</div>
-														)}
-														<div className="flex items-center gap-2">
-															<input
-																type="text"
-																required
-																placeholder="Enter PIN"
-																value={
-																	checkInInput
-																}
-																onChange={(e) =>
-																	setCheckInInput(
-																		e.target
-																			.value,
-																	)
-																}
-																className="grow rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-mono font-bold text-center text-text-primary uppercase tracking-widest focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:font-sans placeholder:font-normal placeholder:tracking-normal"
-															/>
-															<button
-																type="submit"
-																disabled={
-																	!currentSelectedEvent.isActive ||
-																	!checkInInput.trim()
-																}
-																className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all disabled:opacity-50 cursor-pointer shrink-0"
-															>
-																Check In
-															</button>
-														</div>
-														{!currentSelectedEvent.isActive && (
-															<p className="text-[11px] text-text-muted italic">
-																This meeting
-																session is
-																currently
-																inactive or
-																concluded.
-															</p>
-														)}
-													</form>
-												)}
-											</div>
-										)}
-
-										{/* Live Member Roster Checklist */}
-										<div className="space-y-3 pt-4 border-t border-border">
-											<div className="flex items-center justify-between">
-												<h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-													Meeting Roster &amp;
-													Verification
-												</h4>
-												<span className="text-xs text-text-muted">
-													{canManage
-														? 'Officers & Leaders can toggle status below'
-														: 'Live member turnout'}
-												</span>
-											</div>
-
-											<div className="rounded-xl border border-border overflow-hidden">
-												<table className="w-full text-left text-xs">
-													<thead className="bg-surface-secondary/70 border-b border-border text-text-muted text-[11px]">
-														<tr>
-															<th className="p-3">
-																Member
-															</th>
-															<th className="p-3">
-																Status
-															</th>
-															{canManage && (
-																<>
-																	<th className="p-3 hidden sm:table-cell">
-																		Method
-																	</th>
-																	<th className="p-3 text-right">
-																		Officer
-																		Actions
-																	</th>
-																</>
-															)}
-														</tr>
-													</thead>
-													<tbody className="divide-y divide-border">
-														{group.memberIds.map(
-															(mId) => {
-																const memberUser =
-																	users.find(
-																		(u) =>
-																			u.id ===
-																			mId,
-																	);
-																const attRecord =
-																	eventAttendances.find(
-																		(a) =>
-																			a.userId ===
-																			mId,
-																	);
-																const status =
-																	attRecord?.status ||
-																	'ABSENT';
-
-																return (
-																	<tr
-																		key={
-																			mId
-																		}
-																		className="hover:bg-surface-secondary/30 transition-colors"
-																	>
-																		<td className="p-3 flex items-center gap-2">
-																			{memberUser?.avatarUrl ? (
-																				<Image
-																					src={
-																						memberUser.avatarUrl
-																					}
-																					alt=""
-																					width={
-																						24
-																					}
-																					height={
-																						24
-																					}
-																					className="h-6 w-6 rounded-full object-cover border border-border"
-																					unoptimized
-																				/>
-																			) : (
-																				<div className="h-6 w-6 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold">
-																					{memberUser
-																						?.name?.[0] ||
-																						'M'}
-																				</div>
-																			)}
-																			<div>
-																				<span className="font-semibold text-text-primary block">
-																					{memberUser?.name ||
-																						'Member'}
-																				</span>
-																				<span className="text-[10px] text-text-muted">
-																					{
-																						memberUser?.email
-																					}
-																				</span>
-																			</div>
-																		</td>
-
-																		<td className="p-3">
-																			<span
-																				className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-																					status ===
-																					'PRESENT'
-																						? 'bg-success-bg text-success border border-success/20'
-																						: status ===
-																							  'LATE'
-																							? 'bg-warning-bg text-warning border border-warning/20'
-																							: status ===
-																								  'EXCUSED'
-																								? 'bg-primary-light text-primary border border-primary/20'
-																								: 'bg-surface-secondary text-text-muted border border-border'
-																				}`}
-																			>
-																				{
-																					status
-																				}
-																			</span>
-																		</td>
-
-																		{canManage && (
-																			<td className="p-3 text-text-muted hidden sm:table-cell text-[11px]">
-																				{attRecord?.checkInMethod ||
-																					'—'}
-																			</td>
-																		)}
-
-																		{canManage && (
-																			<td className="p-3 text-right">
-																				<div className="inline-flex items-center gap-1">
-																					<button
-																						onClick={() =>
-																							updateAttendanceStatus(
-																								currentSelectedEvent.id,
-																								mId,
-																								'PRESENT',
-																							)
-																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-																							status ===
-																							'PRESENT'
-																								? 'bg-success text-white border-success'
-																								: 'border-border text-text-secondary hover:text-success'
-																						}`}
-																					>
-																						Present
-																					</button>
-																					<button
-																						onClick={() =>
-																							updateAttendanceStatus(
-																								currentSelectedEvent.id,
-																								mId,
-																								'LATE',
-																							)
-																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-																							status ===
-																							'LATE'
-																								? 'bg-warning text-white border-warning'
-																								: 'border-border text-text-secondary hover:text-warning'
-																						}`}
-																					>
-																						Late
-																					</button>
-																					<button
-																						onClick={() =>
-																							updateAttendanceStatus(
-																								currentSelectedEvent.id,
-																								mId,
-																								'EXCUSED',
-																							)
-																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-																							status ===
-																							'EXCUSED'
-																								? 'bg-primary text-white border-primary'
-																								: 'border-border text-text-secondary hover:text-primary'
-																						}`}
-																					>
-																						Excused
-																					</button>
-																				</div>
-																			</td>
-																		)}
-																	</tr>
-																);
-															},
-														)}
-													</tbody>
-												</table>
-											</div>
-										</div>
-									</>
+								<p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
+									Officers and Leaders can create a meeting
+									session to enable link attendance check-in
+									for members.
+								</p>
+								{canManage && (
+									<button
+										onClick={() => {
+											setMeetingTitle('');
+											setMeetingDesc('');
+											setMeetingDate(
+												new Date()
+													.toISOString()
+													.split('T')[0],
+											);
+											setMeetingTime('18:00');
+											setMeetingLocation('');
+											setMeetingEndDate('');
+											setMeetingPrice('');
+											setMeetingStatus('PUBLISHED');
+											setCreateMeetingModal(true);
+										}}
+										className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white cursor-pointer"
+									>
+										Create First Session
+									</button>
 								)}
-
-						{activeSubTab === 'info' && (
-							<div className="space-y-4 pt-2">
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
-										<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
-											Time & Location
-										</span>
-										<div className="text-xs text-text-secondary space-y-2">
-											<p className="flex items-center gap-2">
-												📅 <strong>Date:</strong> {currentSelectedEvent.date}
-											</p>
-											<p className="flex items-center gap-2">
-												⏰ <strong>Start Time:</strong> {currentSelectedEvent.time}
-											</p>
-											{currentSelectedEvent.endDate && (
-												<p className="flex items-center gap-2">
-													📅 <strong>End Date:</strong> {currentSelectedEvent.endDate}
-												</p>
-											)}
-											<p className="flex items-center gap-2">
-												📍 <strong>Location:</strong> {currentSelectedEvent.location || 'Campus Center'}
-											</p>
-										</div>
-									</div>
-
-									<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
-										<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
-											Session Status & Cost
-										</span>
-										<div className="text-xs text-text-secondary space-y-2">
-											<p className="flex items-center gap-2">
-												💵 <strong>Price:</strong> {currentSelectedEvent.price ? `$${currentSelectedEvent.price}` : 'Free'}
-											</p>
-											<p className="flex items-center gap-2">
-												🔔 <strong>Status:</strong> {currentSelectedEvent.status === 'CLOSED' ? 'Closed' : currentSelectedEvent.status === 'PUBLISHED' ? 'Published' : 'Draft / Not sent'}
-											</p>
-											<p className="flex items-center gap-2">
-												👤 <strong>Created By:</strong> {getUserName(currentSelectedEvent.createdById)}
-											</p>
-										</div>
-									</div>
+							</motion.div>
+						) : !currentSelectedEvent ? (
+							<motion.div
+								key="list"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: 10 }}
+								transition={{ duration: 0.2 }}
+								className="space-y-4"
+							>
+								<div className="flex items-center justify-between">
+									<h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+										All Meeting Sessions (
+										{clubEvents.length})
+									</h3>
 								</div>
 
-								{currentSelectedEvent.description && (
-									<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-2">
-										<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
-											Description
-										</span>
-										<p className="text-xs text-text-secondary whitespace-pre-wrap">
-											{currentSelectedEvent.description}
-										</p>
-									</div>
-								)}
-							</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+									{clubEvents.map((evt) => {
+										const evtTurnout = attendances.filter(
+											(a) => a.eventId === evt.id,
+										).length;
+
+										return (
+											<button
+												key={evt.id}
+												onClick={() =>
+													setSelectedEventId(evt.id)
+												}
+												className="w-full text-left p-5 rounded-2xl border border-border bg-surface hover:border-primary hover:shadow-md transition-all cursor-pointer space-y-3 group"
+											>
+												<div className="flex items-center justify-between">
+													<span className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate">
+														{evt.title}
+													</span>
+													{evt.isActive ? (
+														<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-success-bg text-success border border-success/20 animate-pulse">
+															● Active
+														</span>
+													) : (
+														<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-secondary text-text-muted border border-border">
+															Closed
+														</span>
+													)}
+												</div>
+
+												<div className="flex items-center gap-2 text-xs text-text-muted">
+													<FiCalendar
+														size={12}
+														className="text-primary shrink-0"
+													/>
+													<span>
+														{evt.date} at {evt.time}
+													</span>
+												</div>
+
+												{evt.description && (
+													<p className="text-xs text-text-muted line-clamp-2 mt-1">
+														{evt.description}
+													</p>
+												)}
+
+												<div className="flex items-center justify-between text-xs text-text-muted border-t border-border/40 pt-2 mt-2">
+													<span>
+														👥 {evtTurnout}{' '}
+														Attendees
+													</span>
+													{canManage && (
+														<span className="font-mono font-semibold text-primary">
+															Code:{' '}
+															{evt.checkInCode}
+														</span>
+													)}
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							</motion.div>
+						) : (
+							<motion.div
+								key="detail"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: 10 }}
+								transition={{ duration: 0.2 }}
+								className="space-y-4"
+							>
+								<div className="mb-4">
+									<button
+										onClick={() => setSelectedEventId(null)}
+										className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary/40 shadow-2xs cursor-pointer transition-colors"
+									>
+										<FiArrowLeft size={13} /> Back to all
+										sessions
+									</button>
+								</div>
+
+								<div className="w-full space-y-6">
+									{currentSelectedEvent && (
+										<div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-5">
+											<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-border pb-4">
+												<div>
+													<div className="flex items-center gap-2">
+														<span
+															className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+																currentSelectedEvent.isActive
+																	? 'bg-success-bg text-success border border-success/20'
+																	: 'bg-surface-secondary text-text-muted border border-border'
+															}`}
+														>
+															{currentSelectedEvent.isActive
+																? '● Check-in Open'
+																: 'Check-in Closed'}
+														</span>
+														<span className="text-xs text-text-muted">
+															{
+																currentSelectedEvent.date
+															}{' '}
+															at{' '}
+															{
+																currentSelectedEvent.time
+															}
+														</span>
+													</div>
+													<h3 className="text-lg font-bold text-text-primary mt-1.5">
+														{
+															currentSelectedEvent.title
+														}
+													</h3>
+													{currentSelectedEvent.description && (
+														<p className="text-xs text-text-secondary mt-1">
+															{
+																currentSelectedEvent.description
+															}
+														</p>
+													)}
+												</div>
+
+												{canManage && (
+													<div className="flex items-center gap-2 shrink-0">
+														<button
+															onClick={() =>
+																toggleEventActive(
+																	currentSelectedEvent.id,
+																	!currentSelectedEvent.isActive,
+																)
+															}
+															className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary"
+														>
+															{currentSelectedEvent.isActive
+																? 'Close Check-in'
+																: 'Re-open Check-in'}
+														</button>
+														<button
+															onClick={() => {
+																if (
+																	confirm(
+																		'Are you sure you want to delete this meeting session?',
+																	)
+																) {
+																	deleteMeetingEvent(
+																		currentSelectedEvent.id,
+																	);
+																}
+															}}
+															className="text-text-muted hover:text-danger p-1.5 cursor-pointer"
+															title="Delete meeting session"
+														>
+															<FiTrash2
+																size={16}
+															/>
+														</button>
+													</div>
+												)}
+											</div>
+
+											{/* Sub-tab Navigation */}
+											<div className="flex border-b border-border gap-4 pb-0.5 mt-2">
+												<button
+													onClick={() =>
+														setActiveSubTab(
+															'roster',
+														)
+													}
+													className={`pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+														activeSubTab ===
+														'roster'
+															? 'border-primary text-primary font-bold'
+															: 'border-transparent text-text-muted hover:text-text-primary'
+													}`}
+												>
+													👥 Roster & Check-In
+												</button>
+												<button
+													onClick={() =>
+														setActiveSubTab('info')
+													}
+													className={`pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+														activeSubTab === 'info'
+															? 'border-primary text-primary font-bold'
+															: 'border-transparent text-text-muted hover:text-text-primary'
+													}`}
+												>
+													ℹ️ Session Details
+												</button>
+											</div>
+
+											{activeSubTab === 'roster' && (
+												<>
+													{/* Big Check-in PIN Display (Officers Only) / Check-in Form */}
+													{canManage ? (
+														<div className="rounded-xl bg-primary-light/50 border border-primary/20 p-4 flex flex-col justify-between">
+															<div>
+																<span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
+																	Meeting
+																	Check-In
+																	Code
+																</span>
+																<p className="text-xs text-text-muted mt-0.5">
+																	Project this
+																	code on
+																	screen for
+																	attendees.
+																</p>
+															</div>
+															<div className="my-3 text-center">
+																<span className="text-3xl sm:text-4xl font-extrabold tracking-widest font-mono text-primary select-all">
+																	{
+																		currentSelectedEvent.checkInCode
+																	}
+																</span>
+															</div>
+															<button
+																onClick={() => {
+																	navigator.clipboard.writeText(
+																		currentSelectedEvent.checkInCode,
+																	);
+																	setCopiedPin(
+																		true,
+																	);
+																	setTimeout(
+																		() =>
+																			setCopiedPin(
+																				false,
+																			),
+																		2000,
+																	);
+																}}
+																className="w-full rounded-lg bg-primary py-1.5 text-xs font-semibold text-white shadow-2xs cursor-pointer hover:bg-primary-hover transition-all"
+															>
+																{copiedPin
+																	? 'Copied Code!'
+																	: 'Copy Code'}
+															</button>
+														</div>
+													) : (
+														/* Member-Only Self Check-in Form (No Code Visible) */
+														<div className="rounded-2xl border border-border bg-surface-secondary/30 p-5 space-y-4">
+															<div>
+																<span className="text-xs font-bold text-text-primary uppercase tracking-wider block">
+																	Self
+																	Check-In
+																</span>
+																<p className="text-xs text-text-muted mt-0.5">
+																	Enter the
+																	check-in PIN
+																	displayed by
+																	club
+																	officers on
+																	the screen
+																	to verify
+																	your
+																	attendance.
+																</p>
+															</div>
+
+															{userIsCheckedIn ? (
+																<div className="py-4 text-center rounded-xl bg-success-bg border border-success/20">
+																	<span className="text-sm font-bold text-success flex items-center justify-center gap-2">
+																		<FiCheckCircle
+																			size={
+																				20
+																			}
+																		/>
+																		You are
+																		checked
+																		into
+																		this
+																		meeting!
+																	</span>
+																</div>
+															) : (
+																<form
+																	onSubmit={
+																		handleSelfCheckIn
+																	}
+																	className="space-y-3 max-w-md"
+																>
+																	{checkInResult?.error && (
+																		<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-2.5 rounded-xl text-center font-medium">
+																			{
+																				checkInResult.error
+																			}
+																		</div>
+																	)}
+																	<div className="flex items-center gap-2">
+																		<input
+																			type="text"
+																			required
+																			placeholder="Enter PIN"
+																			value={
+																				checkInInput
+																			}
+																			onChange={(
+																				e,
+																			) =>
+																				setCheckInInput(
+																					e
+																						.target
+																						.value,
+																				)
+																			}
+																			className="grow rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-mono font-bold text-center text-text-primary uppercase tracking-widest focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:font-sans placeholder:font-normal placeholder:tracking-normal"
+																		/>
+																		<button
+																			type="submit"
+																			disabled={
+																				!currentSelectedEvent.isActive ||
+																				!checkInInput.trim()
+																			}
+																			className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all disabled:opacity-50 cursor-pointer shrink-0"
+																		>
+																			Check
+																			In
+																		</button>
+																	</div>
+																	{!currentSelectedEvent.isActive && (
+																		<p className="text-[11px] text-text-muted italic">
+																			This
+																			meeting
+																			session
+																			is
+																			currently
+																			inactive
+																			or
+																			concluded.
+																		</p>
+																	)}
+																</form>
+															)}
+														</div>
+													)}
+
+													{/* Live Member Roster Checklist */}
+													<div className="space-y-3 pt-4 border-t border-border">
+														<div className="flex items-center justify-between">
+															<h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+																Meeting Roster
+																&amp;
+																Verification
+															</h4>
+															<span className="text-xs text-text-muted">
+																{canManage
+																	? 'Officers & Leaders can toggle status below'
+																	: 'Live member turnout'}
+															</span>
+														</div>
+
+														<div className="rounded-xl border border-border overflow-hidden">
+															<table className="w-full text-left text-xs">
+																<thead className="bg-surface-secondary/70 border-b border-border text-text-muted text-[11px]">
+																	<tr>
+																		<th className="p-3">
+																			Member
+																		</th>
+																		<th className="p-3">
+																			Status
+																		</th>
+																		{canManage && (
+																			<>
+																				<th className="p-3 hidden sm:table-cell">
+																					Method
+																				</th>
+																				<th className="p-3 text-right">
+																					Officer
+																					Actions
+																				</th>
+																			</>
+																		)}
+																	</tr>
+																</thead>
+																<tbody className="divide-y divide-border">
+																	{group.memberIds.map(
+																		(
+																			mId,
+																		) => {
+																			const memberUser =
+																				users.find(
+																					(
+																						u,
+																					) =>
+																						u.id ===
+																						mId,
+																				);
+																			const attRecord =
+																				eventAttendances.find(
+																					(
+																						a,
+																					) =>
+																						a.userId ===
+																						mId,
+																				);
+																			const status =
+																				attRecord?.status ||
+																				'ABSENT';
+
+																			return (
+																				<tr
+																					key={
+																						mId
+																					}
+																					className="hover:bg-surface-secondary/30 transition-colors"
+																				>
+																					<td className="p-3 flex items-center gap-2">
+																						{memberUser?.avatarUrl ? (
+																							<Image
+																								src={
+																									memberUser.avatarUrl
+																								}
+																								alt=""
+																								width={
+																									24
+																								}
+																								height={
+																									24
+																								}
+																								className="h-6 w-6 rounded-full object-cover border border-border"
+																								unoptimized
+																							/>
+																						) : (
+																							<div className="h-6 w-6 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold">
+																								{memberUser
+																									?.name?.[0] ||
+																									'M'}
+																							</div>
+																						)}
+																						<div>
+																							<span className="font-semibold text-text-primary block">
+																								{memberUser?.name ||
+																									'Member'}
+																							</span>
+																							<span className="text-[10px] text-text-muted">
+																								{
+																									memberUser?.email
+																								}
+																							</span>
+																						</div>
+																					</td>
+
+																					<td className="p-3">
+																						<span
+																							className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+																								status ===
+																								'PRESENT'
+																									? 'bg-success-bg text-success border border-success/20'
+																									: status ===
+																										  'LATE'
+																										? 'bg-warning-bg text-warning border border-warning/20'
+																										: status ===
+																											  'EXCUSED'
+																											? 'bg-primary-light text-primary border border-primary/20'
+																											: 'bg-surface-secondary text-text-muted border border-border'
+																							}`}
+																						>
+																							{
+																								status
+																							}
+																						</span>
+																					</td>
+
+																					{canManage && (
+																						<td className="p-3 text-text-muted hidden sm:table-cell text-[11px]">
+																							{attRecord?.checkInMethod ||
+																								'—'}
+																						</td>
+																					)}
+
+																					{canManage && (
+																						<td className="p-3 text-right">
+																							<div className="inline-flex items-center gap-1">
+																								<button
+																									onClick={() =>
+																										updateAttendanceStatus(
+																											currentSelectedEvent.id,
+																											mId,
+																											'PRESENT',
+																										)
+																									}
+																									className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+																										status ===
+																										'PRESENT'
+																											? 'bg-success text-white border-success'
+																											: 'border-border text-text-secondary hover:text-success'
+																									}`}
+																								>
+																									Present
+																								</button>
+																								<button
+																									onClick={() =>
+																										updateAttendanceStatus(
+																											currentSelectedEvent.id,
+																											mId,
+																											'LATE',
+																										)
+																									}
+																									className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+																										status ===
+																										'LATE'
+																											? 'bg-warning text-white border-warning'
+																											: 'border-border text-text-secondary hover:text-warning'
+																									}`}
+																								>
+																									Late
+																								</button>
+																								<button
+																									onClick={() =>
+																										updateAttendanceStatus(
+																											currentSelectedEvent.id,
+																											mId,
+																											'EXCUSED',
+																										)
+																									}
+																									className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+																										status ===
+																										'EXCUSED'
+																											? 'bg-primary text-white border-primary'
+																											: 'border-border text-text-secondary hover:text-primary'
+																									}`}
+																								>
+																									Excused
+																								</button>
+																							</div>
+																						</td>
+																					)}
+																				</tr>
+																			);
+																		},
+																	)}
+																</tbody>
+															</table>
+														</div>
+													</div>
+												</>
+											)}
+
+											{activeSubTab === 'info' && (
+												<div className="space-y-4 pt-2">
+													<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+														<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
+															<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+																Time & Location
+															</span>
+															<div className="text-xs text-text-secondary space-y-2">
+																<p className="flex items-center gap-2">
+																	📅{' '}
+																	<strong>
+																		Date:
+																	</strong>{' '}
+																	{
+																		currentSelectedEvent.date
+																	}
+																</p>
+																<p className="flex items-center gap-2">
+																	⏰{' '}
+																	<strong>
+																		Start
+																		Time:
+																	</strong>{' '}
+																	{
+																		currentSelectedEvent.time
+																	}
+																</p>
+																{currentSelectedEvent.endDate && (
+																	<p className="flex items-center gap-2">
+																		📅{' '}
+																		<strong>
+																			End
+																			Date:
+																		</strong>{' '}
+																		{
+																			currentSelectedEvent.endDate
+																		}
+																	</p>
+																)}
+																<p className="flex items-center gap-2">
+																	📍{' '}
+																	<strong>
+																		Location:
+																	</strong>{' '}
+																	{currentSelectedEvent.location ||
+																		'Campus Center'}
+																</p>
+															</div>
+														</div>
+
+														<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
+															<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+																Session Status &
+																Cost
+															</span>
+															<div className="text-xs text-text-secondary space-y-2">
+																<p className="flex items-center gap-2">
+																	💵{' '}
+																	<strong>
+																		Price:
+																	</strong>{' '}
+																	{currentSelectedEvent.price
+																		? `$${currentSelectedEvent.price}`
+																		: 'Free'}
+																</p>
+																<p className="flex items-center gap-2">
+																	🔔{' '}
+																	<strong>
+																		Status:
+																	</strong>{' '}
+																	{currentSelectedEvent.status ===
+																	'CLOSED'
+																		? 'Closed'
+																		: currentSelectedEvent.status ===
+																			  'PUBLISHED'
+																			? 'Published'
+																			: 'Draft / Not sent'}
+																</p>
+																<p className="flex items-center gap-2">
+																	👤{' '}
+																	<strong>
+																		Created
+																		By:
+																	</strong>{' '}
+																	{getUserName(
+																		currentSelectedEvent.createdById,
+																	)}
+																</p>
+															</div>
+														</div>
+													</div>
+
+													{currentSelectedEvent.description && (
+														<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-2">
+															<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+																Description
+															</span>
+															<p className="text-xs text-text-secondary whitespace-pre-wrap">
+																{
+																	currentSelectedEvent.description
+																}
+															</p>
+														</div>
+													)}
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							</motion.div>
 						)}
-					</div>
-				)}
-							</div>
-						</motion.div>
-					)}
-				</AnimatePresence>
+					</AnimatePresence>
 				</main>
 			)}
 
@@ -4287,1038 +4388,89 @@ export default function GroupFeedPage() {
 				</main>
 			)}
 
-			{/* Standalone Schedule Meeting Session Modal */}
-			<AnimatePresence>
-				{createMeetingModal && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in duration-200"
-						>
-							<div className="flex items-start justify-between border-b border-border pb-3">
-								<div>
-									<h3 className="text-base font-bold text-text-primary">
-										Schedule Meeting Session
-									</h3>
-									<p className="text-[10px] text-text-muted mt-0.5">
-										Create a meeting session to enable link
-										attendance check-in for members.
-									</p>
-								</div>
-								<button
-									onClick={() => setCreateMeetingModal(false)}
-									className="text-text-muted hover:text-text-primary p-1 cursor-pointer transition-colors"
-								>
-									<FiX size={16} />
-								</button>
-							</div>
+			<ScheduleMeetingModal
+				isOpen={createMeetingModal}
+				onClose={() => setCreateMeetingModal(false)}
+				onSubmit={handleCreateMeetingSession}
+				meetingTitle={meetingTitle}
+				setMeetingTitle={setMeetingTitle}
+				meetingDate={meetingDate}
+				setMeetingDate={setMeetingDate}
+				meetingTime={meetingTime}
+				setMeetingTime={setMeetingTime}
+				meetingLocation={meetingLocation}
+				setMeetingLocation={setMeetingLocation}
+				meetingPrice={meetingPrice}
+				setMeetingPrice={setMeetingPrice}
+				meetingDesc={meetingDesc}
+				setMeetingDesc={setMeetingDesc}
+				meetingEndDate={meetingEndDate}
+				setMeetingEndDate={setMeetingEndDate}
+				meetingStatus={meetingStatus}
+				setMeetingStatus={setMeetingStatus}
+				creatingEvent={creatingEvent}
+			/>
 
-							<form
-								onSubmit={handleCreateMeetingSession}
-								className="space-y-4"
-							>
-								<Input
-									label="Meeting Title"
-									required
-									placeholder="e.g. Weekly Club Assembly"
-									value={meetingTitle}
-									onChange={(e) =>
-										setMeetingTitle(e.target.value)
-									}
-								/>
-
-								<div className="grid grid-cols-2 gap-3">
-									<div>
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											Date
-										</label>
-										<input
-											type="date"
-											required
-											value={meetingDate}
-											onChange={(e) =>
-												setMeetingDate(e.target.value)
-											}
-											className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											Time
-										</label>
-										<input
-											type="time"
-											required
-											value={meetingTime}
-											onChange={(e) =>
-												setMeetingTime(e.target.value)
-											}
-											className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-										/>
-									</div>
-								</div>
-
-								<div className="grid grid-cols-2 gap-3">
-									<Input
-										label="Location"
-										placeholder="e.g. Room 402 or Main Hall"
-										value={meetingLocation}
-										onChange={(e) =>
-											setMeetingLocation(e.target.value)
-										}
-									/>
-
-									<Input
-										label="Price (Optional)"
-										placeholder="e.g. Free"
-										value={meetingPrice}
-										onChange={(e) =>
-											setMeetingPrice(e.target.value)
-										}
-									/>
-								</div>
-
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Description / Agenda
-									</label>
-									<textarea
-										rows={3}
-										value={meetingDesc}
-										onChange={(e) =>
-											setMeetingDesc(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none resize-none"
-										placeholder="Agenda or notes for this meeting..."
-									/>
-								</div>
-
-								<div className="grid grid-cols-2 gap-3">
-									<div>
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											End Date (Optional)
-										</label>
-										<input
-											type="date"
-											value={meetingEndDate}
-											onChange={(e) =>
-												setMeetingEndDate(
-													e.target.value,
-												)
-											}
-											className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											Status
-										</label>
-										<select
-											value={meetingStatus}
-											onChange={(e) =>
-												setMeetingStatus(e.target.value)
-											}
-											className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none cursor-pointer"
-										>
-											<option value="PUBLISHED">
-												Published / Open
-											</option>
-											<option value="NOT_SENT">
-												Draft / Closed
-											</option>
-										</select>
-									</div>
-								</div>
-
-								<div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-2">
-									<button
-										type="button"
-										onClick={() =>
-											setCreateMeetingModal(false)
-										}
-										className="rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
-									>
-										Cancel
-									</button>
-									<button
-										type="submit"
-										disabled={
-											creatingEvent ||
-											!meetingTitle.trim() ||
-											!meetingDate
-										}
-										className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-									>
-										{creatingEvent
-											? 'Scheduling...'
-											: 'Schedule Meeting'}
-									</button>
-								</div>
-							</form>
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
-
-			{/* Add Activity Modal */}
-			<AnimatePresence>
-				{createEventModal && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							className="w-full max-w-xl rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
-						>
-							{/* Modal Header */}
-							<div className="flex items-start justify-between border-b border-border pb-3">
-								<div className="space-y-1 grow">
-									<h3 className="text-base font-bold text-text-primary">
-										{editingActivityId
-											? 'Edit Activity'
-											: 'Add activity'}
-									</h3>
-
-									{/* Subtitle live metadata */}
-									<div className="text-[11px] text-text-muted space-y-0.5">
-										<span className="font-semibold block truncate">
-											{eventTitle ? (
-												eventTitle
-											) : (
-												<span className="italic">
-													No title yet
-												</span>
-											)}
-										</span>
-										<div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-											<span className="flex items-center gap-1">
-												<FiCalendar
-													size={11}
-													className="text-primary shrink-0"
-												/>
-												<span>
-													{eventDate
-														? new Date(
-																eventDate,
-															).toLocaleDateString(
-																'en-US',
-																{
-																	weekday:
-																		'short',
-																	day: 'numeric',
-																	month: 'short',
-																	year: 'numeric',
-																},
-															)
-														: 'No date yet'}
-													{!activityAllDay &&
-														eventTime &&
-														` , ${eventTime}`}
-													{!activityAllDay &&
-														activityEndTime &&
-														`–${activityEndTime}`}
-												</span>
-											</span>
-											<span className="flex items-center gap-1">
-												<FiMapPin
-													size={11}
-													className="text-primary shrink-0"
-												/>
-												<span className="truncate max-w-[150px]">
-													{eventLocation
-														? eventLocation
-														: 'No location yet'}
-												</span>
-											</span>
-											<span className="flex items-center gap-1">
-												<FiUsers
-													size={11}
-													className="text-primary shrink-0"
-												/>
-												<span>All members</span>
-											</span>
-										</div>
-									</div>
-								</div>
-								<button
-									onClick={() => {
-										setCreateEventModal(false);
-										setEditingActivityId(null);
-										setEventTitle('');
-										setEventDesc('');
-										setActivityEndDate('');
-										setActivityPrice('');
-										setActivityStatus('NOT_SENT');
-										setActivityLocationType('');
-										setActivityAllDay(false);
-										setActivityEndTime('10:00');
-										setActivityRegRequired(false);
-										setActivityRegCapacity('');
-										setActivityRegDeadline('');
-										setActivityInviteMessage('');
-										setActivityInviteReminderDays('0');
-										setModalActiveTab('data');
-									}}
-									className="text-text-muted hover:text-text-primary text-base ml-2 shrink-0 cursor-pointer"
-								>
-									✕
-								</button>
-							</div>
-
-							{/* Horizontal Tabs */}
-							<div className="flex items-center border-b border-border text-xs font-semibold">
-								<button
-									type="button"
-									onClick={() => setModalActiveTab('data')}
-									className={`pb-2 px-3 relative cursor-pointer flex items-center gap-1.5 transition-colors ${
-										modalActiveTab === 'data'
-											? 'text-primary border-b-2 border-primary'
-											: 'text-text-muted hover:text-text-primary'
-									}`}
-								>
-									<span>ℹ️ Data</span>
-									{(!eventTitle || !eventDate) && (
-										<span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-									)}
-								</button>
-
-								<button
-									type="button"
-									onClick={() => setModalActiveTab('login')}
-									className={`pb-2 px-3 relative cursor-pointer flex items-center gap-1.5 transition-colors ${
-										modalActiveTab === 'login'
-											? 'text-primary border-b-2 border-primary'
-											: 'text-text-muted hover:text-text-primary'
-									}`}
-								>
-									<span>👥 Login</span>
-									{activityRegRequired && (
-										<span className="bg-primary/20 text-primary text-[9px] px-1 rounded">
-											On
-										</span>
-									)}
-								</button>
-
-								<button
-									type="button"
-									onClick={() => setModalActiveTab('costs')}
-									className={`pb-2 px-3 relative cursor-pointer flex items-center gap-1.5 transition-colors ${
-										modalActiveTab === 'costs'
-											? 'text-primary border-b-2 border-primary'
-											: 'text-text-muted hover:text-text-primary'
-									}`}
-								>
-									<span>💵 Costs</span>
-									{activityPrice && (
-										<span className="bg-primary/20 text-primary text-[9px] px-1 rounded">
-											1
-										</span>
-									)}
-								</button>
-
-								<button
-									type="button"
-									onClick={() =>
-										setModalActiveTab('invitation')
-									}
-									className={`pb-2 px-3 relative cursor-pointer flex items-center gap-1.5 transition-colors ${
-										modalActiveTab === 'invitation'
-											? 'text-primary border-b-2 border-primary'
-											: 'text-text-muted hover:text-text-primary'
-									}`}
-								>
-									<span>📢 Invitation</span>
-								</button>
-							</div>
-
-							{/* Tab Contents Panel */}
-							<form
-								onSubmit={handleCreateEvent}
-								className="space-y-4 text-xs"
-							>
-								{modalActiveTab === 'data' && (
-									<div className="space-y-3">
-										<p className="text-[11px] text-text-muted">
-											What happens, where it is and when.
-											This is what members see first.
-										</p>
-
-										<Input
-											label="Title"
-											required
-											placeholder="Title"
-											value={eventTitle}
-											onChange={(e) =>
-												setEventTitle(e.target.value)
-											}
-										/>
-
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												Description
-											</label>
-											<span className="block text-[10px] text-text-muted mb-1">
-												Shown in the app and in the
-												invitation email.
-											</span>
-											<motion.div
-												animate={{
-													scale: descFocused
-														? 1.01
-														: 1,
-													boxShadow: descFocused
-														? '0 4px 12px rgba(79, 70, 229, 0.12)'
-														: '0 0px 0px rgba(0,0,0,0)',
-												}}
-												transition={{
-													type: 'spring',
-													stiffness: 400,
-													damping: 25,
-												}}
-												className={`rounded-xl border bg-surface-secondary px-3 py-2 transition-colors ${
-													descFocused
-														? 'border-primary/50 ring-2 ring-primary/10'
-														: 'border-border'
-												}`}
-											>
-												<textarea
-													rows={3}
-													value={eventDesc}
-													onChange={(e) =>
-														setEventDesc(
-															e.target.value,
-														)
-													}
-													onFocus={() =>
-														setDescFocused(true)
-													}
-													onBlur={() =>
-														setDescFocused(false)
-													}
-													className="w-full bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none resize-none"
-												/>
-											</motion.div>
-										</div>
-
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												Location type
-											</label>
-											<div className="relative">
-												<motion.button
-													type="button"
-													onClick={() => {
-														setIsLocDropdownOpen(
-															!isLocDropdownOpen,
-														);
-														setLocTypeFocused(
-															!isLocDropdownOpen,
-														);
-													}}
-													animate={{
-														scale: isLocDropdownOpen
-															? 1.01
-															: 1,
-														boxShadow:
-															isLocDropdownOpen
-																? '0 4px 12px rgba(79, 70, 229, 0.12)'
-																: '0 0px 0px rgba(0,0,0,0)',
-													}}
-													transition={{
-														type: 'spring',
-														stiffness: 400,
-														damping: 25,
-													}}
-													className={`w-full rounded-xl bg-surface-secondary border px-3 py-2.5 flex items-center justify-between text-xs text-text-primary focus:outline-none transition-colors cursor-pointer ${
-														isLocDropdownOpen
-															? 'border-primary/50 ring-2 ring-primary/10'
-															: 'border-border'
-													}`}
-												>
-													<span>
-														{activityLocationType ===
-															'fixed' &&
-															'📍 Fixed location'}
-														{activityLocationType ===
-															'house' &&
-															"🏠 Member's house"}
-														{activityLocationType ===
-															'custom' &&
-															'✏️ Type address myself'}
-														{!activityLocationType &&
-															'Select location type...'}
-													</span>
-													<FiChevronDown
-														className={`transition-transform duration-200 ${isLocDropdownOpen ? 'rotate-180' : ''}`}
-													/>
-												</motion.button>
-
-												<AnimatePresence>
-													{isLocDropdownOpen && (
-														<>
-															<div
-																className="fixed inset-0 z-10"
-																onClick={() => {
-																	setIsLocDropdownOpen(
-																		false,
-																	);
-																	setLocTypeFocused(
-																		false,
-																	);
-																}}
-															/>
-															<motion.div
-																initial={{
-																	opacity: 0,
-																	y: -4,
-																	scale: 0.98,
-																}}
-																animate={{
-																	opacity: 1,
-																	y: 0,
-																	scale: 1,
-																}}
-																exit={{
-																	opacity: 0,
-																	y: -4,
-																	scale: 0.98,
-																}}
-																transition={{
-																	duration: 0.15,
-																}}
-																className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-surface p-1 shadow-lg space-y-0.5"
-															>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																		setLocTypeFocused(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		!activityLocationType
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span>
-																		-
-																	</span>
-																	{!activityLocationType && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'fixed',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																		setLocTypeFocused(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		activityLocationType ===
-																		'fixed'
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span className="flex items-center gap-2">
-																		📍 Fixed
-																		location
-																	</span>
-																	{activityLocationType ===
-																		'fixed' && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'house',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																		setLocTypeFocused(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		activityLocationType ===
-																		'house'
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span className="flex items-center gap-2">
-																		🏠
-																		Member's
-																		house
-																	</span>
-																	{activityLocationType ===
-																		'house' && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'custom',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																		setLocTypeFocused(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		activityLocationType ===
-																		'custom'
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span className="flex items-center gap-2">
-																		✏️ Type
-																		address
-																		myself
-																	</span>
-																	{activityLocationType ===
-																		'custom' && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-															</motion.div>
-														</>
-													)}
-												</AnimatePresence>
-											</div>
-											<span className="block text-[10px] text-text-muted mt-1">
-												Choose a fixed location, a
-												member's house, or type an
-												address yourself. Members are
-												then given a route link.
-											</span>
-										</div>
-
-										{activityLocationType && (
-											<Input
-												label="Address"
-												value={eventLocation}
-												onChange={(e) =>
-													setEventLocation(
-														e.target.value,
-													)
-												}
-												placeholder="Enter location address"
-											/>
-										)}
-
-										<Checkbox
-											checked={activityAllDay}
-											onChange={(e) =>
-												setActivityAllDay(
-													e.target.checked,
-												)
-											}
-											label={
-												<div className="space-y-0.5 ml-1">
-													<span className="font-semibold block text-text-primary">
-														All day
-													</span>
-													<span className="text-[10px] text-text-muted block">
-														Without start and end
-														time, for example a
-														weekend or a whole day.
-													</span>
-												</div>
-											}
-										/>
-
-										<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-											<div>
-												<label className="block text-[10px] font-bold text-text-muted uppercase mb-1">
-													Start date
-												</label>
-												<input
-													type="date"
-													required
-													value={eventDate}
-													onChange={(e) =>
-														setEventDate(
-															e.target.value,
-														)
-													}
-													className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-												/>
-											</div>
-
-											{!activityAllDay && (
-												<div>
-													<label className="block text-[10px] font-bold text-text-muted uppercase mb-1">
-														Start time
-													</label>
-													<input
-														type="time"
-														required
-														value={eventTime}
-														onChange={(e) =>
-															setEventTime(
-																e.target.value,
-															)
-														}
-														className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-													/>
-												</div>
-											)}
-
-											<div>
-												<label className="block text-[10px] font-bold text-text-muted uppercase mb-1">
-													End date
-												</label>
-												<div className="relative">
-													<input
-														type="date"
-														value={activityEndDate}
-														onChange={(e) =>
-															setActivityEndDate(
-																e.target.value,
-															)
-														}
-														className="w-full rounded-xl border border-border bg-surface-secondary p-3 pr-8 text-xs text-text-primary focus:outline-none"
-													/>
-													{activityEndDate && (
-														<button
-															type="button"
-															onClick={() =>
-																setActivityEndDate(
-																	'',
-																)
-															}
-															className="absolute right-2.5 top-3.5 text-text-muted hover:text-text-primary"
-														>
-															✕
-														</button>
-													)}
-												</div>
-											</div>
-
-											{!activityAllDay && (
-												<div>
-													<label className="block text-[10px] font-bold text-text-muted uppercase mb-1">
-														End time
-													</label>
-													<input
-														type="time"
-														required
-														value={activityEndTime}
-														onChange={(e) =>
-															setActivityEndTime(
-																e.target.value,
-															)
-														}
-														className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-													/>
-												</div>
-											)}
-										</div>
-
-										<Checkbox
-											label={
-												<div className="space-y-0.5 ml-1">
-													<span className="font-semibold block text-text-primary">
-														Create multiple dates
-													</span>
-													<span className="text-[10px] text-text-muted block">
-														Create the same activity
-														at once for several
-														months, for example
-														every first Tuesday.
-													</span>
-												</div>
-											}
-										/>
-
-										<Checkbox
-											checked={autoCreateAttendance}
-											onChange={(e) =>
-												setAutoCreateAttendance(
-													e.target.checked,
-												)
-											}
-											label={
-												<div className="space-y-0.5 ml-1">
-													<span className="font-semibold block text-text-primary">
-														Automatically create
-														attendance session
-													</span>
-													<span className="text-[10px] text-text-muted block">
-														Create a separate
-														meeting session for this
-														date to track member
-														attendance check-in.
-													</span>
-												</div>
-											}
-										/>
-									</div>
-								)}
-
-								{modalActiveTab === 'login' && (
-									<div className="space-y-3">
-										<p className="text-[11px] text-text-muted">
-											Configure registration settings for
-											the activity.
-										</p>
-
-										<Checkbox
-											checked={activityRegRequired}
-											onChange={(e) =>
-												setActivityRegRequired(
-													e.target.checked,
-												)
-											}
-											label={
-												<div className="space-y-0.5 ml-1">
-													<span className="font-semibold block text-text-primary">
-														Require registration to
-														attend
-													</span>
-													<span className="text-[10px] text-text-muted block">
-														Users must register and
-														confirm attendance prior
-														to the deadline.
-													</span>
-												</div>
-											}
-										/>
-
-										{activityRegRequired && (
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-												<Input
-													type="number"
-													label="Maximum capacity (optional)"
-													placeholder="e.g. 50"
-													value={activityRegCapacity}
-													onChange={(e) =>
-														setActivityRegCapacity(
-															e.target.value,
-														)
-													}
-												/>
-
-												<div>
-													<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-														Registration Deadline
-													</label>
-													<input
-														type="datetime-local"
-														value={
-															activityRegDeadline
-														}
-														onChange={(e) =>
-															setActivityRegDeadline(
-																e.target.value,
-															)
-														}
-														className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-													/>
-												</div>
-											</div>
-										)}
-									</div>
-								)}
-
-								{modalActiveTab === 'costs' && (
-									<div className="space-y-3">
-										<p className="text-[11px] text-text-muted">
-											Indicate how much the activity costs
-											for the member.
-										</p>
-
-										<Input
-											type="text"
-											label="Costs (e.g. $10.00)"
-											placeholder="e.g. $ 10.00 or Free"
-											value={activityPrice}
-											onChange={(e) =>
-												setActivityPrice(e.target.value)
-											}
-										/>
-									</div>
-								)}
-
-								{modalActiveTab === 'invitation' && (
-									<div className="space-y-4">
-										<div className="space-y-3">
-											<p className="text-[11px] text-text-muted">
-												What goes to the club, and when.
-												The invitation only goes away
-												when you click &quot;Send&quot;.
-											</p>
-
-											<div>
-												<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-													Email message
-												</label>
-												<span className="block text-[10px] text-text-muted mb-1">
-													Optional message to include
-													in the invitation email. Use
-													this for specific details
-													about this activity (e.g.
-													speaker information, special
-													instructions).
-												</span>
-												<motion.div
-													animate={{
-														scale: inviteMsgFocused
-															? 1.01
-															: 1,
-														boxShadow:
-															inviteMsgFocused
-																? '0 4px 12px rgba(79, 70, 229, 0.12)'
-																: '0 0px 0px rgba(0,0,0,0)',
-													}}
-													transition={{
-														type: 'spring',
-														stiffness: 400,
-														damping: 25,
-													}}
-													className={`rounded-xl border bg-surface-secondary px-3 py-2 transition-colors ${
-														inviteMsgFocused
-															? 'border-primary/50 ring-2 ring-primary/10'
-															: 'border-border'
-													}`}
-												>
-													<textarea
-														rows={3}
-														value={
-															activityInviteMessage
-														}
-														onChange={(e) =>
-															setActivityInviteMessage(
-																e.target.value,
-															)
-														}
-														onFocus={() =>
-															setInviteMsgFocused(
-																true,
-															)
-														}
-														onBlur={() =>
-															setInviteMsgFocused(
-																false,
-															)
-														}
-														className="w-full bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none resize-none"
-														placeholder="Type invitation message..."
-													/>
-												</motion.div>
-											</div>
-
-											<div>
-												<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-													Remembrance days in advance
-												</label>
-												<span className="block text-[10px] text-text-muted mb-1">
-													Number of days for this
-													activity that non-responders
-													receive a reminder. Use 0 to
-													disable.
-												</span>
-												<input
-													type="number"
-													value={
-														activityInviteReminderDays
-													}
-													onChange={(e) =>
-														setActivityInviteReminderDays(
-															e.target.value,
-														)
-													}
-													className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
-												/>
-											</div>
-										</div>
-									</div>
-								)}
-
-								{/* Modal Actions Footer */}
-								<div className="pt-3 border-t border-border flex justify-end gap-3">
-									<button
-										type="button"
-										onClick={() => {
-											setCreateEventModal(false);
-											setEditingActivityId(null);
-											setEventTitle('');
-											setEventDesc('');
-											setActivityEndDate('');
-											setActivityPrice('');
-											setActivityStatus('NOT_SENT');
-											setActivityLocationType('');
-											setActivityAllDay(false);
-											setActivityEndTime('10:00');
-											setActivityRegRequired(false);
-											setActivityRegCapacity('');
-											setActivityRegDeadline('');
-											setActivityInviteMessage('');
-											setActivityInviteReminderDays('0');
-											setModalActiveTab('data');
-										}}
-										className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary/40 transition-colors cursor-pointer"
-									>
-										Cancel
-									</button>
-									<button
-										type="submit"
-										disabled={creatingEvent}
-										className="rounded-xl bg-primary px-6 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50 transition-colors cursor-pointer"
-									>
-										{creatingEvent
-											? 'Saving...'
-											: 'Save activity'}
-									</button>
-								</div>
-							</form>
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
+			<CreateEventModal
+				isOpen={createEventModal}
+				onClose={() => {
+					setCreateEventModal(false);
+					setEditingActivityId(null);
+					setEventTitle('');
+					setEventDesc('');
+					setActivityEndDate('');
+					setActivityPrice('');
+					setActivityStatus('NOT_SENT');
+					setActivityLocationType('');
+					setActivityAllDay(false);
+					setActivityEndTime('10:00');
+					setActivityRegRequired(false);
+					setActivityRegCapacity('');
+					setActivityRegDeadline('');
+					setActivityInviteMessage('');
+					setActivityInviteReminderDays('0');
+					setModalActiveTab('data');
+				}}
+				onSubmit={handleCreateEvent}
+				editingActivityId={editingActivityId}
+				eventTitle={eventTitle}
+				setEventTitle={setEventTitle}
+				eventDesc={eventDesc}
+				setEventDesc={setEventDesc}
+				eventDate={eventDate}
+				setEventDate={setEventDate}
+				eventTime={eventTime}
+				setEventTime={setEventTime}
+				eventLocation={eventLocation}
+				setEventLocation={setEventLocation}
+				activityEndDate={activityEndDate}
+				setActivityEndDate={setActivityEndDate}
+				activityPrice={activityPrice}
+				setActivityPrice={setActivityPrice}
+				activityStatus={activityStatus}
+				setActivityStatus={setActivityStatus}
+				activityLocationType={activityLocationType}
+				setActivityLocationType={setActivityLocationType}
+				activityAllDay={activityAllDay}
+				setActivityAllDay={setActivityAllDay}
+				activityEndTime={activityEndTime}
+				setActivityEndTime={setActivityEndTime}
+				activityRegRequired={activityRegRequired}
+				setActivityRegRequired={setActivityRegRequired}
+				activityRegCapacity={activityRegCapacity}
+				setActivityRegCapacity={setActivityRegCapacity}
+				activityRegDeadline={activityRegDeadline}
+				setActivityRegDeadline={setActivityRegDeadline}
+				activityInviteMessage={activityInviteMessage}
+				setActivityInviteMessage={setActivityInviteMessage}
+				activityInviteReminderDays={activityInviteReminderDays}
+				setActivityInviteReminderDays={setActivityInviteReminderDays}
+				autoCreateAttendance={autoCreateAttendance}
+				setAutoCreateAttendance={setAutoCreateAttendance}
+				modalActiveTab={modalActiveTab}
+				setModalActiveTab={setModalActiveTab}
+				creatingEvent={creatingEvent}
+			/>
 
 			<Footer />
 		</div>
