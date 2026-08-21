@@ -92,7 +92,7 @@ export default function Home() {
 			targetGroup.memberIds.includes(currentUser.id) ||
 			Boolean(
 				targetGroup.officerIds &&
-					targetGroup.officerIds.includes(currentUser.id),
+				targetGroup.officerIds.includes(currentUser.id),
 			)
 		);
 	};
@@ -211,12 +211,9 @@ export default function Home() {
 
 	// Always ensure 5 events are displayed to fill the container edge to edge
 	const displayedEvents =
-		events.length >= 5
-			? events.slice(0, 5)
-			: [
-					...events,
-					...sampleCampusEvents.slice(events.length, 5),
-			  ];
+		events.length >= 3
+			? events.slice(0, 3)
+			: [...events, ...sampleCampusEvents.slice(events.length, 3)];
 
 	const handleSearchSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -301,7 +298,7 @@ export default function Home() {
 			<Nav />
 
 			{/* ═══════════ Hero Section ═══════════ */}
-			<header className="relative overflow-hidden py-16 sm:py-24">
+			<header className="h-[75vh] relative overflow-hidden py-16 sm:py-24">
 				{/* Decorative gradient blob */}
 				<div className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-125 w-200 -translate-x-1/2 opacity-30 blur-3xl">
 					<div className="absolute inset-0 rounded-full bg-linear-to-br from-primary/40 via-indigo-300/30 to-violet-400/20" />
@@ -380,8 +377,8 @@ export default function Home() {
 			</header>
 
 			{/* ═══════════ Full-Width Upcoming Events Calendar Strip ═══════════ */}
-			<section className="w-full min-h-[25vh] border-y border-border bg-surface overflow-hidden">
-				<div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border">
+			<section className="max-w-5xl mx-auto min-h-[25vh] border-y border-border bg-surface overflow-hidden">
+				<div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
 					{displayedEvents.map((event) => {
 						let dateNumber = 24;
 						let monthName = 'AUG';
@@ -403,7 +400,7 @@ export default function Home() {
 						return (
 							<div
 								key={event.id}
-								className="group relative p-2 m-0 bg-white dark:bg-surface hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors duration-200 flex flex-col justify-between"
+								className="group relative p-4 m-0 bg-white dark:bg-surface hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors duration-200 flex flex-col justify-between"
 							>
 								{/* Top Info */}
 								<div className="space-y-1.5">
@@ -429,7 +426,8 @@ export default function Home() {
 
 									{/* Event description in sub-heading style (less bold, slightly smaller text) */}
 									<p className="text-[11px] sm:text-xs text-text-secondary line-clamp-2 leading-snug font-normal">
-										{event.description || 'No description added'}
+										{event.description ||
+											'No description added'}
 									</p>
 								</div>
 
@@ -987,12 +985,15 @@ export default function Home() {
 											Members Only Event
 										</h3>
 										<span className="text-xs font-semibold text-primary">
-											{membersOnlyModalEvent.group?.name || 'Club Activity'}
+											{membersOnlyModalEvent.group
+												?.name || 'Club Activity'}
 										</span>
 									</div>
 								</div>
 								<button
-									onClick={() => setMembersOnlyModalEvent(null)}
+									onClick={() =>
+										setMembersOnlyModalEvent(null)
+									}
 									className="h-8 w-8 rounded-full bg-surface-secondary text-text-muted hover:text-text-primary flex items-center justify-center hover:bg-border/60 transition-colors cursor-pointer"
 								>
 									✕
@@ -1002,27 +1003,36 @@ export default function Home() {
 							{/* Body explanation */}
 							<div className="p-4 rounded-xl border border-border bg-surface-secondary/40 space-y-2">
 								<p className="text-xs text-text-secondary leading-relaxed">
-									This event is restricted to registered members of{' '}
+									This event is restricted to registered
+									members of{' '}
 									<strong className="text-text-primary font-bold">
-										{membersOnlyModalEvent.group?.name || 'this club'}
-									</strong>.
+										{membersOnlyModalEvent.group?.name ||
+											'this club'}
+									</strong>
+									.
 								</p>
 								<p className="text-xs text-text-muted leading-relaxed">
-									You must join or be an active member of this student organization to register, RSVP, and attend this activity.
+									You must join or be an active member of this
+									student organization to register, RSVP, and
+									attend this activity.
 								</p>
 							</div>
 
 							{/* Actions: View Club button on bottom right */}
 							<div className="flex items-center justify-end gap-3 pt-2">
 								<button
-									onClick={() => setMembersOnlyModalEvent(null)}
+									onClick={() =>
+										setMembersOnlyModalEvent(null)
+									}
 									className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:bg-surface-secondary cursor-pointer transition-colors"
 								>
 									Cancel
 								</button>
 								<Link
 									href={`/search?club=${membersOnlyModalEvent.groupId}`}
-									onClick={() => setMembersOnlyModalEvent(null)}
+									onClick={() =>
+										setMembersOnlyModalEvent(null)
+									}
 									className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white hover:bg-primary-hover shadow-sm transition-all inline-flex items-center gap-1.5"
 								>
 									<span>View Club</span>
