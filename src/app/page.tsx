@@ -185,6 +185,12 @@ export default function Home() {
 							Explore All Clubs <FiArrowRight size={16} />
 						</Link>
 						<Link
+							href="/events"
+							className="rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-purple-700 transition-all inline-flex items-center gap-2"
+						>
+							View All Events <FiCalendar size={16} />
+						</Link>
+						<Link
 							href={currentUser ? '/groups' : '/auth/register'}
 							className="rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-text-primary hover:bg-surface-secondary hover:border-primary/40 transition-all"
 						>

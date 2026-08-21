@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAppContext } from './AppContext';
 import ProfileMenu from './ProfileMenu';
 import NotificationDrawer from './NotificationDrawer';
-import { FiMenu, FiX, FiCompass, FiUsers, FiBell } from 'react-icons/fi';
+import { FiMenu, FiX, FiCompass, FiUsers, FiBell, FiCalendar } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Nav() {
@@ -19,6 +19,7 @@ export default function Nav() {
 	const navLinks = [
 		{ label: 'Home', href: '/' },
 		{ label: 'Explore Clubs', href: '/search', icon: FiCompass },
+		{ label: 'All Events', href: '/events', icon: FiCalendar },
 		...(currentUser
 			? [{ label: 'My Clubs', href: '/groups', icon: FiUsers }]
 			: []),

@@ -36,7 +36,17 @@ export async function GET(req: NextRequest) {
 		}
 
 		const events = await prisma.meetingEvent.findMany({
-			where: groupId ? { groupId } : undefined,
+			where: groupId ? { groupId } : { group: { isPrivate: false } },
+			include: {
+				group: {
+					select: {
+						id: true,
+						name: true,
+						bannerUrl: true,
+						category: true,
+					},
+				},
+			},
 			orderBy: { date: 'desc' },
 		});
 
