@@ -117,6 +117,10 @@ export interface MeetingEvent {
 	regDeadline?: string;
 	inviteMessage?: string;
 	inviteReminderDays?: number;
+	membersOnly?: boolean;
+	bannerUrl?: string;
+	isAttendanceSession?: boolean;
+	eventType?: 'ACTIVITY' | 'ATTENDANCE_SESSION';
 }
 
 export interface AttendanceRecord {
@@ -273,7 +277,11 @@ interface AppContextType {
 	isIdle: boolean;
 	fetchGroups: () => Promise<void>;
 	fetchInvites: () => Promise<void>;
-	fetchEvents: () => Promise<void>;
+	fetchEvents: (
+		groupId?: string,
+		type?: 'activity' | 'attendance' | 'all',
+		eventId?: string,
+	) => Promise<void>;
 	fetchAttendances: (groupId?: string, eventId?: string) => Promise<void>;
 	refreshData: () => Promise<void>;
 
@@ -384,15 +392,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
-	const fetchEvents = useCallback(async () => {
-		try {
-			const res = await fetch('/api/events');
-			const data = await res.json();
-			if (data.events) setEvents(data.events);
-		} catch (e) {
-			console.error('fetchEvents failed:', e);
-		}
-	}, []);
+	const fetchEvents = useCallback(
+		async (
+			groupId?: string,
+			type?: 'activity' | 'attendance' | 'all',
+			eventId?: string,
+		) => {
+			try {
+				const params = new URLSearchParams();
+				if (groupId) params.append('groupId', groupId);
+				if (type && type !== 'all') params.append('type', type);
+				if (eventId) params.append('eventId', eventId);
+				const url = `/api/events${params.toString() ? `?${params.toString()}` : ''}`;
+				const res = await fetch(url);
+				const data = await res.json();
+				if (data.events) {
+					setEvents((prev) => {
+						if (!groupId && !eventId) return data.events;
+						if (eventId) {
+							// Update only this single event in state
+							const eventMap = new Map(
+								prev.map((e) => [e.id, e]),
+							);
+							data.events.forEach((ev: MeetingEvent) => {
+								eventMap.set(ev.id, ev);
+							});
+							return Array.from(eventMap.values());
+						}
+						const otherGroupEvents = prev.filter(
+							(e) => e.groupId !== groupId,
+						);
+						return [...data.events, ...otherGroupEvents];
+					});
+				}
+			} catch (e) {
+				console.error('fetchEvents failed:', e);
+			}
+		},
+		[],
+	);
 
 	const fetchAttendances = useCallback(
 		async (groupId?: string, eventId?: string) => {
@@ -621,18 +659,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				// Only refresh data specifically needed by the current active page/tab
 				if (pathname.includes('/group/')) {
 					const groupId = pathname.split('/')[2];
-					if (
-						currentTab === 'attendance' ||
-						pathname.endsWith('/activities')
-					) {
+					if (currentTab === 'attendance') {
 						const sessionId = searchParams.get('session');
 						if (sessionId) {
 							await Promise.allSettled([
-								fetchEvents(),
-								fetchAttendances(groupId),
+								fetchEvents(groupId, 'attendance', sessionId),
+								fetchAttendances(groupId, sessionId),
 							]);
 						} else {
-							await fetchEvents();
+							await Promise.allSettled([
+								fetchEvents(groupId, 'attendance'),
+								fetchAttendances(groupId),
+							]);
 						}
 					} else if (
 						currentTab === 'roster' ||
@@ -643,6 +681,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						// Groups and invites are loaded once on settings tab mount, not on interval
 					} else if (currentTab === 'feed') {
 						// Feed messages are polled by the active GroupFeedPage directly
+					} else if (
+						currentTab === 'activities' ||
+						pathname.endsWith('/activities')
+					) {
+						// Activities tab: single mount fetch, no polling
 					}
 				} else if (pathname === '/pending') {
 					await Promise.allSettled([
@@ -1365,6 +1408,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				endDate?: string;
 				price?: string;
 				status?: string;
+				membersOnly?: boolean;
+				bannerUrl?: string;
+				isAttendanceSession?: boolean;
+				eventType?: 'ACTIVITY' | 'ATTENDANCE_SESSION';
+				locationType?: string;
+				allDay?: boolean;
+				endTime?: string;
+				regRequired?: boolean;
+				regCapacity?: number;
+				regDeadline?: string;
+				inviteMessage?: string;
+				inviteReminderDays?: number;
 			},
 		) => {
 			if (!currentUser)

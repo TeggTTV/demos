@@ -144,6 +144,19 @@ export async function POST(req: NextRequest) {
 			where: { groupId: event.groupId, userId: session.userId },
 		});
 		const isOfficer = officerMember?.role === 'OFFICER';
+		const isMember = isLeader || Boolean(officerMember);
+
+		// If event is members-only, enforce membership
+		if ((event as { membersOnly?: boolean }).membersOnly && !isMember) {
+			return NextResponse.json(
+				{
+					error: 'This activity is for club members only. Please join the club first.',
+					isMembersOnly: true,
+					groupId: event.groupId,
+				},
+				{ status: 403 },
+			);
+		}
 
 		// If user is trying to check in someone else
 		if (userId !== session.userId) {

@@ -40,7 +40,6 @@ export function Select({
 	value,
 	onChange,
 	disabled,
-	...props
 }: SelectProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	// eslint-disable-next-line react-hooks/rules-of-hooks

@@ -45,7 +45,7 @@ export default function GroupActivitiesPage() {
 
 	useEffect(() => {
 		fetchGroups();
-		fetchEvents();
+		fetchEvents(id, 'activity');
 		fetchAttendances(id);
 	}, [fetchGroups, fetchEvents, fetchAttendances, id]);
 
@@ -167,9 +167,14 @@ export default function GroupActivitiesPage() {
 		}
 	};
 
-	// 1. Gather all regular club events
+	// 1. Gather all regular club activities (excluding attendance tracking sessions)
 	const clubEvents = events
-		.filter((e) => e.groupId === id)
+		.filter(
+			(e) =>
+				e.groupId === id &&
+				!e.isAttendanceSession &&
+				e.eventType !== 'ATTENDANCE_SESSION',
+		)
 		.map((e) => ({
 			...e,
 			isBirthday: false,

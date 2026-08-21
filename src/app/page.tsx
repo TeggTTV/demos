@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
@@ -18,10 +18,30 @@ import {
 	FiMapPin,
 	FiPlusCircle,
 	FiLayers,
+	FiLock,
+	FiShield,
+	FiExternalLink,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface LandingEvent {
+	id: string;
+	groupId: string;
+	title: string;
+	description: string | null;
+	date: string;
+	time: string;
+	membersOnly?: boolean;
+	isAttendanceSession?: boolean;
+	eventType?: string;
+	group?: {
+		id: string;
+		name: string;
+	};
+}
 
 export default function Home() {
 	const { loginUser, groups, currentUser } = useAppContext();
@@ -31,7 +51,172 @@ export default function Home() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [authError, setAuthError] = useState('');
+	const [events, setEvents] = useState<LandingEvent[]>([]);
+	const [membersOnlyModalEvent, setMembersOnlyModalEvent] =
+		useState<LandingEvent | null>(null);
+	const [rsvpSuccessEventId, setRsvpSuccessEventId] = useState<string | null>(
+		null,
+	);
+	const [rsvpLoadingEventId, setRsvpLoadingEventId] = useState<string | null>(
+		null,
+	);
 	const router = useRouter();
+
+	useEffect(() => {
+		const fetchEvents = async () => {
+			try {
+				const res = await fetch('/api/events?type=activity');
+				const data = await res.json();
+				if (data.events && data.events.length > 0) {
+					setEvents(
+						data.events.filter(
+							(e: LandingEvent) =>
+								!e.isAttendanceSession &&
+								e.eventType !== 'ATTENDANCE_SESSION',
+						),
+					);
+				}
+			} catch (err) {
+				console.error('Failed to fetch landing events:', err);
+			}
+		};
+		fetchEvents();
+	}, []);
+
+	const isUserMemberOfGroup = (groupId: string) => {
+		if (!currentUser) return false;
+		const targetGroup = groups.find((g) => g.id === groupId);
+		if (!targetGroup) return false;
+		return (
+			targetGroup.leaderId === currentUser.id ||
+			targetGroup.memberIds.includes(currentUser.id) ||
+			Boolean(
+				targetGroup.officerIds &&
+					targetGroup.officerIds.includes(currentUser.id),
+			)
+		);
+	};
+
+	const handleRSVPClick = async (event: LandingEvent) => {
+		if (event.membersOnly) {
+			const isMember = isUserMemberOfGroup(event.groupId);
+			if (!isMember) {
+				setMembersOnlyModalEvent(event);
+				return;
+			}
+		}
+
+		if (!currentUser) {
+			setShowAuthModal(true);
+			return;
+		}
+
+		try {
+			setRsvpLoadingEventId(event.id);
+			const res = await fetch('/api/attendance', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					eventId: event.id,
+					status: 'RSVP_YES',
+					checkInMethod: 'CODE',
+				}),
+			});
+			const data = await res.json();
+			if (data.success) {
+				setRsvpSuccessEventId(event.id);
+				setTimeout(() => setRsvpSuccessEventId(null), 3000);
+			} else if (data.isMembersOnly) {
+				setMembersOnlyModalEvent(event);
+			}
+		} catch (err) {
+			console.error('RSVP Error:', err);
+		} finally {
+			setRsvpLoadingEventId(null);
+		}
+	};
+
+	const sampleCampusEvents: LandingEvent[] = [
+		{
+			id: 'demo-1',
+			groupId: groups[0]?.id || 'tech-club',
+			title: 'AI & Web Development Hack Night',
+			description:
+				'Hands-on collaborative coding workshop building modern web apps with cutting-edge tools.',
+			date: '2026-08-24',
+			time: '18:00',
+			membersOnly: false,
+			group: {
+				id: groups[0]?.id || 'tech-club',
+				name: groups[0]?.name || 'Tech & Coding Club',
+			},
+		},
+		{
+			id: 'demo-2',
+			groupId: groups[1]?.id || 'design-guild',
+			title: 'UI/UX Design Studio Sprint',
+			description:
+				'Critique session and prototyping workshop for upcoming campus product showcases.',
+			date: '2026-08-26',
+			time: '17:30',
+			membersOnly: false,
+			group: {
+				id: groups[1]?.id || 'design-guild',
+				name: groups[1]?.name || 'Design Guild',
+			},
+		},
+		{
+			id: 'demo-3',
+			groupId: groups[2]?.id || 'robotics-team',
+			title: 'Autonomous Robotics Lab Meetup',
+			description:
+				'Hardware testing and circuit design session for the inter-collegiate championship.',
+			date: '2026-08-28',
+			time: '19:00',
+			membersOnly: true,
+			group: {
+				id: groups[2]?.id || 'robotics-team',
+				name: groups[2]?.name || 'Robotics Design Team',
+			},
+		},
+		{
+			id: 'demo-4',
+			groupId: groups[3]?.id || 'biz-society',
+			title: 'Startup Pitch & Founder Mixer',
+			description:
+				'Meet campus entrepreneurs and pitch ideas to student venture capital leads.',
+			date: '2026-08-30',
+			time: '18:30',
+			membersOnly: false,
+			group: {
+				id: groups[3]?.id || 'biz-society',
+				name: groups[3]?.name || 'Business Society',
+			},
+		},
+		{
+			id: 'demo-5',
+			groupId: groups[0]?.id || 'campus-social',
+			title: 'Fall Semester Welcome Social',
+			description:
+				'Kickoff social gathering with games, icebreakers, pizza, and club leader intros.',
+			date: '2026-09-02',
+			time: '17:00',
+			membersOnly: false,
+			group: {
+				id: groups[0]?.id || 'campus-social',
+				name: groups[0]?.name || 'Student Union',
+			},
+		},
+	];
+
+	// Always ensure 5 events are displayed to fill the container edge to edge
+	const displayedEvents =
+		events.length >= 5
+			? events.slice(0, 5)
+			: [
+					...events,
+					...sampleCampusEvents.slice(events.length, 5),
+			  ];
 
 	const handleSearchSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -180,25 +365,104 @@ export default function Home() {
 					<div className="mt-8 flex flex-wrap justify-center items-center gap-3">
 						<Link
 							href="/search"
-							className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-primary-hover transition-all inline-flex items-center gap-2"
+							className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-primary-hover transition-all inline-flex items-center gap-2 cursor-pointer"
 						>
 							Explore All Clubs <FiArrowRight size={16} />
 						</Link>
 						<Link
-							href="/events"
-							className="rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-purple-700 transition-all inline-flex items-center gap-2"
-						>
-							View All Events <FiCalendar size={16} />
-						</Link>
-						<Link
 							href={currentUser ? '/groups' : '/auth/register'}
-							className="rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-text-primary hover:bg-surface-secondary hover:border-primary/40 transition-all"
+							className="rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-text-primary hover:bg-surface-secondary hover:border-primary/40 transition-all cursor-pointer"
 						>
 							Start a Student Organization
 						</Link>
 					</div>
 				</div>
 			</header>
+
+			{/* ═══════════ Full-Width Upcoming Events Calendar Strip ═══════════ */}
+			<section className="w-full min-h-[25vh] border-y border-border bg-surface overflow-hidden">
+				<div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border">
+					{displayedEvents.map((event) => {
+						let dateNumber = 24;
+						let monthName = 'AUG';
+						try {
+							const dateObj = new Date(event.date + 'T00:00:00');
+							if (!isNaN(dateObj.getDate())) {
+								dateNumber = dateObj.getDate();
+								monthName = dateObj
+									.toLocaleString('en-US', { month: 'short' })
+									.toUpperCase();
+							}
+						} catch {
+							// fallback defaults
+						}
+
+						const isRsvpd = rsvpSuccessEventId === event.id;
+						const isRsvpLoading = rsvpLoadingEventId === event.id;
+
+						return (
+							<div
+								key={event.id}
+								className="group relative p-2 m-0 bg-white dark:bg-surface hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors duration-200 flex flex-col justify-between"
+							>
+								{/* Top Info */}
+								<div className="space-y-1.5">
+									{/* Date number BIG on top left, Month to the right */}
+									<div className="flex items-baseline gap-2">
+										<span className="text-3xl sm:text-4xl font-black text-text-primary leading-none tracking-tight">
+											{dateNumber}
+										</span>
+										<span className="text-xs font-bold text-primary uppercase tracking-wider">
+											{monthName}
+										</span>
+										{event.membersOnly && (
+											<span className="ml-auto text-[9px] font-bold text-purple-700 bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+												<FiLock size={8} /> Members
+											</span>
+										)}
+									</div>
+
+									{/* Event title underneath date */}
+									<h4 className="font-bold text-xs sm:text-sm text-text-primary group-hover:text-primary transition-colors line-clamp-1">
+										{event.title}
+									</h4>
+
+									{/* Event description in sub-heading style (less bold, slightly smaller text) */}
+									<p className="text-[11px] sm:text-xs text-text-secondary line-clamp-2 leading-snug font-normal">
+										{event.description || 'No description added'}
+									</p>
+								</div>
+
+								{/* Bottom Actions: View Club (Bottom left) & RSVP to Event (Bottom right) */}
+								<div className="pt-3 mt-auto flex items-center justify-between gap-1 w-full border-t border-border/40">
+									<Link
+										href={`/search?club=${event.groupId}`}
+										className="text-[11px] font-semibold text-text-secondary hover:text-primary transition-colors flex items-center gap-1"
+									>
+										<span>View Club</span>
+									</Link>
+
+									<button
+										onClick={() => handleRSVPClick(event)}
+										disabled={isRsvpLoading}
+										className={`text-[11px] font-bold px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+											isRsvpd
+												? 'bg-success text-white'
+												: 'bg-primary text-white hover:bg-primary-hover shadow-2xs'
+										}`}
+									>
+										{isRsvpd
+											? '✓ RSVP'
+											: isRsvpLoading
+												? '...'
+												: 'RSVP to Event'}
+									</button>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</section>
 
 			{/* ═══════════ Core Pillars Grid ═══════════ */}
 			<section className="py-16 bg-surface-secondary/40 border-y border-border">
@@ -701,6 +965,74 @@ export default function Home() {
 					</div>
 				</div>
 			)}
+
+			{/* ═══════════ Members-Only Notice Modal ═══════════ */}
+			<AnimatePresence>
+				{membersOnlyModalEvent && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.95 }}
+							className="w-full max-w-md rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden p-6 space-y-5"
+						>
+							{/* Header with X button */}
+							<div className="flex items-start justify-between gap-4">
+								<div className="flex items-center gap-3">
+									<div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-950/70 text-purple-600 flex items-center justify-center shrink-0 border border-purple-200 dark:border-purple-800/40">
+										<FiShield size={20} />
+									</div>
+									<div>
+										<h3 className="text-base font-bold text-text-primary">
+											Members Only Event
+										</h3>
+										<span className="text-xs font-semibold text-primary">
+											{membersOnlyModalEvent.group?.name || 'Club Activity'}
+										</span>
+									</div>
+								</div>
+								<button
+									onClick={() => setMembersOnlyModalEvent(null)}
+									className="h-8 w-8 rounded-full bg-surface-secondary text-text-muted hover:text-text-primary flex items-center justify-center hover:bg-border/60 transition-colors cursor-pointer"
+								>
+									✕
+								</button>
+							</div>
+
+							{/* Body explanation */}
+							<div className="p-4 rounded-xl border border-border bg-surface-secondary/40 space-y-2">
+								<p className="text-xs text-text-secondary leading-relaxed">
+									This event is restricted to registered members of{' '}
+									<strong className="text-text-primary font-bold">
+										{membersOnlyModalEvent.group?.name || 'this club'}
+									</strong>.
+								</p>
+								<p className="text-xs text-text-muted leading-relaxed">
+									You must join or be an active member of this student organization to register, RSVP, and attend this activity.
+								</p>
+							</div>
+
+							{/* Actions: View Club button on bottom right */}
+							<div className="flex items-center justify-end gap-3 pt-2">
+								<button
+									onClick={() => setMembersOnlyModalEvent(null)}
+									className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:bg-surface-secondary cursor-pointer transition-colors"
+								>
+									Cancel
+								</button>
+								<Link
+									href={`/search?club=${membersOnlyModalEvent.groupId}`}
+									onClick={() => setMembersOnlyModalEvent(null)}
+									className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white hover:bg-primary-hover shadow-sm transition-all inline-flex items-center gap-1.5"
+								>
+									<span>View Club</span>
+									<FiExternalLink size={13} />
+								</Link>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

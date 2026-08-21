@@ -144,6 +144,10 @@ model MeetingEvent {
   regDeadline        String?
   inviteMessage      String?
   inviteReminderDays Int?               @default(0)
+  membersOnly        Boolean            @default(false)
+  bannerUrl          String?
+  isAttendanceSession Boolean           @default(false)
+  eventType          String             @default("ACTIVITY")
   checkInCode String             // 4-6 character alphanumeric code
   isActive    Boolean            @default(true)
   createdById String             @db.ObjectId

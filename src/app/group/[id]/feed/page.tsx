@@ -163,6 +163,7 @@ export default function GroupFeedPage() {
 		'roster',
 	);
 
+	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
 		const sessionParam = params.get('session');
@@ -174,6 +175,7 @@ export default function GroupFeedPage() {
 			setActiveSubTabState(subParam);
 		}
 	}, []);
+	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const setSelectedEventId = (id: string | null) => {
 		setSelectedEventIdState(id);
@@ -219,7 +221,7 @@ export default function GroupFeedPage() {
 	);
 	const [showBirthdaysTab, setShowBirthdaysTab] = useState(true);
 	const [modalActiveTab, setModalActiveTab] = useState<
-		'data' | 'login' | 'costs' | 'invitation'
+		'data' | 'login' | 'costs'
 	>('data');
 	const [activityLocationType, setActivityLocationType] = useState('');
 	const [activityAllDay, setActivityAllDay] = useState(false);
@@ -227,13 +229,10 @@ export default function GroupFeedPage() {
 	const [activityRegRequired, setActivityRegRequired] = useState(false);
 	const [activityRegCapacity, setActivityRegCapacity] = useState('');
 	const [activityRegDeadline, setActivityRegDeadline] = useState('');
+	const [activityMembersOnly, setActivityMembersOnly] = useState(false);
 	const [activityInviteMessage, setActivityInviteMessage] = useState('');
 	const [activityInviteReminderDays, setActivityInviteReminderDays] =
 		useState('0');
-	const [descFocused, setDescFocused] = useState(false);
-	const [inviteMsgFocused, setInviteMsgFocused] = useState(false);
-	const [locTypeFocused, setLocTypeFocused] = useState(false);
-	const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
 	const [createMeetingModal, setCreateMeetingModal] = useState(false);
 	const [meetingTitle, setMeetingTitle] = useState('');
 	const [meetingDesc, setMeetingDesc] = useState('');
@@ -243,7 +242,6 @@ export default function GroupFeedPage() {
 	const [meetingEndDate, setMeetingEndDate] = useState('');
 	const [meetingPrice, setMeetingPrice] = useState('');
 	const [meetingStatus, setMeetingStatus] = useState('PUBLISHED');
-	const [autoCreateAttendance, setAutoCreateAttendance] = useState(false);
 
 	// Settings & Invites State
 	const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -571,14 +569,14 @@ export default function GroupFeedPage() {
 
 	useEffect(() => {
 		async function loadFeed() {
-			if (id) {
+			if (id && activeTab === 'feed') {
 				setIsLoading(true);
 				await fetchFeedMessages(id);
 				setIsLoading(false);
 			}
 		}
 		loadFeed();
-	}, [id, fetchFeedMessages]);
+	}, [id, activeTab, fetchFeedMessages]);
 
 	// Sync generated invite code with database values from global context
 	const activeInvite = invites.find((i) => i.groupId === id);
@@ -599,16 +597,29 @@ export default function GroupFeedPage() {
 		}
 	}, [activeTab, fetchGroups, fetchInvites]);
 
-	// Fetch events and attendances once when loading attendance tab
+	// Fetch events and attendances when loading attendance tab
 	useEffect(() => {
 		if (activeTab === 'attendance') {
-			fetchEvents();
-			fetchAttendances(id);
+			if (selectedEventId) {
+				fetchEvents(id, 'attendance', selectedEventId);
+				fetchAttendances(id, selectedEventId);
+			} else {
+				fetchEvents(id, 'attendance');
+				fetchAttendances(id);
+			}
 		}
-	}, [activeTab, id, fetchEvents, fetchAttendances]);
+	}, [activeTab, id, selectedEventId, fetchEvents, fetchAttendances]);
 
+	// Fetch activities once when loading activities tab (no messages API, no polling)
 	useEffect(() => {
-		if (!id || isIdle) return;
+		if (activeTab === 'activities') {
+			fetchEvents(id, 'activity');
+		}
+	}, [activeTab, id, fetchEvents]);
+
+	// Polling messages strictly when on the feed tab
+	useEffect(() => {
+		if (!id || isIdle || activeTab !== 'feed') return;
 		let active = true;
 		let timeoutId: NodeJS.Timeout;
 
@@ -630,7 +641,7 @@ export default function GroupFeedPage() {
 			active = false;
 			clearTimeout(timeoutId);
 		};
-	}, [id, fetchFeedMessages, isIdle]);
+	}, [id, activeTab, fetchFeedMessages, isIdle]);
 
 	if (!hydrated) {
 		return (
@@ -676,8 +687,14 @@ export default function GroupFeedPage() {
 	}
 
 	const groupMessages = feedMessages.filter((m) => m.groupId === id);
-	const clubEvents = events
-		.filter((e) => e.groupId === id)
+
+	// Separate: Attendance Sessions vs Regular Activities
+	const clubAttendanceSessions = events
+		.filter(
+			(e) =>
+				e.groupId === id &&
+				(e.isAttendanceSession || e.eventType === 'ATTENDANCE_SESSION'),
+		)
 		.filter((e) => {
 			if (canManage) return true;
 			const eventDateTime = new Date(`${e.date}T${e.time || '00:00'}`);
@@ -689,6 +706,15 @@ export default function GroupFeedPage() {
 					isTimeReached);
 			return isEventActive;
 		});
+
+	const clubActivities = events.filter(
+		(e) =>
+			e.groupId === id &&
+			!e.isAttendanceSession &&
+			e.eventType !== 'ATTENDANCE_SESSION',
+	);
+
+	const clubEvents = clubAttendanceSessions;
 	const activeEvent = clubEvents.find((e) => e.isActive) || clubEvents[0];
 	const currentSelectedEvent = selectedEventId
 		? clubEvents.find((e) => e.id === selectedEventId) || null
@@ -777,6 +803,9 @@ export default function GroupFeedPage() {
 			inviteReminderDays: activityInviteReminderDays
 				? parseInt(activityInviteReminderDays)
 				: 0,
+			membersOnly: activityMembersOnly,
+			isAttendanceSession: false,
+			eventType: 'ACTIVITY' as const,
 		};
 
 		if (editingActivityId) {
@@ -805,6 +834,7 @@ export default function GroupFeedPage() {
 					setActivityRegRequired(false);
 					setActivityRegCapacity('');
 					setActivityRegDeadline('');
+					setActivityMembersOnly(false);
 					setActivityInviteMessage('');
 					setActivityInviteReminderDays('0');
 					setModalActiveTab('data');
@@ -815,25 +845,6 @@ export default function GroupFeedPage() {
 		} else {
 			const res = await createMeetingEvent(id, payload);
 			if (res.success && res.event) {
-				if (autoCreateAttendance) {
-					try {
-						await createMeetingEvent(id, {
-							title: `${eventTitle} (Attendance)`,
-							description: `Attendance tracking session automatically created for ${eventTitle}`,
-							date: eventDate,
-							time: eventTime,
-							location: eventLocation || '',
-							endDate: activityEndDate || undefined,
-							price: activityPrice || undefined,
-							status: 'PUBLISHED',
-						});
-					} catch (e) {
-						console.error(
-							'Failed to automatically create attendance session:',
-							e,
-						);
-					}
-				}
 				setCreateEventModal(false);
 				setEventTitle('');
 				setEventDesc('');
@@ -846,10 +857,10 @@ export default function GroupFeedPage() {
 				setActivityRegRequired(false);
 				setActivityRegCapacity('');
 				setActivityRegDeadline('');
+				setActivityMembersOnly(false);
 				setActivityInviteMessage('');
 				setActivityInviteReminderDays('0');
 				setModalActiveTab('data');
-				setAutoCreateAttendance(false);
 				setSelectedEventId(res.event.id);
 			}
 		}
@@ -868,6 +879,8 @@ export default function GroupFeedPage() {
 			endDate: meetingEndDate || undefined,
 			price: meetingPrice || undefined,
 			status: meetingStatus,
+			isAttendanceSession: true,
+			eventType: 'ATTENDANCE_SESSION' as const,
 		};
 		const res = await createMeetingEvent(id, payload);
 		if (res.success && res.event) {
@@ -1549,8 +1562,7 @@ export default function GroupFeedPage() {
 							</span>
 							<div className="space-y-3">
 								{(() => {
-									const sortedFutureEvents = events
-										.filter((e) => e.groupId === id)
+									const sortedFutureEvents = clubActivities
 										.map((e) => ({
 											...e,
 											dateObj: new Date(
@@ -1901,7 +1913,7 @@ export default function GroupFeedPage() {
 														>
 															{currentSelectedEvent.isActive
 																? 'Close Check-in'
-																: 'Re-open Check-in'}
+																: 'Open Check-in'}
 														</button>
 														<button
 															onClick={() => {
@@ -4076,15 +4088,13 @@ export default function GroupFeedPage() {
 						};
 
 						// Gather and sort items
-						const clubEvts = events
-							.filter((e) => e.groupId === id)
-							.map((e) => ({
-								...e,
-								isBirthday: false,
-								dateTime: new Date(
-									`${e.date}T${e.time || '00:00'}`,
-								),
-							}));
+						const clubEvts = clubActivities.map((e) => ({
+							...e,
+							isBirthday: false,
+							dateTime: new Date(
+								`${e.date}T${e.time || '00:00'}`,
+							),
+						}));
 
 						const bdayEvts: any[] = [];
 						if (showBirthdaysTab) {
@@ -4389,6 +4399,10 @@ export default function GroupFeedPage() {
 																					)
 																				: '0',
 																		);
+																		setActivityMembersOnly(
+																			item.membersOnly ||
+																				false,
+																		);
 																		setModalActiveTab(
 																			'data',
 																		);
@@ -4528,8 +4542,8 @@ export default function GroupFeedPage() {
 				setActivityInviteMessage={setActivityInviteMessage}
 				activityInviteReminderDays={activityInviteReminderDays}
 				setActivityInviteReminderDays={setActivityInviteReminderDays}
-				autoCreateAttendance={autoCreateAttendance}
-				setAutoCreateAttendance={setAutoCreateAttendance}
+				activityMembersOnly={activityMembersOnly}
+				setActivityMembersOnly={setActivityMembersOnly}
 				modalActiveTab={modalActiveTab}
 				setModalActiveTab={setModalActiveTab}
 				creatingEvent={creatingEvent}

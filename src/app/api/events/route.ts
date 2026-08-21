@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import type { Prisma } from '@/../generated/prisma';
 import { sendWebPushToGroupMembers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
 
@@ -13,6 +14,8 @@ export async function GET(req: NextRequest) {
 
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId');
+		const eventId = searchParams.get('eventId') || searchParams.get('sessionId');
+		const type = searchParams.get('type'); // 'activity' | 'attendance' | 'all'
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -35,8 +38,26 @@ export async function GET(req: NextRequest) {
 			}
 		}
 
+		// Filter criteria: disassociate attendance sessions from public activities/events
+		const whereClause: Prisma.MeetingEventWhereInput = eventId
+			? { id: eventId, ...(groupId ? { groupId } : {}) }
+			: groupId
+				? { groupId }
+				: { group: { isPrivate: false } };
+
+		if (!eventId) {
+			if (type === 'attendance') {
+				whereClause.isAttendanceSession = true;
+			} else if (type === 'activity') {
+				whereClause.isAttendanceSession = false;
+			} else if (!type && !groupId) {
+				// Public explore / events / home strip: ONLY show activities, NEVER attendance sessions
+				whereClause.isAttendanceSession = false;
+			}
+		}
+
 		const events = await prisma.meetingEvent.findMany({
-			where: groupId ? { groupId } : { group: { isPrivate: false } },
+			where: whereClause,
 			include: {
 				group: {
 					select: {
@@ -94,6 +115,10 @@ export async function POST(req: NextRequest) {
 			regDeadline,
 			inviteMessage,
 			inviteReminderDays,
+			membersOnly,
+			bannerUrl,
+			isAttendanceSession,
+			eventType,
 		} = body;
 
 		if (!groupId || !title || !date || !time) {
@@ -126,6 +151,8 @@ export async function POST(req: NextRequest) {
 		}
 
 		const initialIsActive = new Date(`${date}T${time || '00:00'}`) <= new Date();
+		const finalIsAttendance = isAttendanceSession !== undefined ? Boolean(isAttendanceSession) : false;
+		const finalEventType = eventType || (finalIsAttendance ? 'ATTENDANCE_SESSION' : 'ACTIVITY');
 
 		const newEvent = await prisma.meetingEvent.create({
 			data: {
@@ -149,6 +176,10 @@ export async function POST(req: NextRequest) {
 				regDeadline: regDeadline || null,
 				inviteMessage: inviteMessage || null,
 				inviteReminderDays: inviteReminderDays !== undefined && inviteReminderDays !== null ? parseInt(String(inviteReminderDays)) : 0,
+				membersOnly: membersOnly !== undefined ? membersOnly : false,
+				bannerUrl: bannerUrl || null,
+				isAttendanceSession: finalIsAttendance,
+				eventType: finalEventType,
 			},
 			include: {
 				group: { select: { name: true } },
@@ -196,6 +227,10 @@ export async function PUT(req: NextRequest) {
 			regDeadline,
 			inviteMessage,
 			inviteReminderDays,
+			membersOnly,
+			bannerUrl,
+			isAttendanceSession,
+			eventType,
 		} = body;
 
 		if (!eventId) {
@@ -267,6 +302,10 @@ export async function PUT(req: NextRequest) {
 				regDeadline: regDeadline !== undefined ? regDeadline : undefined,
 				inviteMessage: inviteMessage !== undefined ? inviteMessage : undefined,
 				inviteReminderDays: inviteReminderDays !== undefined ? (inviteReminderDays !== null ? parseInt(String(inviteReminderDays)) : 0) : undefined,
+				membersOnly: membersOnly !== undefined ? membersOnly : undefined,
+				bannerUrl: bannerUrl !== undefined ? bannerUrl : undefined,
+				isAttendanceSession: isAttendanceSession !== undefined ? Boolean(isAttendanceSession) : undefined,
+				eventType: eventType !== undefined ? eventType : undefined,
 			},
 			include: {
 				group: { select: { name: true } },
