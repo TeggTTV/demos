@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import { FiClock, FiSend, FiArchive, FiRefreshCw } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
+import PageLoader from '@/components/ui/PageLoader';
 
 export default function PendingPage() {
 	const {
@@ -17,6 +18,7 @@ export default function PendingPage() {
 		approveRequest,
 		declineRequest,
 		refreshData,
+		hydrated,
 	} = useAppContext();
 	const [activeTab, setActiveTab] = useState<'requests' | 'sent' | 'history'>(
 		'requests',
@@ -28,6 +30,21 @@ export default function PendingPage() {
 		await refreshData();
 		setIsRefreshing(false);
 	};
+
+	if (!hydrated) {
+		return (
+			<div className="flex min-h-screen flex-col bg-background">
+				<Nav />
+				<main className="grow flex items-center justify-center py-20">
+					<PageLoader
+						message="Loading Applications"
+						subMessage="Retrieving membership records..."
+					/>
+				</main>
+				<Footer />
+			</div>
+		);
+	}
 
 	if (!currentUser) {
 		return (

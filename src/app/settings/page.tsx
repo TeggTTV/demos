@@ -24,6 +24,7 @@ import {
 	FiShare,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import PageLoader from '@/components/ui/PageLoader';
 
 const NOTIFICATION_KEYS: NotificationType[] = [
 	'feed_message',
@@ -179,7 +180,20 @@ export default function SettingsPage() {
 		setTimeout(() => setSaveSuccess(false), 2000);
 	};
 
-	if (!hydrated) return null;
+	if (!hydrated) {
+		return (
+			<div className="flex min-h-screen flex-col bg-background">
+				<Nav />
+				<main className="grow flex items-center justify-center py-20">
+					<PageLoader
+						message="Loading Settings"
+						subMessage="Configuring preferences..."
+					/>
+				</main>
+				<Footer />
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex min-h-screen flex-col bg-background">

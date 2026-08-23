@@ -6,13 +6,14 @@ import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/Input';
+import PageLoader from '@/components/ui/PageLoader';
 import Link from 'next/link';
 import Image from 'next/image';
 
 function LoginContent() {
 	const { loginUser } = useAppContext();
 	const searchParams = useSearchParams();
-	const redirectUrl = searchParams.get('redirect') || '/';
+	const redirectUrl = searchParams.get('redirect') || '/groups';
 
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -115,9 +116,7 @@ export default function LoginPage() {
 			<Suspense
 				fallback={
 					<main className="grow flex items-center justify-center py-20">
-						<h1 className="text-xs text-text-muted font-normal">
-							Loading...
-						</h1>
+						<PageLoader message="Loading..." />
 					</main>
 				}
 			>

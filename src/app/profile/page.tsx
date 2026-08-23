@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { compressImage } from '@/utils/imageCompression';
+import PageLoader from '@/components/ui/PageLoader';
 
 export default function ProfilePage() {
 	const { currentUser, updateProfile, hydrated } = useAppContext();
@@ -43,7 +44,20 @@ export default function ProfilePage() {
 		setTimeout(() => setSuccess(false), 3000);
 	};
 
-	if (!hydrated) return null;
+	if (!hydrated) {
+		return (
+			<div className="flex min-h-screen flex-col bg-background">
+				<Nav />
+				<main className="grow flex items-center justify-center py-20">
+					<PageLoader
+						message="Loading Profile"
+						subMessage="Retrieving account details..."
+					/>
+				</main>
+				<Footer />
+			</div>
+		);
+	}
 
 	if (!currentUser) {
 		return (

@@ -1,262 +1,95 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/components/AppContext';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import { FiUsers, FiArrowRight, FiPlus, FiKey } from 'react-icons/fi';
+import CreateGroupModal from '@/components/group/CreateGroupModal';
+import RedeemInviteModal from '@/components/modals/RedeemInviteModal';
+import GroupCard from '@/components/group/GroupCard';
+import { ClubCardSkeleton } from '@/components/ui/Skeleton';
+import PageLoader from '@/components/ui/PageLoader';
 import {
-	FiUsers,
-	FiArrowRight,
-	FiPlus,
-	FiCalendar,
-	FiMapPin,
-	FiKey,
-	FiCheck,
-	FiShield,
-} from 'react-icons/fi';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+	ScrollStaggerContainer,
+	ScrollStaggerItem,
+} from '@/components/ui/ScrollReveal';
 
-
-export const BANNER_COLOR_PRESETS = [
-	{
-		id: 'blue',
-		name: 'Ocean Blue Glow',
-		value: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-	},
-	{
-		id: 'rose',
-		name: 'Sunset Rose',
-		value: 'linear-gradient(135deg, #be123c 0%, #f43f5e 100%)',
-	},
-	{
-		id: 'green',
-		name: 'Emerald Forest',
-		value: 'linear-gradient(135deg, #065f46 0%, #10b981 100%)',
-	},
-	{
-		id: 'purple',
-		name: 'Neon Purple',
-		value: 'linear-gradient(135deg, #9333ea 0%, #c026d3 100%)',
-	},
-	{
-		id: 'slate',
-		name: 'Midnight Slate',
-		value: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-	},
-	{
-		id: 'teal',
-		name: 'Teal Lagoon',
-		value: 'linear-gradient(135deg, #0d9488 0%, #06b6d4 100%)',
-	},
-];
-
-const compileFrequency = (
-	isCustom: boolean,
-	preset: string,
-	days: Record<string, boolean>,
-	time: string,
-) => {
-	if (!isCustom) return preset;
-	const selectedDays = Object.keys(days).filter((d) => days[d]);
-	if (selectedDays.length === 0) return `Weekly at ${time}`;
-	return `Weekly on ${selectedDays.join(', ')} at ${time}`;
-};
-
-export default function GroupsPage() {
-	const { currentUser, groups, createGroup, joinViaInviteCode, events } =
-		useAppContext();
+function GroupsContent() {
+	const { currentUser, groups, createGroup, events, hydrated } = useAppContext();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 
 	const [activeTab, setActiveTab] = useState<'all' | 'leading' | 'joined'>(
 		'all',
 	);
-
-	// Create Club modal state
 	const [modalOpen, setModalOpen] = useState(false);
-	const [name, setName] = useState('');
-	const [tagline, setTagline] = useState('');
-	const [category, setCategory] = useState('Technology & Coding');
-	const [description, setDescription] = useState('');
-	const [location, setLocation] = useState('');
-	const [frequency, setFrequency] = useState('Weekly');
-	const [enableCustomBanner, setEnableCustomBanner] = useState(false);
-	const [selectedBannerColor, setSelectedBannerColor] = useState(
-		BANNER_COLOR_PRESETS[0].value,
-	);
-	const [customBannerPreview, setCustomBannerPreview] = useState('');
-	const [discordUrl, setDiscordUrl] = useState('');
-	const [instagramUrl, setInstagramUrl] = useState('');
-	const [websiteUrl, setWebsiteUrl] = useState('');
-	const [tagsInput, setTagsInput] = useState('');
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState('');
-	const [fileSizeError, setFileSizeError] = useState('');
-
-	// Redeem Invite state
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
-	const [inviteCodeInput, setInviteCodeInput] = useState('');
-	const [inviteError, setInviteError] = useState('');
-	const [inviteSuccess, setInviteSuccess] = useState('');
 
-	// Custom frequency state variables
-	const [isCustomFreq, setIsCustomFreq] = useState(false);
-	const [customDays, setCustomDays] = useState<Record<string, boolean>>({
-		Mon: false,
-		Tue: false,
-		Wed: false,
-		Thu: false,
-		Fri: false,
-		Sat: false,
-		Sun: false,
-	});
-	const [customTime, setCustomTime] = useState('18:00');
+	/* eslint-disable react-hooks/set-state-in-effect */
+	useEffect(() => {
+		const shouldCreate =
+			searchParams.get('create') === 'true' ||
+			searchParams.get('action') === 'create';
+		if (shouldCreate) {
+			setModalOpen(true);
+		}
+	}, [searchParams]);
+	/* eslint-enable react-hooks/set-state-in-effect */
 
-	const categoriesList = [
-		'Technology & Coding',
-		'Arts & Design',
-		'Engineering & Robotics',
-		'Business & Entrepreneurship',
-		'Media & Photography',
-		'Science & Research',
-		'Cultural & Social',
-		'Sports & Recreation',
-	];
-
-	const openCreateModal = () => {
-		setName('');
-		setTagline('');
-		setDescription('');
-		setLocation('');
-		setFrequency('Weekly');
-		setDiscordUrl('');
-		setInstagramUrl('');
-		setWebsiteUrl('');
-		setTagsInput('');
-		setError('');
-		setEnableCustomBanner(false);
-		setCustomBannerPreview('');
-		const randomPreset =
-			BANNER_COLOR_PRESETS[
-				Math.floor(Math.random() * BANNER_COLOR_PRESETS.length)
-			].value;
-		setSelectedBannerColor(randomPreset);
-		setIsCustomFreq(false);
-		setCustomDays({
-			Mon: false,
-			Tue: false,
-			Wed: false,
-			Thu: false,
-			Fri: false,
-			Sat: false,
-			Sun: false,
-		});
-		setCustomTime('18:00');
-		setModalOpen(true);
-	};
-
-	const handleCreateGroup = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!currentUser) return;
-		setLoading(true);
-		setError('');
-
-		const finalFreq = compileFrequency(
-			isCustomFreq,
-			frequency,
-			customDays,
-			customTime,
+	if (!hydrated) {
+		return (
+			<div className="flex min-h-screen flex-col bg-background">
+				<Nav />
+				<main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+						<div className="space-y-1">
+							<div className="h-7 w-48 bg-border/40 rounded-lg animate-pulse" />
+							<div className="h-4 w-72 bg-border/30 rounded-lg animate-pulse" />
+						</div>
+					</div>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+						{Array.from({ length: 6 }).map((_, i) => (
+							<ClubCardSkeleton key={i} />
+						))}
+					</div>
+				</main>
+				<Footer />
+			</div>
 		);
-
-		const tagsArray = tagsInput
-			.split(',')
-			.map((t) => t.trim().replace(/^#/, ''))
-			.filter(Boolean);
-
-		const finalBanner =
-			enableCustomBanner && customBannerPreview
-				? customBannerPreview
-				: selectedBannerColor;
-
-		const res = await createGroup({
-			name,
-			tagline,
-			description,
-			category,
-			meetingFrequency: finalFreq,
-			meetingLocation: location,
-			minMembers: 1,
-			maxMembers: 100,
-			bannerUrl: finalBanner,
-			discordUrl: discordUrl || undefined,
-			instagramUrl: instagramUrl || undefined,
-			websiteUrl: websiteUrl || undefined,
-			tags: tagsArray,
-		});
-
-		setLoading(false);
-		if (res.success && res.group) {
-			setModalOpen(false);
-			router.push(`/group/${res.group.id}/feed`);
-		} else {
-			setError(res.error || 'Failed to create club');
-		}
-	};
-
-	const handleRedeemInvite = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setInviteError('');
-		setInviteSuccess('');
-		const res = await joinViaInviteCode(inviteCodeInput);
-		if (res.success && res.group) {
-			setInviteSuccess(`Successfully joined ${res.group.name}!`);
-			setTimeout(() => {
-				setInviteModalOpen(false);
-				setInviteCodeInput('');
-				setInviteSuccess('');
-				router.push(`/group/${res.group?.id}/feed`);
-			}, 1200);
-		} else {
-			setInviteError(res.error || 'Failed to redeem invite code');
-		}
-	};
+	}
 
 	if (!currentUser) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
 				<main className="grow flex items-center justify-center p-6 text-center">
-					<div className="max-w-xl py-12 space-y-4">
+					<div className="max-w-md space-y-4">
 						<div className="mx-auto h-12 w-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center text-xl shadow-xs">
 							<FiUsers size={24} />
 						</div>
-						<h1 className="text-3xl font-extrabold text-text-primary">
-							Manage Your Campus Clubs &amp; Hubs
+						<h1 className="text-2xl font-bold text-text-primary">
+							Sign In to Access Your Clubs
 						</h1>
-						<p className="text-sm text-text-secondary leading-relaxed max-w-md mx-auto">
-							Access the student organizations and academic
-							societies you lead. Create meeting agendas, track
-							live student attendance with unique link, manage
-							officer rosters, and share flyers.
+						<p className="text-xs text-text-secondary leading-relaxed">
+							Join student organizations, access private
+							discussion hubs, and track meeting attendance with
+							your campus account.
 						</p>
-						<div className="pt-2 flex flex-wrap justify-center gap-3">
+						<div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
 							<Link
 								href="/auth/login"
-								className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all"
+								className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all"
 							>
-								Sign In to Your Club Hub
+								Sign In
 							</Link>
 							<Link
-								href="/search"
+								href="/auth/register"
 								className="rounded-xl border border-border bg-surface px-5 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-secondary transition-all"
 							>
-								Browse Public Club Directory
+								Create Account
 							</Link>
 						</div>
 					</div>
@@ -266,651 +99,175 @@ export default function GroupsPage() {
 		);
 	}
 
-	const myLedClubs = groups.filter(
-		(g) =>
-			g.leaderId === currentUser.id ||
-			(g.officerIds && g.officerIds.includes(currentUser.id)),
-	);
-	const myJoinedClubs = groups.filter(
+	const leadingClubs = groups.filter((g) => g.leaderId === currentUser.id);
+	const joinedClubs = groups.filter(
 		(g) =>
 			g.memberIds.includes(currentUser.id) &&
-			g.leaderId !== currentUser.id &&
-			!(g.officerIds && g.officerIds.includes(currentUser.id)),
+			g.leaderId !== currentUser.id,
+	);
+	const allUserClubs = groups.filter(
+		(g) =>
+			g.leaderId === currentUser.id ||
+			g.memberIds.includes(currentUser.id),
 	);
 
 	const displayedClubs =
-		activeTab === 'leading'
-			? myLedClubs
-			: activeTab === 'joined'
-				? myJoinedClubs
-				: [...myLedClubs, ...myJoinedClubs];
+		activeTab === 'all'
+			? allUserClubs
+			: activeTab === 'leading'
+				? leadingClubs
+				: joinedClubs;
 
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
 
-			<main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-				{/* Top Header & Actions */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 mb-6">
+			<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+				{/* Top Bar Header */}
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
 					<div>
-						<h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
+						<h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary">
 							My Campus Clubs
 						</h1>
-						<p className="text-xs text-text-muted mt-1">
-							Manage the organizations you lead, collaborate in
-							club hubs, and track attendance.
+						<p className="mt-1 text-xs sm:text-sm text-text-muted">
+							Manage your executive leadership roles, member
+							communications, and meeting sessions.
 						</p>
 					</div>
 
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="flex items-center gap-2.5">
 						<button
 							onClick={() => setInviteModalOpen(true)}
-							className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary shadow-2xs transition-all cursor-pointer"
+							className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary shadow-2xs transition-all cursor-pointer"
 						>
-							<FiKey size={14} className="text-primary" /> Join
-							with Code
+							<FiKey size={14} className="text-primary" />
+							<span>Join with Code</span>
 						</button>
+
 						<button
-							onClick={openCreateModal}
-							className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
+							onClick={() => setModalOpen(true)}
+							className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
 						>
-							<FiPlus size={15} /> Register New Club
+							<FiPlus size={15} />
+							<span>Register Club</span>
 						</button>
 					</div>
 				</div>
 
-				{/* Tabs Navigation */}
-				<div className="flex items-center gap-2 border-b border-border mb-6">
+				{/* Tab Filters */}
+				<div className="flex items-center space-x-2 border-b border-border pb-1">
 					<button
 						onClick={() => setActiveTab('all')}
-						className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer ${
+						className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
 							activeTab === 'all'
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
 					>
-						All Clubs ({myLedClubs.length + myJoinedClubs.length})
+						All Clubs ({allUserClubs.length})
 					</button>
 					<button
 						onClick={() => setActiveTab('leading')}
-						className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer ${
+						className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
 							activeTab === 'leading'
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
 					>
-						Leading ({myLedClubs.length})
+						Leadership ({leadingClubs.length})
 					</button>
 					<button
 						onClick={() => setActiveTab('joined')}
-						className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer ${
+						className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
 							activeTab === 'joined'
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
 					>
-						Joined ({myJoinedClubs.length})
+						Member ({joinedClubs.length})
 					</button>
 				</div>
 
-				{/* Club Grid */}
+				{/* Clubs Grid / Empty State */}
 				{displayedClubs.length === 0 ? (
-					<div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center my-6">
-						<div className="mx-auto h-12 w-12 rounded-full bg-primary-light flex items-center justify-center text-primary mb-3">
-							<FiUsers size={22} />
+					<div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center max-w-lg mx-auto space-y-4">
+						<div className="mx-auto h-12 w-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center text-xl">
+							<FiUsers size={24} />
 						</div>
 						<h3 className="text-base font-bold text-text-primary">
-							No clubs to display
+							No clubs in this section
 						</h3>
-						<p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-							Explore the campus directory to join active clubs or
-							register a new student organization.
+						<p className="text-xs text-text-muted leading-relaxed">
+							{activeTab === 'leading'
+								? 'You are not currently leading any student organizations. Start one now!'
+								: activeTab === 'joined'
+									? 'You have not joined any campus clubs yet. Explore the directory or redeem an invite.'
+									: 'You are not affiliated with any campus clubs yet.'}
 						</p>
-						<div className="mt-5 flex justify-center gap-3">
+						<div className="pt-2 flex flex-wrap justify-center gap-3">
 							<Link
 								href="/search"
-								className="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary"
+								className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm inline-flex items-center gap-1.5"
 							>
-								Explore Clubs
+								<span>Explore Clubs</span>
+								<FiArrowRight size={13} />
 							</Link>
 							<button
-								onClick={openCreateModal}
-								className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover"
+								onClick={() => setModalOpen(true)}
+								className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-primary hover:bg-surface-secondary"
 							>
 								Register Club
 							</button>
 						</div>
 					</div>
 				) : (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{displayedClubs.map((club) => {
-							const isLeader = club.leaderId === currentUser.id;
-							const isOfficer =
-								club.officerIds &&
-								club.officerIds.includes(currentUser.id);
-							const clubEvents = events.filter(
-								(e) => e.groupId === club.id && e.isActive,
-							);
-
-							return (
-								<div
-									key={club.id}
-									onClick={() =>
-										router.push(`/group/${club.id}/feed`)
-									}
-									className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all flex flex-col cursor-pointer"
-								>
-									{/* Banner */}
-									<div className="h-32 w-full relative bg-surface-secondary overflow-hidden">
-										{club.bannerUrl?.startsWith('data:') ||
-										club.bannerUrl?.startsWith('http') ? (
-											<Image
-												src={club.bannerUrl}
-												alt={club.name}
-												fill
-												className="object-cover group-hover:scale-102 transition-transform duration-300"
-											/>
-										) : (
-											<div
-												className="w-full h-full"
-												style={{
-													background:
-														club.bannerUrl ||
-														'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-												}}
-											/>
-										)}
-										<div className="absolute top-3 right-3 bg-surface/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full text-[10px] font-bold text-primary border border-border">
-											{club.category}
-										</div>
-
-										<div className="absolute top-3 left-3 flex items-center gap-1.5">
-											{isLeader ? (
-												<span className="bg-primary text-white px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 shadow-xs">
-													<FiShield size={10} /> Lead
-												</span>
-											) : isOfficer ? (
-												<span className="bg-primary-light text-primary px-2 py-0.5 rounded-md text-[10px] font-bold border border-primary/20">
-													Officer
-												</span>
-											) : null}
-										</div>
-									</div>
-
-									{/* Content */}
-									<div className="p-5 flex flex-col grow">
-										<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors line-clamp-1">
-											{club.name}
-										</h3>
-										{club.tagline && (
-											<p className="text-xs text-text-muted mt-0.5 line-clamp-1">
-												{club.tagline}
-											</p>
-										)}
-
-										<p className="text-xs text-text-secondary mt-2 line-clamp-2 leading-relaxed">
-											{club.description}
-										</p>
-
-										{/* Active Event Banner */}
-										{clubEvents.length > 0 && (
-											<div className="mt-3 rounded-lg bg-primary-light/60 border border-primary/20 p-2.5 flex items-center justify-between text-xs">
-												<div className="flex items-center gap-1.5 text-primary font-semibold">
-													<span className="flex h-2 w-2 relative">
-														<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-														<span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-													</span>
-													Live Meeting Session Active
-												</div>
-												{isLeader || isOfficer ? (
-													<span className="text-[10px] font-mono bg-surface px-1.5 py-0.5 rounded border border-border text-primary font-bold">
-														{
-															clubEvents[0]
-																.checkInCode
-														}
-													</span>
-												) : (
-													<span className="text-[10px] font-semibold bg-success-bg text-success px-2 py-0.5 rounded-full border border-success/20">
-														Active
-													</span>
-												)}
-											</div>
-										)}
-
-										{/* Meeting schedule & location */}
-										<div className="mt-4 pt-3 border-t border-border space-y-1 text-xs text-text-muted">
-											<div className="flex items-center gap-2">
-												<FiCalendar
-													size={13}
-													className="text-primary shrink-0"
-												/>
-												<span className="truncate">
-													{club.meetingFrequency}
-												</span>
-											</div>
-											{club.meetingLocation && (
-												<div className="flex items-center gap-2">
-													<FiMapPin
-														size={13}
-														className="text-primary shrink-0"
-													/>
-													<span className="truncate">
-														{club.meetingLocation}
-													</span>
-												</div>
-											)}
-										</div>
-
-										{/* Footer */}
-										<div className="mt-5 pt-3 border-t border-border flex items-center justify-between">
-											<span className="text-[11px] font-medium text-text-muted">
-												👥 {club.memberIds.length}{' '}
-												Members
-											</span>
-											<div className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-all shadow-2xs inline-flex items-center gap-1">
-												Enter Hub{' '}
-												<FiArrowRight size={12} />
-											</div>
-										</div>
-									</div>
-								</div>
-							);
-						})}
-					</div>
+					<ScrollStaggerContainer
+						staggerDelay={0.07}
+						className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+					>
+						{displayedClubs.map((club) => (
+							<ScrollStaggerItem key={club.id}>
+								<GroupCard
+									club={club}
+									currentUser={currentUser}
+									activeEvents={events}
+								/>
+							</ScrollStaggerItem>
+						))}
+					</ScrollStaggerContainer>
 				)}
 			</main>
 
-			{/* ═══════════ Register Club Modal ═══════════ */}
-			<AnimatePresence>
-				{modalOpen && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							className="w-full max-w-xl rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 my-8"
-						>
-							<div className="flex items-center justify-between border-b border-border pb-3">
-								<div>
-									<h2 className="text-lg font-bold text-text-primary">
-										Register a New Campus Club
-									</h2>
-									<p className="text-xs text-text-muted">
-										Create a hub for your organization to
-										promote, recruit, and track attendance.
-									</p>
-								</div>
-								<button
-									onClick={() => setModalOpen(false)}
-									className="text-text-muted hover:text-text-primary p-1 rounded-lg"
-								>
-									✕
-								</button>
-							</div>
+			<CreateGroupModal
+				isOpen={modalOpen}
+				onClose={() => setModalOpen(false)}
+				onCreateGroup={createGroup}
+				onSuccess={(groupId) => router.push(`/group/${groupId}/feed`)}
+			/>
 
-							<form
-								onSubmit={handleCreateGroup}
-								className="space-y-3.5 text-xs"
-							>
-								{error && (
-									<div className="text-xs text-danger bg-danger-bg p-2.5 rounded-lg text-center">
-										{error}
-									</div>
-								)}
-
-								<Input
-									label="Club Name"
-									required
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-								/>
-
-								<Input
-									label="Tagline / Short Hook"
-									value={tagline}
-									onChange={(e) => setTagline(e.target.value)}
-								/>
-
-								<Select
-									label="Category"
-									value={category}
-									onChange={(e) => setCategory(e.target.value)}
-								>
-									{categoriesList.map((cat) => (
-										<option key={cat} value={cat}>{cat}</option>
-									))}
-								</Select>
-
-								<Textarea
-									label="Mission & Description"
-									required
-									rows={3}
-									value={description}
-									onChange={(e) => setDescription(e.target.value)}
-								/>
-
-								<Input
-									label="Meeting Location / Room"
-									value={location}
-									onChange={(e) =>
-										setLocation(e.target.value)
-									}
-								/>
-
-								{/* Banner Appearance Selector */}
-								<div className="rounded-xl border border-border bg-surface-secondary/40 p-3.5 space-y-3">
-									<div className="flex items-center justify-between">
-										<div>
-											<span className="text-[11px] font-bold text-text-primary uppercase tracking-wider block">
-												Club Banner
-											</span>
-											<span className="text-[10px] text-text-muted">
-												Select a color theme or upload a
-												custom banner image
-											</span>
-										</div>
-										<label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
-											<Checkbox
-												checked={enableCustomBanner}
-												onChange={() =>
-													setEnableCustomBanner(
-														!enableCustomBanner,
-													)
-												}
-											/>
-											<span>Upload custom image</span>
-										</label>
-									</div>
-
-									{/* Banner Preview Box */}
-									<div className="relative h-24 w-full rounded-lg overflow-hidden border border-border flex items-center justify-center">
-										{enableCustomBanner &&
-										customBannerPreview ? (
-											<>
-												<Image
-													src={customBannerPreview}
-													alt="Banner Preview"
-													fill
-													className="object-cover"
-												/>
-												<button
-													type="button"
-													onClick={() =>
-														setCustomBannerPreview(
-															'',
-														)
-													}
-													className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-md px-2 py-0.5 text-[10px] font-semibold cursor-pointer"
-												>
-													Remove
-												</button>
-											</>
-										) : (
-											<div
-												className="w-full h-full flex items-center justify-center text-white font-bold text-sm shadow-inner"
-												style={{
-													background:
-														selectedBannerColor,
-												}}
-											>
-												{name || 'Banner Preview'}
-											</div>
-										)}
-									</div>
-
-									{enableCustomBanner ? (
-										<div className="space-y-1">
-											<label className="block text-[10px] font-semibold text-text-muted uppercase">
-												Select Image File
-											</label>
-											{fileSizeError && (
-												<div className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
-													<span className="shrink-0 mt-0.5">⚠️</span>
-													<span>
-														{fileSizeError}{' '}
-														<a
-															href="https://joeyjazwinski.com/developer-tools/image-compressor"
-															target="_blank"
-															rel="noopener noreferrer"
-															className="underline font-semibold hover:text-danger/80 transition-colors"
-														>
-															Compress your image here →
-														</a>
-													</span>
-												</div>
-											)}
-											<input
-												type="file"
-												accept="image/*"
-												onChange={(e) => {
-													const file =
-														e.target.files?.[0];
-													if (file) {
-														if (file.size > 200000) {
-															setFileSizeError('Image is too large (max 200 KB).');
-															e.target.value = '';
-															return;
-														}
-														setFileSizeError('');
-														const reader =
-															new FileReader();
-														reader.onload = () => {
-															setCustomBannerPreview(
-																reader.result as string,
-															);
-														};
-														reader.readAsDataURL(
-															file,
-														);
-													}
-												}}
-												className="block w-full text-xs text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary-light/80 cursor-pointer"
-											/>
-										</div>
-									) : (
-											<Select
-												label="Color Theme Preset"
-												value={selectedBannerColor}
-												onChange={(e) => setSelectedBannerColor(e.target.value)}
-											>
-												{BANNER_COLOR_PRESETS.map((preset) => (
-													<option key={preset.id} value={preset.value}>{preset.name}</option>
-												))}
-											</Select>
-									)}
-								</div>
-
-								{/* Custom Meeting Days Selector */}
-								<div className="rounded-xl border border-border bg-surface-secondary/40 p-3 space-y-2">
-									<div className="flex items-center justify-between">
-										<span className="font-semibold text-text-primary">
-											Meeting Schedule
-										</span>
-										<label className="flex items-center gap-1.5 text-text-secondary cursor-pointer">
-											<Checkbox
-												checked={isCustomFreq}
-												onChange={() =>
-													setIsCustomFreq(
-														!isCustomFreq,
-													)
-												}
-											/>
-											<span>Custom Days &amp; Time</span>
-										</label>
-									</div>
-
-									{isCustomFreq ? (
-										<div className="space-y-2 pt-1">
-											<div className="flex flex-wrap gap-1.5">
-												{[
-													'Mon',
-													'Tue',
-													'Wed',
-													'Thu',
-													'Fri',
-													'Sat',
-													'Sun',
-												].map((day) => (
-													<button
-														key={day}
-														type="button"
-														onClick={() =>
-															setCustomDays(
-																(prev) => ({
-																	...prev,
-																	[day]: !prev[
-																		day
-																	],
-																}),
-															)
-														}
-														className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-all ${
-															customDays[day]
-																? 'bg-primary text-white border-primary'
-																: 'bg-surface text-text-secondary border-border'
-														}`}
-													>
-														{day}
-													</button>
-												))}
-											</div>
-												<Input
-													type="time"
-													value={customTime}
-													onChange={(e) => setCustomTime(e.target.value)}
-												/>
-										</div>
-									) : (
-										<Select
-											value={frequency}
-											onChange={(e) => setFrequency(e.target.value)}
-										>
-											<option value="Weekly">Weekly</option>
-											<option value="Bi-weekly">Bi-weekly</option>
-											<option value="Fortnightly">Fortnightly</option>
-											<option value="Monthly">Monthly</option>
-										</Select>
-									)}
-								</div>
-
-								{/* Social handles */}
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-									<Input
-										label="Discord URL"
-										value={discordUrl}
-										onChange={(e) =>
-											setDiscordUrl(e.target.value)
-										}
-									/>
-									<Input
-										label="Instagram URL"
-										value={instagramUrl}
-										onChange={(e) =>
-											setInstagramUrl(e.target.value)
-										}
-									/>
-									<Input
-										label="Website URL"
-										value={websiteUrl}
-										onChange={(e) =>
-											setWebsiteUrl(e.target.value)
-										}
-									/>
-								</div>
-
-								<Input
-									label="Focus Tags (Comma separated)"
-									value={tagsInput}
-									onChange={(e) =>
-										setTagsInput(e.target.value)
-									}
-								/>
-
-								<div className="pt-2 flex justify-end gap-2">
-									<button
-										type="button"
-										onClick={() => setModalOpen(false)}
-										className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary"
-									>
-										Cancel
-									</button>
-									<button
-										type="submit"
-										disabled={loading}
-										className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50"
-									>
-										{loading
-											? 'Registering...'
-											: 'Register Club'}
-									</button>
-								</div>
-							</form>
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
-
-			{/* ═══════════ Redeem Invite Code Modal ═══════════ */}
-			<AnimatePresence>
-				{inviteModalOpen && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4"
-						>
-							<div className="flex items-center justify-between border-b border-border pb-3">
-								<h3 className="text-base font-bold text-text-primary flex items-center gap-2">
-									<FiKey className="text-primary" /> Join with
-									Invite Code
-								</h3>
-								<button
-									onClick={() => setInviteModalOpen(false)}
-									className="text-text-muted hover:text-text-primary"
-								>
-									✕
-								</button>
-							</div>
-
-							<form
-								onSubmit={handleRedeemInvite}
-								className="space-y-3"
-							>
-								{inviteError && (
-									<div className="text-xs text-danger bg-danger-bg p-2.5 rounded-lg text-center font-medium">
-										{inviteError}
-									</div>
-								)}
-								{inviteSuccess && (
-									<div className="text-xs text-success bg-success-bg p-2.5 rounded-lg text-center font-medium flex items-center justify-center gap-1.5">
-										<FiCheck /> {inviteSuccess}
-									</div>
-								)}
-
-								<Input
-									label="Club Invite Code or Direct Link"
-									required
-									placeholder="e.g. DEMOS-GDSC-2026 or https://.../join/CODE"
-									value={inviteCodeInput}
-									onChange={(e) =>
-										setInviteCodeInput(e.target.value)
-									}
-								/>
-
-								<button
-									type="submit"
-									className="w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
-								>
-									Redeem &amp; Join Club
-								</button>
-							</form>
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
+			<RedeemInviteModal
+				isOpen={inviteModalOpen}
+				onClose={() => setInviteModalOpen(false)}
+			/>
 
 			<Footer />
 		</div>
+	);
+}
+
+export default function GroupsPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex min-h-screen items-center justify-center bg-background">
+					<PageLoader
+						message="Loading Your Clubs"
+						subMessage="Syncing memberships and leadership roles..."
+					/>
+				</div>
+			}
+		>
+			<GroupsContent />
+		</Suspense>
 	);
 }

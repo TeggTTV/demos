@@ -7,6 +7,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
+import PageLoader from '@/components/ui/PageLoader';
 import Link from 'next/link';
 import Image from 'next/image';
 import { compressImage } from '@/utils/imageCompression';
@@ -245,9 +246,7 @@ export default function RegisterPage() {
 			<Suspense
 				fallback={
 					<main className="grow flex items-center justify-center py-20">
-						<h1 className="text-xs text-text-muted font-normal">
-							Loading...
-						</h1>
+						<PageLoader message="Loading Registration..." />
 					</main>
 				}
 			>

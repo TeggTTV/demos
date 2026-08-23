@@ -6,6 +6,7 @@ import React, {
 	useState,
 	useEffect,
 	useCallback,
+	useRef,
 } from 'react';
 import {
 	AppNotification,
@@ -16,293 +17,21 @@ import {
 	sendBrowserNotification,
 	subscribeToPushNotifications,
 } from '@/utils/notificationUtils';
+import {
+	User,
+	Group,
+	JoinRequest,
+	ClubInvite,
+	FeedMessage,
+	MeetingEvent,
+	AttendanceRecord,
+	Theme,
+	AppContextType,
+} from '@/types/models';
+import { apiClient } from '@/services/apiClient';
 
-/* ──────────────────────────── Types ──────────────────────────── */
-
-export interface User {
-	id: string;
-	email: string;
-	name: string;
-	avatarUrl?: string;
-	role: 'LEADER' | 'APPLICANT' | 'GUEST';
-	bio?: string;
-	major?: string;
-	year?: string;
-	phone?: string;
-	birthday?: string;
-	lastActive?: string;
-}
-
-export interface Group {
-	id: string;
-	name: string;
-	tagline?: string;
-	description: string;
-	category: string;
-	subject?: string; // compatibility
-	meetingFrequency: string;
-	meetingLocation?: string;
-	minMembers: number;
-	maxMembers: number;
-	leaderId: string;
-	memberIds: string[];
-	officerIds?: string[];
-	isPrivate?: boolean;
-	profanityFilter?: boolean;
-	bannerUrl?: string;
-	logoUrl?: string;
-	websiteUrl?: string;
-	instagramUrl?: string;
-	discordUrl?: string;
-	tags?: string[];
-	createdAt?: string;
-}
-
-export interface JoinRequest {
-	id: string;
-	groupId: string;
-	userId: string;
-	message?: string;
-	status: 'PENDING' | 'APPROVED' | 'DECLINED';
-	createdAt: string;
-}
-
-export interface ClubInvite {
-	id: string;
-	groupId: string;
-	code: string;
-	email?: string;
-	status: 'ACTIVE' | 'USED' | 'EXPIRED';
-	createdAt: string;
-	expiresAt?: string;
-}
-
-export interface FeedMessage {
-	id: string;
-	groupId: string;
-	userId: string;
-	content: string;
-	fileUrl?: string;
-	fileName?: string;
-	isAnnouncement?: boolean;
-	pinned?: boolean;
-	createdAt: string;
-	user?: {
-		id: string;
-		name: string;
-		avatarUrl?: string | null;
-	};
-}
-
-export interface MeetingEvent {
-	id: string;
-	groupId: string;
-	title: string;
-	description?: string;
-	date: string; // YYYY-MM-DD
-	time: string; // e.g. "18:00"
-	location?: string;
-	checkInCode: string;
-	isActive: boolean;
-	createdById: string;
-	createdAt: string;
-	endDate?: string;
-	price?: string;
-	status?: string;
-	locationType?: string;
-	allDay?: boolean;
-	endTime?: string;
-	regRequired?: boolean;
-	regCapacity?: number;
-	regDeadline?: string;
-	inviteMessage?: string;
-	inviteReminderDays?: number;
-	membersOnly?: boolean;
-	bannerUrl?: string;
-	isAttendanceSession?: boolean;
-	eventType?: 'ACTIVITY' | 'ATTENDANCE_SESSION';
-}
-
-export interface AttendanceRecord {
-	id: string;
-	eventId: string;
-	groupId: string;
-	userId: string;
-	userName?: string;
-	userEmail?: string;
-	status:
-		| 'PRESENT'
-		| 'LATE'
-		| 'EXCUSED'
-		| 'ABSENT'
-		| 'RSVP_YES'
-		| 'RSVP_NO'
-		| 'RSVP_MAYBE';
-	checkInMethod: 'CODE' | 'MANUAL' | 'QR';
-	timestamp: string;
-}
-
-export type Theme = 'light' | 'dark';
-
-interface AppContextType {
-	currentUser: User | null;
-	users: User[];
-	groups: Group[];
-	requests: JoinRequest[];
-	feedMessages: FeedMessage[];
-	events: MeetingEvent[];
-	attendances: AttendanceRecord[];
-	invites: ClubInvite[];
-	notifications: AppNotification[];
-	notificationSettings: NotificationSettings;
-	unreadNotificationCount: number;
-	theme: Theme;
-	hydrated: boolean;
-	toggleTheme: () => void;
-	loginUser: (
-		email: string,
-		password: string,
-	) => Promise<{ success: boolean; error?: string }>;
-	registerUser: (
-		email: string,
-		name: string,
-		password: string,
-		role: 'LEADER' | 'APPLICANT',
-		avatarUrl?: string,
-		bio?: string,
-		major?: string,
-		year?: string,
-	) => Promise<{ success: boolean; error?: string }>;
-	logoutUser: () => void;
-	sendJoinRequest: (groupId: string, message?: string) => Promise<void>;
-	approveRequest: (requestId: string) => Promise<void>;
-	declineRequest: (requestId: string) => Promise<void>;
-	postMessage: (
-		groupId: string,
-		content: string,
-		fileName?: string,
-		fileUrl?: string,
-		isAnnouncement?: boolean,
-		pinned?: boolean,
-	) => Promise<void>;
-	updateProfile: (
-		name: string,
-		avatarUrl: string,
-		bio?: string,
-		major?: string,
-		year?: string,
-		phone?: string,
-		birthday?: string,
-	) => Promise<void>;
-	fetchFeedMessages: (groupId: string) => Promise<void>;
-	createGroup: (groupData: {
-		name: string;
-		tagline?: string;
-		description: string;
-		category: string;
-		meetingFrequency: string;
-		meetingLocation?: string;
-		minMembers: number;
-		maxMembers: number;
-		bannerUrl?: string;
-		logoUrl?: string;
-		websiteUrl?: string;
-		instagramUrl?: string;
-		discordUrl?: string;
-		tags?: string[];
-	}) => Promise<{ success: boolean; group?: Group; error?: string }>;
-	deleteMessage: (messageId: string) => Promise<void>;
-	updateGroupSettings: (
-		groupId: string,
-		settings: {
-			name?: string;
-			tagline?: string;
-			description?: string;
-			category?: string;
-			meetingFrequency?: string;
-			meetingLocation?: string;
-			isPrivate?: boolean;
-			profanityFilter?: boolean;
-			bannerUrl?: string;
-			logoUrl?: string;
-			websiteUrl?: string;
-			instagramUrl?: string;
-			discordUrl?: string;
-			tags?: string[];
-			officerIds?: string[];
-			kickUserId?: string;
-			deleteLinkId?: string;
-			deleteFileId?: string;
-		},
-	) => Promise<{ success: boolean; error?: string }>;
-	createMeetingEvent: (
-		groupId: string,
-		eventData: {
-			title: string;
-			description?: string;
-			date: string;
-			time: string;
-			location?: string;
-			endDate?: string;
-			price?: string;
-			status?: string;
-		},
-	) => Promise<{ success: boolean; event?: MeetingEvent; error?: string }>;
-	toggleEventActive: (
-		eventId: string,
-		isActive: boolean,
-	) => Promise<{ success: boolean }>;
-	deleteMeetingEvent: (eventId: string) => Promise<{ success: boolean }>;
-	checkInToEvent: (
-		eventId: string,
-		code: string,
-	) => Promise<{ success: boolean; message?: string; error?: string }>;
-	updateAttendanceStatus: (
-		eventId: string,
-		userId: string,
-		status: 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT',
-	) => Promise<{ success: boolean }>;
-	generateClubInvite: (
-		groupId: string,
-	) => Promise<{ success: boolean; code?: string; error?: string }>;
-	deleteClubInvites: (
-		groupId: string,
-	) => Promise<{ success: boolean; error?: string }>;
-	joinViaInviteCode: (code: string) => Promise<{
-		groupId?: string;
-		success: boolean;
-		group?: Group;
-		error?: string;
-	}>;
-	isIdle: boolean;
-	fetchGroups: () => Promise<void>;
-	fetchInvites: () => Promise<void>;
-	fetchEvents: (
-		groupId?: string,
-		type?: 'activity' | 'attendance' | 'all',
-		eventId?: string,
-	) => Promise<void>;
-	fetchAttendances: (groupId?: string, eventId?: string) => Promise<void>;
-	refreshData: () => Promise<void>;
-
-	// Notifications API
-	triggerNotification: (params: {
-		type: NotificationType;
-		title: string;
-		body: string;
-		groupId?: string;
-		groupName?: string;
-		url?: string;
-		meta?: Record<string, unknown>;
-	}) => void;
-	markNotificationAsRead: (id: string) => void;
-	markAllNotificationsAsRead: () => void;
-	deleteNotification: (id: string) => void;
-	clearAllNotifications: () => void;
-	updateNotificationSettings: (
-		newSettings: Partial<NotificationSettings>,
-	) => void;
-}
+// Re-export all types so existing imports from AppContext continue working smoothly
+export * from '@/types/models';
 
 /* ──────────────────────────── Context ─────────────────────────── */
 
@@ -364,8 +93,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	/* ─── Modular Data Fetchers for Active Tabs / Pages ─── */
 	const fetchGroups = useCallback(async () => {
 		try {
-			const res = await fetch('/api/groups');
-			const data = await res.json();
+			const data = await apiClient.fetchGroups();
 			if (data.groups) setGroups(data.groups);
 		} catch (e) {
 			console.error('fetchGroups failed:', e);
@@ -374,8 +102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	const fetchRequests = useCallback(async () => {
 		try {
-			const res = await fetch('/api/requests');
-			const data = await res.json();
+			const data = await apiClient.fetchRequests();
 			if (data.requests) setRequests(data.requests);
 		} catch (e) {
 			console.error('fetchRequests failed:', e);
@@ -384,8 +111,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	const fetchUsers = useCallback(async () => {
 		try {
-			const res = await fetch('/api/users');
-			const data = await res.json();
+			const data = await apiClient.fetchUsers();
 			if (data.users) setUsers(data.users);
 		} catch (e) {
 			console.error('fetchUsers failed:', e);
@@ -399,22 +125,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			eventId?: string,
 		) => {
 			try {
-				const params = new URLSearchParams();
-				if (groupId) params.append('groupId', groupId);
-				if (type && type !== 'all') params.append('type', type);
-				if (eventId) params.append('eventId', eventId);
-				const url = `/api/events${params.toString() ? `?${params.toString()}` : ''}`;
-				const res = await fetch(url);
-				const data = await res.json();
+				const data = await apiClient.fetchEvents({ groupId, type, eventId });
 				if (data.events) {
 					setEvents((prev) => {
-						if (!groupId && !eventId) return data.events;
+						if (!groupId && !eventId) return data.events!;
 						if (eventId) {
-							// Update only this single event in state
 							const eventMap = new Map(
 								prev.map((e) => [e.id, e]),
 							);
-							data.events.forEach((ev: MeetingEvent) => {
+							data.events!.forEach((ev: MeetingEvent) => {
 								eventMap.set(ev.id, ev);
 							});
 							return Array.from(eventMap.values());
@@ -422,7 +141,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						const otherGroupEvents = prev.filter(
 							(e) => e.groupId !== groupId,
 						);
-						return [...data.events, ...otherGroupEvents];
+						return [...data.events!, ...otherGroupEvents];
 					});
 				}
 			} catch (e) {
@@ -435,12 +154,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const fetchAttendances = useCallback(
 		async (groupId?: string, eventId?: string) => {
 			try {
-				const params = new URLSearchParams();
-				if (groupId) params.append('groupId', groupId);
-				if (eventId) params.append('eventId', eventId);
-				const url = `/api/attendance${params.toString() ? `?${params.toString()}` : ''}`;
-				const res = await fetch(url);
-				const data = await res.json();
+				const data = await apiClient.fetchAttendances({ groupId, eventId });
 				if (data.attendances) setAttendances(data.attendances);
 			} catch (e) {
 				console.error('fetchAttendances failed:', e);
@@ -451,8 +165,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	const fetchInvites = useCallback(async () => {
 		try {
-			const res = await fetch('/api/invites');
-			const data = await res.json();
+			const data = await apiClient.fetchInvites();
 			if (data.invites) setInvites(data.invites);
 		} catch (e) {
 			console.error('fetchInvites failed:', e);
@@ -461,7 +174,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Hydrate pure from API ─── */
 	const loadData = useCallback(async () => {
-		const isPendingPage = typeof window !== 'undefined' && window.location.pathname === '/pending';
+		const isPendingPage =
+			typeof window !== 'undefined' &&
+			window.location.pathname === '/pending';
 		await Promise.allSettled([
 			fetchGroups(),
 			fetchRequests(),
@@ -489,7 +204,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		}
 
-		// Load Notifications and Settings from localStorage
 		const savedNotifications = localStorage.getItem('demos_notifications');
 		if (savedNotifications) {
 			try {
@@ -519,12 +233,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	/* ─── Ref sync for notificationSettings & currentUser ─── */
-	const settingsRef = React.useRef(notificationSettings);
+	const settingsRef = useRef(notificationSettings);
 	useEffect(() => {
 		settingsRef.current = notificationSettings;
 	}, [notificationSettings]);
 
-	const userRef = React.useRef(currentUser);
+	const userRef = useRef(currentUser);
 	useEffect(() => {
 		userRef.current = currentUser;
 		if (
@@ -536,11 +250,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			subscribeToPushNotifications(currentUser.id).catch(() => {});
 		}
 	}, [currentUser]);
-
-	const eventsRef = React.useRef(events);
-	useEffect(() => {
-		eventsRef.current = events;
-	}, [events]);
 
 	/* ─── Persist Notifications ─── */
 	const saveNotifications = useCallback(
@@ -586,7 +295,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			meta?: Record<string, unknown>;
 		}) => {
 			const currentSettings = settingsRef.current;
-			// Check if this specific notification type is enabled
 			if (currentSettings[type] === false) {
 				return;
 			}
@@ -606,12 +314,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 			saveNotifications((prev) => [newNotification, ...prev]);
 
-			// Play sound if enabled
 			if (currentSettings.soundEnabled) {
 				playNotificationSound();
 			}
 
-			// Send browser notification only if the app is currently in background or tab is hidden
 			if (
 				currentSettings.browserPushEnabled &&
 				typeof document !== 'undefined' &&
@@ -623,8 +329,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		[saveNotifications],
 	);
 
-	/* ─── Background Sync for Incoming Messages, Attendance & App Data ─── */
-	const knownMessageIdsRef = React.useRef<Set<string>>(new Set());
+	/* ─── Background Sync for Incoming Messages & App Data ─── */
 	useEffect(() => {
 		let active = true;
 		let timeoutId: NodeJS.Timeout;
@@ -637,7 +342,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 			const pathname = window.location.pathname;
 
-			// Do NOT poll any APIs on the homepage or static informational pages
 			if (
 				pathname === '/' ||
 				pathname === '/terms' ||
@@ -656,7 +360,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				);
 				const currentTab = searchParams.get('tab') || 'feed';
 
-				// Only refresh data specifically needed by the current active page/tab
 				if (pathname.includes('/group/')) {
 					const groupId = pathname.split('/')[2];
 					if (currentTab === 'attendance') {
@@ -677,23 +380,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						currentTab === 'roles'
 					) {
 						await fetchUsers();
-					} else if (currentTab === 'settings') {
-						// Groups and invites are loaded once on settings tab mount, not on interval
-					} else if (currentTab === 'feed') {
-						// Feed messages are polled by the active GroupFeedPage directly
-					} else if (
-						currentTab === 'activities' ||
-						pathname.endsWith('/activities')
-					) {
-						// Activities tab: single mount fetch, no polling
 					}
 				} else if (pathname === '/pending') {
 					await Promise.allSettled([
 						fetchRequests(),
 						fetchInvites(),
 					]);
-				} else if (pathname === '/groups') {
-					// Groups list is loaded initially, no interval polling needed
 				} else if (pathname === '/profile') {
 					await fetchUsers();
 				}
@@ -711,7 +403,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		}
 
-		// Initial check only if not on homepage
 		if (typeof window !== 'undefined' && window.location.pathname !== '/') {
 			pollLoop();
 		} else {
@@ -786,12 +477,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	/* ─── Authentication Handlers ─── */
 	const loginUser = useCallback(async (email: string, password: string) => {
 		try {
-			const res = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password }),
-			});
-			const data = await res.json();
+			const data = await apiClient.login(email, password);
 			if (data.success && data.user) {
 				setCurrentUser(data.user);
 				localStorage.setItem(
@@ -800,16 +486,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				);
 				return { success: true };
 			}
-			return {
-				success: false,
-				error: data.error || 'Invalid email or password',
-			};
+			return { success: false, error: data.error || 'Invalid credentials' };
 		} catch (e) {
 			console.error('Login error:', e);
-			return {
-				success: false,
-				error: 'Network error occurred during login',
-			};
+			return { success: false, error: 'Login network error' };
 		}
 	}, []);
 
@@ -825,24 +505,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			year?: string,
 		) => {
 			try {
-				const res = await fetch('/api/auth/register', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						email,
-						name,
-						password,
-						role,
-						avatarUrl,
-						bio,
-						major,
-						year,
-					}),
+				const data = await apiClient.register({
+					email,
+					name,
+					password,
+					role,
+					avatarUrl,
+					bio,
+					major,
+					year,
 				});
-				const data = await res.json();
 				if (data.success && data.user) {
 					setCurrentUser(data.user);
-					setUsers((prev) => [...prev, data.user]);
 					localStorage.setItem(
 						'demos_current_user',
 						JSON.stringify(data.user),
@@ -854,11 +528,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					error: data.error || 'Registration failed',
 				};
 			} catch (e) {
-				console.error('Registration error:', e);
-				return {
-					success: false,
-					error: 'Network error occurred during registration',
-				};
+				console.error('Register error:', e);
+				return { success: false, error: 'Registration network error' };
 			}
 		},
 		[],
@@ -866,268 +537,148 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	const logoutUser = useCallback(async () => {
 		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
+			await apiClient.logout();
 		} catch (e) {
-			console.error('Logout API failed:', e);
+			console.error('Logout error:', e);
 		}
 		setCurrentUser(null);
 		localStorage.removeItem('demos_current_user');
+		// eslint-disable-next-line @next/next/no-location-assign-relative-destination
+		window.location.href = '/';
 	}, []);
 
-	/* ─── Join Requests & Member Onboarding ─── */
+	/* ─── Join Request Handlers ─── */
 	const sendJoinRequest = useCallback(
 		async (groupId: string, message?: string) => {
 			if (!currentUser) return;
-			const exists = requests.find(
-				(r) =>
-					r.groupId === groupId &&
-					r.userId === currentUser.id &&
-					r.status === 'PENDING',
-			);
-			if (exists) return;
-
-			const targetGroup = groups.find((g) => g.id === groupId);
-
 			try {
-				const res = await fetch('/api/requests', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						action: 'create',
-						groupId,
-						userId: currentUser.id,
-						message,
-					}),
-				});
-				const data = await res.json();
-				if (data.success && data.request) {
-					setRequests((prev) => [...prev, data.request]);
-
+				const data = await apiClient.sendJoinRequest(groupId, message);
+				if (data.request) {
+					setRequests((prev) => [data.request!, ...prev]);
 					triggerNotification({
 						type: 'join_request',
-						title: 'Join Request Submitted',
-						body: `Your application to join "${targetGroup?.name || 'the club'}" was sent.`,
+						title: 'Application Submitted',
+						body: `Your request to join has been sent to club leaders.`,
 						groupId,
-						groupName: targetGroup?.name,
-						url: '/pending',
+						url: `/pending`,
 					});
 				}
 			} catch (e) {
-				console.error('Could not save join request:', e);
+				console.error('sendJoinRequest error:', e);
 			}
 		},
-		[currentUser, groups, requests, triggerNotification],
+		[currentUser, triggerNotification],
 	);
 
 	const approveRequest = useCallback(
 		async (requestId: string) => {
-			const reqObj = requests.find((r) => r.id === requestId);
-			const targetGroup = groups.find((g) => g.id === reqObj?.groupId);
-			const applicant = users.find((u) => u.id === reqObj?.userId);
-
 			try {
-				const res = await fetch('/api/requests', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ action: 'approve', requestId }),
-				});
-				const data = await res.json();
-				if (data.success && data.request) {
+				const reqObj = requests.find((r) => r.id === requestId);
+				const data = await apiClient.updateRequestStatus(requestId, 'APPROVED');
+				if (data.success) {
 					setRequests((prev) =>
 						prev.map((r) =>
-							r.id === requestId ? data.request : r,
+							r.id === requestId ? { ...r, status: 'APPROVED' } : r,
 						),
 					);
-					const gRes = await fetch('/api/groups');
-					const gData = await gRes.json();
-					if (gData.groups) setGroups(gData.groups);
-
-					triggerNotification({
-						type: 'join_request_status',
-						title: 'Application Approved',
-						body: `Approved ${applicant?.name || 'member'} for "${targetGroup?.name || 'Club'}".`,
-						groupId: targetGroup?.id,
-						groupName: targetGroup?.name,
-						url: targetGroup
-							? `/group/${targetGroup.id}/feed`
-							: '/groups',
-					});
-
-					triggerNotification({
-						type: 'member_added',
-						title: 'New Member Joined',
-						body: `${applicant?.name || 'A student'} was added to "${targetGroup?.name || 'Club'}".`,
-						groupId: targetGroup?.id,
-						groupName: targetGroup?.name,
-						url: targetGroup
-							? `/group/${targetGroup.id}/feed`
-							: '/groups',
-					});
+					await fetchGroups();
+					if (reqObj) {
+						triggerNotification({
+							type: 'join_request_status',
+							title: 'Application Approved',
+							body: `Membership application has been approved.`,
+							groupId: reqObj.groupId,
+							url: `/group/${reqObj.groupId}/feed?tab=roster`,
+						});
+					}
 				}
 			} catch (e) {
-				console.error('Could not approve request:', e);
+				console.error('approveRequest error:', e);
 			}
 		},
-		[groups, requests, triggerNotification, users],
+		[fetchGroups, requests, triggerNotification],
 	);
 
 	const declineRequest = useCallback(
 		async (requestId: string) => {
-			const reqObj = requests.find((r) => r.id === requestId);
-			const targetGroup = groups.find((g) => g.id === reqObj?.groupId);
-			const applicant = users.find((u) => u.id === reqObj?.userId);
-
 			try {
-				const res = await fetch('/api/requests', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ action: 'decline', requestId }),
-				});
-				const data = await res.json();
-				if (data.success && data.request) {
+				const reqObj = requests.find((r) => r.id === requestId);
+				const data = await apiClient.updateRequestStatus(requestId, 'DECLINED');
+				if (data.success) {
 					setRequests((prev) =>
 						prev.map((r) =>
-							r.id === requestId ? data.request : r,
+							r.id === requestId ? { ...r, status: 'DECLINED' } : r,
 						),
 					);
-
-					triggerNotification({
-						type: 'join_request_status',
-						title: 'Join Request Declined',
-						body: `Application for ${applicant?.name || 'member'} to join "${targetGroup?.name || 'Club'}" was declined.`,
-						groupId: targetGroup?.id,
-						groupName: targetGroup?.name,
-						url: '/pending',
-					});
+					if (reqObj) {
+						triggerNotification({
+							type: 'join_request_status',
+							title: 'Application Declined',
+							body: `Membership request was declined.`,
+							groupId: reqObj.groupId,
+							url: `/pending`,
+						});
+					}
 				}
 			} catch (e) {
-				console.error('Could not decline request:', e);
+				console.error('declineRequest error:', e);
 			}
 		},
-		[groups, requests, triggerNotification, users],
+		[requests, triggerNotification],
 	);
 
-	/* ─── Club Invite Codes ─── */
+	/* ─── Club Invite Handlers ─── */
 	const generateClubInvite = useCallback(
 		async (groupId: string) => {
-			const targetGroup = groups.find((g) => g.id === groupId);
-			const prefix = targetGroup
-				? targetGroup.name
-						.replace(/[^A-Za-z0-9]/g, '')
-						.slice(0, 4)
-						.toUpperCase()
-				: 'CLUB';
-			const randomNum = Math.floor(1000 + Math.random() * 9000);
-			const code = `DEMOS-${prefix}-${randomNum}`;
-
 			try {
-				const res = await fetch('/api/invites', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ groupId, code }),
-				});
-				const data = await res.json();
-				if (data.success && data.invite) {
-					setInvites((prev) => [
-						data.invite,
-						...prev.filter((i) => i.groupId !== groupId),
-					]);
-					return { success: true, code: data.invite.code };
+				const data = await apiClient.generateClubInvite(groupId);
+				if (data.success && data.code) {
+					await fetchInvites();
+					return { success: true, code: data.code };
 				}
-				return {
-					success: false,
-					error: data.error || 'Failed to generate invite',
-				};
+				return { success: false, error: data.error || 'Failed to generate code' };
 			} catch (e) {
-				console.error('Failed to generate invite:', e);
-				return {
-					success: false,
-					error: 'Network error generating invite',
-				};
+				console.error('generateClubInvite error:', e);
+				return { success: false, error: 'Network error generating invite' };
 			}
 		},
-		[groups],
+		[fetchInvites],
 	);
 
-	const deleteClubInvites = useCallback(async (groupId: string) => {
-		try {
-			const res = await fetch(`/api/invites?groupId=${groupId}`, {
-				method: 'DELETE',
-			});
-			const data = await res.json();
-			if (data.success) {
-				setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
-				return { success: true };
+	const deleteClubInvites = useCallback(
+		async (groupId: string) => {
+			try {
+				const data = await apiClient.deleteClubInvites(groupId);
+				if (data.success) {
+					setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
+					return { success: true };
+				}
+				return { success: false, error: data.error };
+			} catch (e) {
+				console.error('deleteClubInvites error:', e);
+				return { success: false, error: 'Network error deleting invites' };
 			}
-			return {
-				success: false,
-				error: data.error || 'Failed to delete invite',
-			};
-		} catch (e) {
-			console.error('Failed to delete invites:', e);
-			return {
-				success: false,
-				error: 'Network error deleting invites',
-			};
-		}
-	}, []);
+		},
+		[],
+	);
 
 	const joinViaInviteCode = useCallback(
 		async (code: string) => {
-			if (!currentUser)
-				return { success: false, error: 'Must be signed in' };
-
-			let cleanCode = code.trim();
-			if (cleanCode.includes('/join/')) {
-				cleanCode =
-					cleanCode.split('/join/').pop()?.split('?')[0] || cleanCode;
-			}
-			cleanCode = cleanCode.toUpperCase();
-
 			try {
-				const res = await fetch('/api/invites', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						action: 'redeem',
-						code: cleanCode,
-						userId: currentUser.id,
-					}),
-				});
-				const data = await res.json();
+				const data = await apiClient.joinViaInviteCode(code);
 				if (data.success && data.groupId) {
-					const gRes = await fetch('/api/groups');
-					const gData = await gRes.json();
-					let joinedGroup: Group | undefined;
-					if (gData.groups) {
-						setGroups(gData.groups);
-						joinedGroup = gData.groups.find(
-							(g: Group) => g.id === data.groupId,
-						);
-					}
-
+					await fetchGroups();
 					triggerNotification({
 						type: 'invite_used',
-						title: 'Invite Code Redeemed',
-						body: `You joined "${joinedGroup?.name || 'Club'}" using code ${cleanCode}!`,
+						title: 'Joined Club!',
+						body: `You successfully joined ${data.group?.name || 'the club'} with invite code.`,
 						groupId: data.groupId,
-						groupName: joinedGroup?.name,
 						url: `/group/${data.groupId}/feed`,
 					});
-
-					triggerNotification({
-						type: 'member_added',
-						title: 'Member Joined via Invite',
-						body: `${currentUser.name} joined "${joinedGroup?.name || 'Club'}".`,
-						groupId: data.groupId,
-						groupName: joinedGroup?.name,
-						url: `/group/${data.groupId}/feed`,
-					});
-
 					return {
 						success: true,
-						group: joinedGroup,
 						groupId: data.groupId,
+						group: data.group,
 					};
 				}
 				return {
@@ -1135,17 +686,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					error: data.error || 'Invalid or expired invite code',
 				};
 			} catch (e) {
-				console.error('Failed to redeem invite:', e);
-				return {
-					success: false,
-					error: 'Network error redeeming invite',
-				};
+				console.error('joinViaInviteCode error:', e);
+				return { success: false, error: 'Network error joining club' };
 			}
 		},
-		[currentUser, triggerNotification],
+		[fetchGroups, triggerNotification],
 	);
 
-	/* ─── Feed Messages & Announcements ─── */
+	/* ─── Feed Message Handlers ─── */
 	const postMessage = useCallback(
 		async (
 			groupId: string,
@@ -1155,69 +703,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			isAnnouncement?: boolean,
 			pinned?: boolean,
 		) => {
-			if (!currentUser) return;
-
 			try {
-				const res = await fetch('/api/feed', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						groupId,
-						userId: currentUser.id,
-						content,
-						fileName,
-						fileUrl,
-						isAnnouncement,
-						pinned,
-					}),
+				const data = await apiClient.postMessage({
+					groupId,
+					content,
+					fileName,
+					fileUrl,
+					isAnnouncement,
+					pinned,
 				});
-				const data = await res.json();
 				if (data.success && data.message) {
-					setFeedMessages((prev) => [...prev, data.message]);
-					// Add to known IDs so poll doesn't duplicate
-					knownMessageIdsRef.current.add(data.message.id);
+					setFeedMessages((prev) => [data.message!, ...prev]);
 				}
 			} catch (e) {
-				console.error('Could not save feed message:', e);
+				console.error('postMessage error:', e);
 			}
 		},
-		[currentUser],
+		[],
 	);
 
 	const deleteMessage = useCallback(async (messageId: string) => {
 		try {
-			const res = await fetch(`/api/feed?messageId=${messageId}`, {
-				method: 'DELETE',
-			});
-			const data = await res.json();
+			const data = await apiClient.deleteMessage(messageId);
 			if (data.success) {
-				setFeedMessages((prev) =>
-					prev.filter((m) => m.id !== messageId),
-				);
+				setFeedMessages((prev) => prev.filter((m) => m.id !== messageId));
 			}
 		} catch (e) {
-			console.error('Could not delete message:', e);
+			console.error('deleteMessage error:', e);
 		}
 	}, []);
 
 	const fetchFeedMessages = useCallback(async (groupId: string) => {
 		try {
-			const res = await fetch(`/api/feed?groupId=${groupId}`);
-			const data = await res.json();
+			const data = await apiClient.fetchFeedMessages(groupId);
 			if (data.messages) {
-				setFeedMessages((prev) => {
-					const otherGroupMsgs = prev.filter(
-						(m) => m.groupId !== groupId,
-					);
-					return [...otherGroupMsgs, ...data.messages];
-				});
+				setFeedMessages(data.messages);
 			}
 		} catch (e) {
-			console.error('Feed API fetch failed:', e);
+			console.error('fetchFeedMessages error:', e);
 		}
 	}, []);
 
-	/* ─── Profile ─── */
+	/* ─── Profile Update Handler ─── */
 	const updateProfile = useCallback(
 		async (
 			name: string,
@@ -1228,45 +755,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			phone?: string,
 			birthday?: string,
 		) => {
-			if (!currentUser) return;
-			const updatedUser: User = {
-				...currentUser,
-				name,
-				avatarUrl,
-				bio: bio ?? currentUser.bio,
-				major: major ?? currentUser.major,
-				year: year ?? currentUser.year,
-				phone: phone ?? currentUser.phone,
-				birthday: birthday ?? currentUser.birthday,
-			};
-
 			try {
-				const res = await fetch('/api/auth', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(updatedUser),
+				const data = await apiClient.updateProfile({
+					name,
+					avatarUrl,
+					bio,
+					major,
+					year,
+					phone,
+					birthday,
 				});
-				const data = await res.json();
 				if (data.success && data.user) {
 					setCurrentUser(data.user);
-					setUsers((prev) =>
-						prev.map((u) =>
-							u.id === data.user.id ? data.user : u,
-						),
-					);
 					localStorage.setItem(
 						'demos_current_user',
 						JSON.stringify(data.user),
 					);
+					setUsers((prev) =>
+						prev.map((u) => (u.id === data.user!.id ? data.user! : u)),
+					);
 				}
 			} catch (e) {
-				console.error('Could not update profile:', e);
+				console.error('updateProfile error:', e);
 			}
 		},
-		[currentUser],
+		[],
 	);
 
-	/* ─── Club Creation & Settings ─── */
+	/* ─── Group Management Handlers ─── */
 	const createGroup = useCallback(
 		async (groupData: {
 			name: string;
@@ -1284,21 +800,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			discordUrl?: string;
 			tags?: string[];
 		}) => {
-			if (!currentUser)
-				return { success: false, error: 'User not signed in' };
-
 			try {
-				const res = await fetch('/api/groups', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						...groupData,
-						leaderId: currentUser.id,
-					}),
-				});
-				const data = await res.json();
+				const data = await apiClient.createGroup(groupData);
 				if (data.success && data.group) {
-					setGroups((prev) => [data.group, ...prev]);
+					setGroups((prev) => [data.group!, ...prev]);
 					return { success: true, group: data.group };
 				}
 				return {
@@ -1306,11 +811,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					error: data.error || 'Failed to create club',
 				};
 			} catch (e) {
-				console.error('Failed to create group:', e);
+				console.error('createGroup error:', e);
 				return { success: false, error: 'Network error creating club' };
 			}
 		},
-		[currentUser],
+		[],
 	);
 
 	const updateGroupSettings = useCallback(
@@ -1335,67 +840,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				kickUserId?: string;
 				deleteLinkId?: string;
 				deleteFileId?: string;
+				addMemberEmails?: string[];
 			},
 		) => {
 			try {
-				const targetGroup = groups.find((g) => g.id === groupId);
-
-				const res = await fetch('/api/groups', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ groupId, ...settings }),
-				});
-				const data = await res.json();
+				const data = await apiClient.updateGroupSettings(groupId, settings);
 				if (data.success && data.group) {
 					setGroups((prev) =>
-						prev.map((g) => (g.id === groupId ? data.group : g)),
+						prev.map((g) => (g.id === groupId ? data.group! : g)),
 					);
-					if (settings.kickUserId) {
-						setRequests((prev) =>
-							prev.filter(
-								(r) =>
-									!(
-										r.groupId === groupId &&
-										r.userId === settings.kickUserId
-									),
-							),
-						);
-						const kickedUser = users.find(
-							(u) => u.id === settings.kickUserId,
-						);
-						triggerNotification({
-							type: 'member_removed',
-							title: 'Member Removed',
-							body: `${kickedUser?.name || 'A member'} was removed from "${targetGroup?.name || 'Club'}".`,
-							groupId,
-							groupName: targetGroup?.name,
-							url: `/group/${groupId}/feed`,
-						});
-					}
-					if (settings.deleteLinkId || settings.deleteFileId) {
-						const messageId =
-							settings.deleteLinkId || settings.deleteFileId;
-						if (messageId) {
-							setFeedMessages((prev) =>
-								prev.filter((m) => m.id !== messageId),
-							);
-						}
-					}
 					return { success: true };
 				}
 				return {
 					success: false,
-					error: data.error || 'Failed to update club',
+					error: data.error || 'Failed to update club settings',
 				};
 			} catch (e) {
-				console.error('Failed to update group:', e);
-				return { success: false, error: 'Network error updating club' };
+				console.error('updateGroupSettings error:', e);
+				return { success: false, error: 'Network error updating settings' };
 			}
 		},
-		[groups, triggerNotification, users],
+		[],
 	);
 
-	/* ─── Event & Attendance Management ─── */
+	/* ─── Meeting Event & Attendance Handlers ─── */
 	const createMeetingEvent = useCallback(
 		async (
 			groupId: string,
@@ -1408,10 +876,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				endDate?: string;
 				price?: string;
 				status?: string;
-				membersOnly?: boolean;
-				bannerUrl?: string;
-				isAttendanceSession?: boolean;
-				eventType?: 'ACTIVITY' | 'ATTENDANCE_SESSION';
 				locationType?: string;
 				allDay?: boolean;
 				endTime?: string;
@@ -1420,224 +884,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				regDeadline?: string;
 				inviteMessage?: string;
 				inviteReminderDays?: number;
+				membersOnly?: boolean;
+				bannerUrl?: string;
+				isAttendanceSession?: boolean;
+				eventType?: 'ACTIVITY' | 'ATTENDANCE_SESSION';
 			},
 		) => {
-			if (!currentUser)
-				return { success: false, error: 'Must be logged in' };
-
-			const targetGroup = groups.find((g) => g.id === groupId);
-			const randomCode = `${Math.floor(100000 + Math.random() * 900000)}`;
-
 			try {
-				const res = await fetch('/api/events', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						groupId,
-						...eventData,
-						checkInCode: randomCode,
-						createdById: currentUser.id,
-					}),
-				});
-				const data = await res.json();
+				const data = await apiClient.createMeetingEvent(groupId, eventData);
 				if (data.success && data.event) {
-					setEvents((prev) => [data.event, ...prev]);
-
-					triggerNotification({
-						type: 'attendance_opened',
-						title: `Meeting Check-In Open: ${data.event.title}`,
-						body: `Attendance is open for "${targetGroup?.name || 'Club'}" at ${eventData.time}. PIN: ${randomCode}`,
-						groupId,
-						groupName: targetGroup?.name,
-						url: `/group/${groupId}/feed`,
-					});
-
+					setEvents((prev) => [data.event!, ...prev]);
 					return { success: true, event: data.event };
 				}
 				return {
 					success: false,
-					error: data.error || 'Failed to create meeting event',
+					error: data.error || 'Failed to create event',
 				};
 			} catch (e) {
-				console.error('Failed to create meeting event:', e);
-				return {
-					success: false,
-					error: 'Network error creating meeting event',
-				};
+				console.error('createMeetingEvent error:', e);
+				return { success: false, error: 'Network error creating event' };
 			}
 		},
-		[currentUser, groups, triggerNotification],
+		[],
 	);
 
 	const toggleEventActive = useCallback(
 		async (eventId: string, isActive: boolean) => {
-			const targetEvent = events.find((e) => e.id === eventId);
-			const targetGroup = groups.find(
-				(g) => g.id === targetEvent?.groupId,
-			);
-
 			try {
-				const res = await fetch('/api/events', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ eventId, isActive }),
-				});
-				const data = await res.json();
-				if (data.success && data.event) {
+				const data = await apiClient.toggleEventActive(eventId, isActive);
+				if (data.success) {
 					setEvents((prev) =>
 						prev.map((e) =>
 							e.id === eventId ? { ...e, isActive } : e,
 						),
 					);
-
-					if (isActive) {
-						triggerNotification({
-							type: 'attendance_opened',
-							title: `Check-In Opened: ${targetEvent?.title || 'Meeting'}`,
-							body: `Attendance session is active for "${targetGroup?.name || 'Club'}". Code: ${targetEvent?.checkInCode}`,
-							groupId: targetGroup?.id,
-							groupName: targetGroup?.name,
-							url: targetGroup
-								? `/group/${targetGroup.id}/feed`
-								: '/groups',
-						});
-					} else {
-						triggerNotification({
-							type: 'attendance_closed',
-							title: `Check-In Closed: ${targetEvent?.title || 'Meeting'}`,
-							body: `Attendance check-in has concluded for "${targetGroup?.name || 'Club'}".`,
-							groupId: targetGroup?.id,
-							groupName: targetGroup?.name,
-							url: targetGroup
-								? `/group/${targetGroup.id}/feed`
-								: '/groups',
-						});
-					}
-
 					return { success: true };
 				}
 				return { success: false };
 			} catch (e) {
-				console.error('Failed to toggle event active state:', e);
+				console.error('toggleEventActive error:', e);
 				return { success: false };
 			}
 		},
-		[events, groups, triggerNotification],
+		[],
 	);
 
 	const deleteMeetingEvent = useCallback(async (eventId: string) => {
 		try {
-			const res = await fetch(`/api/events?eventId=${eventId}`, {
-				method: 'DELETE',
-			});
-			const data = await res.json();
+			const data = await apiClient.deleteMeetingEvent(eventId);
 			if (data.success) {
 				setEvents((prev) => prev.filter((e) => e.id !== eventId));
-				setAttendances((prev) =>
-					prev.filter((a) => a.eventId !== eventId),
-				);
 				return { success: true };
 			}
 			return { success: false };
 		} catch (e) {
-			console.error('Failed to delete meeting event:', e);
+			console.error('deleteMeetingEvent error:', e);
 			return { success: false };
 		}
 	}, []);
 
 	const checkInToEvent = useCallback(
 		async (eventId: string, code: string) => {
-			if (!currentUser)
-				return {
-					success: false,
-					error: 'Must be logged in to check in',
-				};
-
-			const event = events.find((e) => e.id === eventId);
-			if (!event) return { success: false, error: 'Event not found' };
-
-			const eventDateTime = new Date(
-				`${event.date}T${event.time || '00:00'}`,
-			);
-			const isTimeReached = new Date() >= eventDateTime;
-			const isEventActive =
-				event.isActive ||
-				(event.status !== 'CLOSED' &&
-					event.status !== 'NOT_SENT' &&
-					isTimeReached);
-
-			if (!isEventActive) {
-				return {
-					success: false,
-					error: 'Attendance check-in for this event is closed',
-				};
-			}
-
-			const cleanInput = code.trim().toUpperCase();
-			const cleanTarget = event.checkInCode.trim().toUpperCase();
-
-			if (cleanInput !== cleanTarget) {
-				return {
-					success: false,
-					error: 'Invalid check-in code. Please ask an officer.',
-				};
-			}
-
 			try {
-				const res = await fetch('/api/attendance', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						eventId,
-						groupId: event.groupId,
-						userId: currentUser.id,
-						userName: currentUser.name,
-						userEmail: currentUser.email,
-						status: 'PRESENT',
-						checkInMethod: 'CODE',
-						code: cleanInput,
-					}),
+				const data = await apiClient.checkInToEvent({
+					eventId,
+					code,
+					checkInMethod: 'CODE',
 				});
-				const data = await res.json();
-				if (data.success && data.record) {
-					setAttendances((prev) => {
-						const filtered = prev.filter(
-							(a) =>
-								!(
-									a.eventId === eventId &&
-									a.userId === currentUser.id
-								),
-						);
-						return [data.record, ...filtered];
-					});
-
-					const targetGroup = groups.find(
-						(g) => g.id === event.groupId,
-					);
-					triggerNotification({
-						type: 'attendance_status',
-						title: 'Check-In Confirmed',
-						body: `You are marked PRESENT for "${event.title}" (${targetGroup?.name || 'Club'}).`,
-						groupId: event.groupId,
-						groupName: targetGroup?.name,
-						url: `/group/${event.groupId}/feed`,
-					});
-
-					return {
-						success: true,
-						message: 'Attendance verified! You are checked in.',
-					};
+				if (data.success) {
+					await fetchAttendances(undefined, eventId);
+					return { success: true, message: data.message };
 				}
-				return {
-					success: false,
-					error: data.error || 'Failed to check in',
-				};
+				return { success: false, error: data.error || 'Check-in failed' };
 			} catch (e) {
-				console.error('Failed to check in:', e);
-				return { success: false, error: 'Network error checking in' };
+				console.error('checkInToEvent error:', e);
+				return { success: false, error: 'Network error during check-in' };
 			}
 		},
-		[currentUser, events, groups, triggerNotification],
+		[fetchAttendances],
 	);
 
 	const updateAttendanceStatus = useCallback(
@@ -1646,115 +970,108 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			userId: string,
 			status: 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT',
 		) => {
-			const event = events.find((e) => e.id === eventId);
-			const targetUser = users.find((u) => u.id === userId);
-			const targetGroup = groups.find((g) => g.id === event?.groupId);
-
 			try {
-				const res = await fetch('/api/attendance', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						eventId,
-						groupId: event?.groupId,
-						userId,
-						userName: targetUser?.name,
-						userEmail: targetUser?.email,
-						status,
-						checkInMethod: 'MANUAL',
-					}),
+				const data = await apiClient.updateAttendanceStatus({
+					eventId,
+					userId,
+					status,
 				});
-				const data = await res.json();
-				if (data.success && data.record) {
+				if (data.success) {
 					setAttendances((prev) => {
-						const filtered = prev.filter(
-							(a) =>
-								!(a.eventId === eventId && a.userId === userId),
+						const exists = prev.some(
+							(a) => a.eventId === eventId && a.userId === userId,
 						);
-						return [data.record, ...filtered];
+						if (exists) {
+							return prev.map((a) =>
+								a.eventId === eventId && a.userId === userId
+									? { ...a, status, timestamp: new Date().toISOString() }
+									: a,
+							);
+						}
+						return [
+							...prev,
+							{
+								id: `att_${Date.now()}_${Math.random()}`,
+								eventId,
+								groupId: '',
+								userId,
+								status,
+								checkInMethod: 'MANUAL',
+								timestamp: new Date().toISOString(),
+							},
+						];
 					});
-
-					triggerNotification({
-						type: 'attendance_status',
-						title: `Attendance Updated: ${status}`,
-						body: `${targetUser?.name || 'Member'} marked as ${status} for "${event?.title || 'Meeting'}".`,
-						groupId: event?.groupId,
-						groupName: targetGroup?.name,
-						url: event?.groupId
-							? `/group/${event.groupId}/feed`
-							: '/groups',
-					});
-
 					return { success: true };
 				}
 				return { success: false };
 			} catch (e) {
-				console.error('Failed to update attendance status:', e);
+				console.error('updateAttendanceStatus error:', e);
 				return { success: false };
 			}
 		},
-		[events, groups, triggerNotification, users],
+		[],
 	);
 
-	return (
-		<AppContext.Provider
-			value={{
-				currentUser,
-				users,
-				groups,
-				requests,
-				feedMessages,
-				events,
-				attendances,
-				invites,
-				notifications,
-				notificationSettings,
-				unreadNotificationCount,
-				theme,
-				hydrated,
-				toggleTheme,
-				loginUser,
-				registerUser,
-				logoutUser,
-				sendJoinRequest,
-				approveRequest,
-				declineRequest,
-				postMessage,
-				updateProfile,
-				fetchFeedMessages,
-				createGroup,
-				deleteMessage,
-				updateGroupSettings,
-				createMeetingEvent,
-				toggleEventActive,
-				deleteMeetingEvent,
-				checkInToEvent,
-				updateAttendanceStatus,
-				generateClubInvite,
-				deleteClubInvites,
-				joinViaInviteCode,
-				isIdle,
-				fetchGroups,
-				fetchInvites,
-				fetchEvents,
-				fetchAttendances,
-				refreshData: loadData,
-				triggerNotification,
-				markNotificationAsRead,
-				markAllNotificationsAsRead,
-				deleteNotification,
-				clearAllNotifications,
-				updateNotificationSettings,
-			}}
-		>
-			{children}
-		</AppContext.Provider>
-	);
+	const refreshData = useCallback(async () => {
+		await loadData();
+	}, [loadData]);
+
+	const value: AppContextType = {
+		currentUser,
+		users,
+		groups,
+		requests,
+		feedMessages,
+		events,
+		attendances,
+		invites,
+		notifications,
+		notificationSettings,
+		unreadNotificationCount,
+		theme,
+		hydrated,
+		isIdle,
+		toggleTheme,
+		loginUser,
+		registerUser,
+		logoutUser,
+		sendJoinRequest,
+		approveRequest,
+		declineRequest,
+		postMessage,
+		updateProfile,
+		fetchFeedMessages,
+		createGroup,
+		deleteMessage,
+		updateGroupSettings,
+		createMeetingEvent,
+		toggleEventActive,
+		deleteMeetingEvent,
+		checkInToEvent,
+		updateAttendanceStatus,
+		generateClubInvite,
+		deleteClubInvites,
+		joinViaInviteCode,
+		fetchGroups,
+		fetchInvites,
+		fetchEvents,
+		fetchAttendances,
+		refreshData,
+		triggerNotification,
+		markNotificationAsRead,
+		markAllNotificationsAsRead,
+		deleteNotification,
+		clearAllNotifications,
+		updateNotificationSettings,
+	};
+
+	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-export function useAppContext() {
-	const ctx = useContext(AppContext);
-	if (!ctx)
+export function useAppContext(): AppContextType {
+	const context = useContext(AppContext);
+	if (!context) {
 		throw new Error('useAppContext must be used within an AppProvider');
-	return ctx;
+	}
+	return context;
 }

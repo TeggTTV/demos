@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -5,14 +7,13 @@ import {
 	FiCalendar,
 	FiMapPin,
 	FiUsers,
-	FiCheckCircle,
-	FiDollarSign,
-	FiChevronDown,
+	FiArrowRight,
+	FiArrowLeft,
+	FiCheck,
 } from 'react-icons/fi';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { Checkbox } from '@/components/ui/Checkbox';
+import EventBasicDetailsStep from './events/EventBasicDetailsStep';
+import EventRegistrationStep from './events/EventRegistrationStep';
+import EventPricingStep from './events/EventPricingStep';
 
 interface CreateEventModalProps {
 	isOpen: boolean;
@@ -47,18 +48,18 @@ interface CreateEventModalProps {
 	setActivityRegCapacity: (val: string) => void;
 	activityRegDeadline: string;
 	setActivityRegDeadline: (val: string) => void;
-	activityInviteMessage?: string;
-	setActivityInviteMessage?: (val: string) => void;
-	activityInviteReminderDays?: string;
-	setActivityInviteReminderDays?: (val: string) => void;
-	activityMembersOnly?: boolean;
-	setActivityMembersOnly?: (val: boolean) => void;
-	activityBannerUrl?: string;
-	setActivityBannerUrl?: (val: string) => void;
+	activityMembersOnly: boolean;
+	setActivityMembersOnly: (val: boolean) => void;
 	modalActiveTab: 'data' | 'login' | 'costs';
 	setModalActiveTab: (val: 'data' | 'login' | 'costs') => void;
 	creatingEvent: boolean;
 }
+
+const STEPS: { id: 'data' | 'login' | 'costs'; label: string }[] = [
+	{ id: 'data', label: '1. Basic Details' },
+	{ id: 'login', label: '2. Registration & Access' },
+	{ id: 'costs', label: '3. Entry Costs' },
+];
 
 export default function CreateEventModal({
 	isOpen,
@@ -93,50 +94,32 @@ export default function CreateEventModal({
 	setActivityRegCapacity,
 	activityRegDeadline,
 	setActivityRegDeadline,
-	activityMembersOnly = false,
+	activityMembersOnly,
 	setActivityMembersOnly,
 	modalActiveTab,
 	setModalActiveTab,
 	creatingEvent,
 }: CreateEventModalProps) {
-	// Local UI states for focus & dropdown overlays
-	const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
+	const currentStepIndex = STEPS.findIndex((s) => s.id === modalActiveTab);
 	const [maxReachedStep, setMaxReachedStep] = useState(0);
 
-	// Real-time readiness checks
-	const missingTitle = !eventTitle.trim();
-	const missingDate = !eventDate;
-
-	const STEPS: { id: 'data' | 'login' | 'costs'; label: string; num: number }[] = [
-		{ id: 'data', label: '1. Basic Details', num: 1 },
-		{ id: 'login', label: '2. Registration & Access', num: 2 },
-		{ id: 'costs', label: '3. Entry Costs', num: 3 },
-	];
-
-	const currentStepIndex = STEPS.findIndex((s) => s.id === modalActiveTab);
-
-	const handleStepClick = (targetIndex: number) => {
-		// User can only jump to steps they have unlocked/reached sequentially
-		if (targetIndex <= maxReachedStep || editingActivityId) {
-			setModalActiveTab(STEPS[targetIndex].id);
+	const handleStepClick = (index: number) => {
+		if (index <= maxReachedStep || editingActivityId) {
+			setModalActiveTab(STEPS[index].id);
 		}
 	};
 
-	const handleNextStep = () => {
-		if (currentStepIndex === 0 && (missingTitle || missingDate)) {
-			return; // Validation lock
-		}
-		const nextIndex = currentStepIndex + 1;
-		if (nextIndex < STEPS.length) {
-			setMaxReachedStep((prev) => Math.max(prev, nextIndex));
-			setModalActiveTab(STEPS[nextIndex].id);
+	const goToNextStep = () => {
+		if (currentStepIndex < STEPS.length - 1) {
+			const nextIdx = currentStepIndex + 1;
+			setMaxReachedStep((prev) => Math.max(prev, nextIdx));
+			setModalActiveTab(STEPS[nextIdx].id);
 		}
 	};
 
-	const handlePrevStep = () => {
-		const prevIndex = currentStepIndex - 1;
-		if (prevIndex >= 0) {
-			setModalActiveTab(STEPS[prevIndex].id);
+	const goToPrevStep = () => {
+		if (currentStepIndex > 0) {
+			setModalActiveTab(STEPS[currentStepIndex - 1].id);
 		}
 	};
 
@@ -162,9 +145,7 @@ export default function CreateEventModal({
 								{/* Subtitle live metadata */}
 								<div className="text-[11px] text-text-muted space-y-0.5">
 									<span className="font-semibold block truncate">
-										{eventTitle ? (
-											eventTitle
-										) : (
+										{eventTitle || (
 											<span className="italic">
 												No title yet
 											</span>
@@ -180,16 +161,15 @@ export default function CreateEventModal({
 												{eventDate
 													? new Date(
 															eventDate,
-														).toLocaleDateString(
+													  ).toLocaleDateString(
 															'en-US',
 															{
-																weekday:
-																	'short',
+																weekday: 'short',
 																day: 'numeric',
 																month: 'short',
 																year: 'numeric',
 															},
-														)
+													  )
 													: 'No date yet'}
 												{!activityAllDay &&
 													eventTime &&
@@ -233,15 +213,25 @@ export default function CreateEventModal({
 						{/* Sequential Steps Navigation Header */}
 						<div className="border-b border-border pb-3 space-y-2">
 							<div className="flex items-center justify-between text-[11px] font-semibold text-text-muted">
-								<span>Step {currentStepIndex + 1} of {STEPS.length}</span>
-								<span className="text-primary font-bold">{STEPS[currentStepIndex].label}</span>
+								<span>
+									Step {currentStepIndex + 1} of {STEPS.length}
+								</span>
+								<span className="text-primary font-bold">
+									{STEPS[currentStepIndex].label}
+								</span>
 							</div>
 
 							{/* Progress Bar */}
 							<div className="w-full bg-surface-secondary h-1.5 rounded-full overflow-hidden">
 								<div
 									className="bg-primary h-full transition-all duration-300 rounded-full"
-									style={{ width: `${((currentStepIndex + 1) / STEPS.length) * 100}%` }}
+									style={{
+										width: `${
+											((currentStepIndex + 1) /
+												STEPS.length) *
+											100
+										}%`,
+									}}
 								/>
 							</div>
 
@@ -249,8 +239,12 @@ export default function CreateEventModal({
 							<div className="grid grid-cols-3 gap-1.5 pt-1">
 								{STEPS.map((step, idx) => {
 									const isActive = currentStepIndex === idx;
-									const isCompleted = idx < currentStepIndex || idx <= maxReachedStep;
-									const canClick = idx <= maxReachedStep || Boolean(editingActivityId);
+									const isCompleted =
+										idx < currentStepIndex ||
+										idx <= maxReachedStep;
+									const canClick =
+										idx <= maxReachedStep ||
+										Boolean(editingActivityId);
 
 									return (
 										<button
@@ -262,8 +256,8 @@ export default function CreateEventModal({
 												isActive
 													? 'bg-primary text-white shadow-xs'
 													: isCompleted
-														? 'bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer'
-														: 'bg-surface-secondary/40 text-text-muted opacity-60 cursor-not-allowed'
+													? 'bg-primary-light text-primary hover:opacity-90 cursor-pointer'
+													: 'bg-surface-secondary/40 text-text-muted opacity-60 cursor-not-allowed'
 											}`}
 										>
 											{step.label}
@@ -273,505 +267,82 @@ export default function CreateEventModal({
 							</div>
 						</div>
 
-						{/* Tabs Content */}
-						<div className="space-y-4">
-							{/* Tab 1: DATA */}
+						{/* Form Step Body */}
+						<form onSubmit={onSubmit} className="space-y-4">
 							{modalActiveTab === 'data' && (
-								<div className="space-y-4 animate-in fade-in duration-200">
-									<Input
-										label="Title"
-										required
-										placeholder="e.g. Workshop Advanced Agentic Coding"
-										value={eventTitle}
-										onChange={(e) =>
-											setEventTitle(e.target.value)
-										}
-									/>
-
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												Date
-											</label>
-											<input
-												type="date"
-												required
-												value={eventDate}
-												onChange={(e) =>
-													setEventDate(e.target.value)
-												}
-												className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-											/>
-										</div>
-
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												End Date (Optional)
-											</label>
-											<div className="relative">
-												<input
-													type="date"
-													value={activityEndDate}
-													onChange={(e) =>
-														setActivityEndDate(
-															e.target.value,
-														)
-													}
-													className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none pr-8"
-												/>
-												{activityEndDate && (
-													<button
-														type="button"
-														onClick={() =>
-															setActivityEndDate(
-																'',
-															)
-														}
-														className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-0.5"
-													>
-														<FiX size={14} />
-													</button>
-												)}
-											</div>
-										</div>
-									</div>
-
-									<div className="grid grid-cols-2 gap-3">
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												Start Time
-											</label>
-											<input
-												type="time"
-												disabled={activityAllDay}
-												value={eventTime}
-												onChange={(e) =>
-													setEventTime(e.target.value)
-												}
-												className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none disabled:opacity-50"
-											/>
-										</div>
-
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												End Time
-											</label>
-											<input
-												type="time"
-												disabled={activityAllDay}
-												value={activityEndTime}
-												onChange={(e) =>
-													setActivityEndTime(
-														e.target.value,
-													)
-												}
-												className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none disabled:opacity-50"
-											/>
-										</div>
-									</div>
-
-									<div className="grid grid-cols-2 gap-4 py-1">
-										<div className="flex items-center gap-2">
-											<Checkbox
-												id="all-day-checkbox"
-												checked={activityAllDay}
-												onChange={(e) =>
-													setActivityAllDay(
-														e.target.checked,
-													)
-												}
-											/>
-											<label
-												htmlFor="all-day-checkbox"
-												className="text-xs font-semibold text-text-secondary cursor-pointer select-none"
-											>
-												All day event
-											</label>
-										</div>
-									</div>
-
-									<Input
-										label="Location / Address"
-										placeholder="e.g. Auditorium Hall C or Zoom link"
-										value={eventLocation}
-										onChange={(e) =>
-											setEventLocation(e.target.value)
-										}
-									/>
-
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-										<div>
-											<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-												Location type
-											</label>
-											<div className="relative">
-												<motion.button
-													type="button"
-													onClick={() => {
-														setIsLocDropdownOpen(
-															!isLocDropdownOpen,
-														);
-													}}
-													animate={{
-														scale: isLocDropdownOpen
-															? 1.01
-															: 1,
-														boxShadow:
-															isLocDropdownOpen
-																? '0 4px 12px rgba(79, 70, 229, 0.12)'
-																: '0 0px 0px rgba(0,0,0,0)',
-													}}
-													transition={{
-														type: 'spring',
-														stiffness: 400,
-														damping: 25,
-													}}
-													className={`w-full rounded-xl bg-surface-secondary border px-3 py-2.5 flex items-center justify-between text-xs text-text-primary focus:outline-none transition-colors cursor-pointer ${
-														isLocDropdownOpen
-															? 'border-primary/50 ring-2 ring-primary/10'
-															: 'border-border'
-													}`}
-												>
-													<span>
-														{activityLocationType ===
-															'fixed' &&
-															'📍 Fixed location'}
-														{activityLocationType ===
-															'house' &&
-															"🏠 Member's house"}
-														{activityLocationType ===
-															'custom' &&
-															'✏️ Type address myself'}
-														{!activityLocationType &&
-															'Select location type...'}
-													</span>
-													<FiChevronDown
-														className={`transition-transform duration-200 ${isLocDropdownOpen ? 'rotate-180' : ''}`}
-													/>
-												</motion.button>
-
-												<AnimatePresence>
-													{isLocDropdownOpen && (
-														<>
-															<div
-																className="fixed inset-0 z-10"
-																onClick={() => {
-																	setIsLocDropdownOpen(
-																		false,
-																	);
-																}}
-															/>
-															<motion.div
-																initial={{
-																	opacity: 0,
-																	y: -4,
-																	scale: 0.98,
-																}}
-																animate={{
-																	opacity: 1,
-																	y: 0,
-																	scale: 1,
-																}}
-																exit={{
-																	opacity: 0,
-																	y: -4,
-																	scale: 0.98,
-																}}
-																transition={{
-																	duration: 0.15,
-																}}
-																className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-surface p-1 shadow-lg space-y-0.5"
-															>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		!activityLocationType
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span>
-																		-
-																	</span>
-																	{!activityLocationType && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'fixed',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		activityLocationType ===
-																		'fixed'
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span className="flex items-center gap-2">
-																		📍 Fixed
-																		location
-																	</span>
-																	{activityLocationType ===
-																		'fixed' && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'house',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		activityLocationType ===
-																		'house'
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span className="flex items-center gap-2">
-																		🏠
-																		Member&apos;s
-																		house
-																	</span>
-																	{activityLocationType ===
-																		'house' && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setActivityLocationType(
-																			'custom',
-																		);
-																		setIsLocDropdownOpen(
-																			false,
-																		);
-																	}}
-																	className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-																		activityLocationType ===
-																		'custom'
-																			? 'bg-primary/10 text-primary'
-																			: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-																	}`}
-																>
-																	<span className="flex items-center gap-2">
-																		✏️ Type
-																		address
-																		myself
-																	</span>
-																	{activityLocationType ===
-																		'custom' && (
-																		<FiCheckCircle
-																			size={
-																				12
-																			}
-																		/>
-																	)}
-																</button>
-															</motion.div>
-														</>
-													)}
-												</AnimatePresence>
-											</div>
-											<span className="block text-[10px] text-text-muted mt-1">
-												Choose a fixed location, a
-												member&apos;s house, or type an
-												address yourself. Members are
-												notified about this.
-											</span>
-										</div>
-
-										<Select
-											label="Visibility"
-											value={activityStatus}
-											onChange={(e) => setActivityStatus(e.target.value)}
-										>
-											<option value="PUBLISHED">Published / Open</option>
-											<option value="NOT_SENT">Draft / Closed</option>
-										</Select>
-									</div>
-
-									<Textarea
-										label="Description / Notes"
-										rows={3}
-										value={eventDesc}
-										onChange={(e) => setEventDesc(e.target.value)}
-										placeholder="Provide brief details about this activity..."
-									/>
-								</div>
+								<EventBasicDetailsStep
+									eventTitle={eventTitle}
+									setEventTitle={setEventTitle}
+									eventDate={eventDate}
+									setEventDate={setEventDate}
+									eventTime={eventTime}
+									setEventTime={setEventTime}
+									eventLocation={eventLocation}
+									setEventLocation={setEventLocation}
+									activityEndDate={activityEndDate}
+									setActivityEndDate={setActivityEndDate}
+									activityEndTime={activityEndTime}
+									setActivityEndTime={setActivityEndTime}
+									activityAllDay={activityAllDay}
+									setActivityAllDay={setActivityAllDay}
+									activityLocationType={activityLocationType}
+									setActivityLocationType={
+										setActivityLocationType
+									}
+									activityStatus={activityStatus}
+									setActivityStatus={setActivityStatus}
+									eventDesc={eventDesc}
+									setEventDesc={setEventDesc}
+								/>
 							)}
 
-							{/* Tab 2: REGISTRATION & ACCESS */}
 							{modalActiveTab === 'login' && (
-								<div className="space-y-4 animate-in fade-in duration-200">
-									{/* Members-Only Requirement Toggle */}
-									<div className="p-3.5 rounded-xl border border-primary/20 bg-primary-light/30 space-y-2">
-										<div className="flex items-center gap-2.5">
-											<Checkbox
-												id="members-only-checkbox"
-												checked={activityMembersOnly}
-												onChange={(e) =>
-													setActivityMembersOnly &&
-													setActivityMembersOnly(
-														e.target.checked,
-													)
-												}
-											/>
-											<label
-												htmlFor="members-only-checkbox"
-												className="text-xs font-bold text-text-primary cursor-pointer select-none"
-											>
-												🔒 Members-Only Activity
-											</label>
-										</div>
-										<p className="text-[11px] text-text-secondary pl-6">
-											When enabled, only registered club members and officers can RSVP to this event. Non-members will be prompted to view and join the club.
-										</p>
-									</div>
-
-									<div className="flex items-center gap-2 py-1">
-										<Checkbox
-											id="reg-required-checkbox"
-											checked={activityRegRequired}
-											onChange={(e) =>
-												setActivityRegRequired(
-													e.target.checked,
-												)
-											}
-										/>
-										<label
-											htmlFor="reg-required-checkbox"
-											className="text-xs font-semibold text-text-secondary cursor-pointer select-none"
-										>
-											Require registration to attend
-										</label>
-									</div>
-
-									{activityRegRequired && (
-										<motion.div
-											initial={{ opacity: 0, height: 0 }}
-											animate={{
-												opacity: 1,
-												height: 'auto',
-											}}
-											className="space-y-4 pt-1"
-										>
-											<Input
-												label="Max Capacity (Optional)"
-												type="number"
-												placeholder="Leave empty for unlimited"
-												value={activityRegCapacity}
-												onChange={(e) =>
-													setActivityRegCapacity(
-														e.target.value,
-													)
-												}
-											/>
-
-											<div>
-												<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-													Registration Deadline
-													(Optional)
-												</label>
-												<input
-													type="datetime-local"
-													value={activityRegDeadline}
-													onChange={(e) =>
-														setActivityRegDeadline(
-															e.target.value,
-														)
-													}
-													className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
-												/>
-											</div>
-										</motion.div>
-									)}
-								</div>
+								<EventRegistrationStep
+									activityMembersOnly={activityMembersOnly}
+									setActivityMembersOnly={
+										setActivityMembersOnly
+									}
+									activityRegRequired={activityRegRequired}
+									setActivityRegRequired={
+										setActivityRegRequired
+									}
+									activityRegCapacity={activityRegCapacity}
+									setActivityRegCapacity={
+										setActivityRegCapacity
+									}
+									activityRegDeadline={activityRegDeadline}
+									setActivityRegDeadline={
+										setActivityRegDeadline
+									}
+								/>
 							)}
 
-							{/* Tab 3: COSTS */}
 							{modalActiveTab === 'costs' && (
-								<div className="space-y-4 animate-in fade-in duration-200">
-									<div className="relative">
-										<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-											Cost Price (per member)
-										</label>
-										<div className="relative">
-											<span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-text-muted font-bold">
-												<FiDollarSign size={14} />
-											</span>
-											<input
-												type="number"
-												step="0.01"
-												placeholder="0.00 (Free)"
-												value={activityPrice}
-												onChange={(e) =>
-													setActivityPrice(
-														e.target.value,
-													)
-												}
-												className="w-full rounded-xl border border-border bg-surface-secondary py-3 pl-8 pr-3 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono font-bold"
-											/>
-										</div>
-										<span className="block text-[10px] text-text-muted mt-1.5 leading-relaxed">
-											Indicates if members need to pay to
-											join this activity.
-										</span>
-									</div>
-								</div>
+								<EventPricingStep
+									activityPrice={activityPrice}
+									setActivityPrice={setActivityPrice}
+								/>
 							)}
 
-							{/* Modal Actions Footer: Step by Step Guided Navigation */}
-							<div className="pt-3 border-t border-border flex items-center justify-between gap-3">
+							{/* Stepper Navigation Footer Actions */}
+							<div className="flex items-center justify-between border-t border-border pt-4">
 								<div>
-									{currentStepIndex === 0 ? (
+									{currentStepIndex > 0 ? (
 										<button
 											type="button"
-											onClick={onClose}
-											className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary/40 transition-colors cursor-pointer"
+											onClick={goToPrevStep}
+											className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-all cursor-pointer"
 										>
-											Cancel
+											<FiArrowLeft size={13} />
+											<span>Back</span>
 										</button>
 									) : (
 										<button
 											type="button"
-											onClick={handlePrevStep}
-											className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary/40 transition-colors cursor-pointer flex items-center gap-1"
+											onClick={onClose}
+											className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary cursor-pointer hover:bg-surface-secondary transition-colors"
 										>
-											← Back
+											Cancel
 										</button>
 									)}
 								</div>
@@ -780,36 +351,34 @@ export default function CreateEventModal({
 									{currentStepIndex < STEPS.length - 1 ? (
 										<button
 											type="button"
-											onClick={(e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												handleNextStep();
-											}}
-											disabled={currentStepIndex === 0 && (missingTitle || missingDate)}
-											className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50 transition-colors cursor-pointer flex items-center gap-1.5"
+											onClick={goToNextStep}
+											className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
 										>
-											<span>
-												Next: {STEPS[currentStepIndex + 1].label.replace(/^\d+\.\s*/, '')}
-											</span>
-											<span>→</span>
+											<span>Next</span>
+											<FiArrowRight size={13} />
 										</button>
 									) : (
 										<button
-											type="button"
-											onClick={(e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												onSubmit(e);
-											}}
-											disabled={creatingEvent || missingTitle || missingDate}
-											className="rounded-xl bg-primary px-6 py-2 text-xs font-bold text-white hover:bg-primary-hover shadow-md disabled:opacity-50 transition-all cursor-pointer flex items-center gap-1.5"
+											type="submit"
+											disabled={
+												creatingEvent ||
+												!eventTitle.trim()
+											}
+											className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-6 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm disabled:opacity-50 transition-all cursor-pointer"
 										>
-											{creatingEvent ? 'Saving Activity...' : 'Save Activity ✓'}
+											<FiCheck size={14} />
+											<span>
+												{creatingEvent
+													? 'Saving...'
+													: editingActivityId
+													? 'Update Activity'
+													: 'Create Activity'}
+											</span>
 										</button>
 									)}
 								</div>
 							</div>
-						</div>
+						</form>
 					</motion.div>
 				</div>
 			)}

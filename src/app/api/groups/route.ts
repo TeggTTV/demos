@@ -430,6 +430,8 @@ export async function PUT(req: NextRequest) {
 	}
 }
 
+export const PATCH = PUT;
+
 export async function DELETE(req: NextRequest) {
 	try {
 		const session = await getSession(req);
@@ -438,7 +440,7 @@ export async function DELETE(req: NextRequest) {
 		}
 
 		const { searchParams } = new URL(req.url);
-		const groupId = searchParams.get('groupId');
+		const groupId = searchParams.get('groupId') || searchParams.get('id');
 
 		if (!groupId) {
 			return NextResponse.json(

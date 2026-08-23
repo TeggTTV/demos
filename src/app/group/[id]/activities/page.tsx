@@ -18,7 +18,7 @@ import {
 	FiList,
 	FiArrowLeft,
 } from 'react-icons/fi';
-import { ClipLoader } from 'react-spinners';
+import PageLoader from '@/components/ui/PageLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GroupActivitiesPage() {
@@ -54,7 +54,10 @@ export default function GroupActivitiesPage() {
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
 				<main className="grow flex items-center justify-center py-20">
-					<ClipLoader color="var(--primary)" size={35} />
+					<PageLoader
+						message="Loading Club Activities"
+						subMessage="Syncing schedules and calendar..."
+					/>
 				</main>
 				<Footer />
 			</div>

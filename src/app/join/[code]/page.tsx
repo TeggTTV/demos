@@ -7,7 +7,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ClipLoader } from 'react-spinners';
+import PageLoader from '@/components/ui/PageLoader';
 import {
 	FiCheckCircle,
 	FiAlertCircle,
@@ -170,21 +170,15 @@ export default function JoinCodePage({
 					<div className="p-6 sm:p-8 text-center space-y-5">
 						{/* Status: Loading / Joining */}
 						{(status === 'loading' || status === 'joining') && (
-							<div className="py-6 space-y-4">
-								<ClipLoader
-									color="var(--color-primary)"
-									size={42}
-								/>
-								<div>
-									<h2 className="text-lg font-bold text-text-primary">
-										{status === 'joining'
+							<div className="py-2 space-y-2">
+								<PageLoader
+									message={
+										status === 'joining'
 											? `Joining ${clubInfo?.name || 'Club'}...`
-											: 'Verifying Invite Code...'}
-									</h2>
-									<p className="text-xs text-text-muted mt-1 font-mono font-semibold">
-										Code: {code}
-									</p>
-								</div>
+											: 'Verifying Invite Code...'
+									}
+									subMessage={`Code: ${code}`}
+								/>
 							</div>
 						)}
 
