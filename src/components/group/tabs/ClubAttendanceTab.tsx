@@ -20,7 +20,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 
 interface ClubAttendanceTabProps {
 	group: Group;
-	currentUser: User;
+	currentUser: User | null;
 	users: User[];
 	clubEvents: MeetingEvent[];
 	attendances: AttendanceRecord[];
@@ -108,7 +108,7 @@ export default function ClubAttendanceTab({
 		attendances.some(
 			(a) =>
 				a.eventId === currentSelectedEvent.id &&
-				a.userId === currentUser.id &&
+				a.userId === currentUser?.id &&
 				(a.status === 'PRESENT' || a.status === 'LATE'),
 		),
 	);

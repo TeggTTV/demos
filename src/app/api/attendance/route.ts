@@ -8,14 +8,6 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json(
-				{ error: 'Unauthorized' },
-				{ status: 401 },
-			);
-		}
-
 		const { searchParams } = new URL(req.url);
 		const eventId = searchParams.get('eventId') || undefined;
 		const groupId = searchParams.get('groupId') || undefined;
@@ -24,6 +16,14 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({
 				attendances: mockStore.getAttendances({ eventId, groupId }),
 			});
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json(
+				{ error: 'Unauthorized' },
+				{ status: 401 },
+			);
 		}
 
 		if (!(await isDbConnected())) {
@@ -92,14 +92,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json(
-				{ error: 'Unauthorized' },
-				{ status: 401 },
-			);
-		}
-
 		const body = await req.json();
 		const {
 			eventId,
@@ -116,9 +108,9 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		const userId = targetUserId || session.userId;
-
 		if (USE_MOCK_DATA) {
+			const session = await getSession(req);
+			const userId = targetUserId || session?.userId || 'user_1';
 			const res = mockStore.recordAttendance({
 				eventId,
 				userId,
@@ -131,6 +123,16 @@ export async function POST(req: NextRequest) {
 			}
 			return NextResponse.json({ success: true, record: res.record });
 		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json(
+				{ error: 'Unauthorized' },
+				{ status: 401 },
+			);
+		}
+
+		const userId = targetUserId || session.userId;
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json(

@@ -20,6 +20,7 @@ import ScrollReveal, {
 	ScrollStaggerContainer,
 	ScrollStaggerItem,
 } from '@/components/ui/ScrollReveal';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 function SearchContent() {
 	const { currentUser, groups, requests, sendJoinRequest, events, hydrated } =
@@ -82,7 +83,7 @@ function SearchContent() {
 			currentUser &&
 			(g.leaderId === currentUser.id ||
 				g.memberIds.includes(currentUser.id));
-		const isVisible = !isPrivate || isMember;
+		const isVisible = !isPrivate || isMember || USE_MOCK_DATA;
 
 		const matchQ =
 			!query.trim() ||
@@ -131,7 +132,7 @@ function SearchContent() {
 	};
 
 	const handleCreateClubClick = () => {
-		if (currentUser) {
+		if (currentUser || USE_MOCK_DATA) {
 			router.push('/groups?create=true');
 		} else {
 			setShowAuthModal(true);

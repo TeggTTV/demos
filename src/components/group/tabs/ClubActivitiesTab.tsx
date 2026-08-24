@@ -14,7 +14,7 @@ import { getEnglishWeekday, getEnglishMonth } from '@/utils/dateUtils';
 
 interface ClubActivitiesTabProps {
 	group: Group;
-	currentUser: User;
+	currentUser: User | null;
 	users: User[];
 	clubActivities: MeetingEvent[];
 	attendances: AttendanceRecord[];
@@ -197,7 +197,7 @@ export default function ClubActivitiesTab({
 								const isUserGoing = attendances.some(
 									(a) =>
 										a.eventId === item.id &&
-										a.userId === currentUser.id &&
+										a.userId === currentUser?.id &&
 										(a.status === 'RSVP_YES' ||
 											a.status === 'PRESENT'),
 								);

@@ -29,6 +29,7 @@ import {
 	AppContextType,
 } from '@/types/models';
 import { apiClient } from '@/services/apiClient';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 // Re-export all types so existing imports from AppContext continue working smoothly
 export * from '@/types/models';
@@ -338,7 +339,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		async function pollIncomingData() {
 			if (!active || isPolling || isIdle) return;
 			const user = userRef.current;
-			if (!user || typeof window === 'undefined') return;
+			if ((!user && !USE_MOCK_DATA) || typeof window === 'undefined') return;
 
 			const pathname = window.location.pathname;
 

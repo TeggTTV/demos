@@ -7,16 +7,16 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ users: mockStore.getUsers() });
+		}
+
 		const session = await getSession(req);
 		if (!session) {
 			return NextResponse.json(
 				{ error: 'Unauthorized' },
 				{ status: 401 },
 			);
-		}
-
-		if (USE_MOCK_DATA) {
-			return NextResponse.json({ users: mockStore.getUsers() });
 		}
 
 		// Update calling user's lastActive timestamp

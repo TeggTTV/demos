@@ -17,6 +17,8 @@ import {
 	ScrollStaggerItem,
 } from '@/components/ui/ScrollReveal';
 
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+
 function GroupsContent() {
 	const { currentUser, groups, createGroup, events, hydrated } = useAppContext();
 	const router = useRouter();
@@ -28,25 +30,22 @@ function GroupsContent() {
 	const [modalOpen, setModalOpen] = useState(false);
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
-	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
-		const shouldCreate =
-			searchParams.get('create') === 'true' ||
-			searchParams.get('action') === 'create';
-		if (shouldCreate) {
+		if (searchParams.get('create') === 'true') {
+			// Auto open create modal if create=true query param is present
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setModalOpen(true);
 		}
 	}, [searchParams]);
-	/* eslint-enable react-hooks/set-state-in-effect */
 
 	if (!hydrated) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
-				<main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-						<div className="space-y-1">
-							<div className="h-7 w-48 bg-border/40 rounded-lg animate-pulse" />
+				<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+						<div className="space-y-2">
+							<div className="h-8 w-48 bg-border/40 rounded-lg animate-pulse" />
 							<div className="h-4 w-72 bg-border/30 rounded-lg animate-pulse" />
 						</div>
 					</div>
@@ -61,7 +60,7 @@ function GroupsContent() {
 		);
 	}
 
-	if (!currentUser) {
+	if (!currentUser && !USE_MOCK_DATA) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -99,17 +98,23 @@ function GroupsContent() {
 		);
 	}
 
-	const leadingClubs = groups.filter((g) => g.leaderId === currentUser.id);
-	const joinedClubs = groups.filter(
-		(g) =>
-			g.memberIds.includes(currentUser.id) &&
-			g.leaderId !== currentUser.id,
-	);
-	const allUserClubs = groups.filter(
-		(g) =>
-			g.leaderId === currentUser.id ||
-			g.memberIds.includes(currentUser.id),
-	);
+	const leadingClubs = currentUser
+		? groups.filter((g) => g.leaderId === currentUser.id)
+		: [];
+	const joinedClubs = currentUser
+		? groups.filter(
+				(g) =>
+					g.memberIds.includes(currentUser.id) &&
+					g.leaderId !== currentUser.id,
+			)
+		: [];
+	const allUserClubs = currentUser
+		? groups.filter(
+				(g) =>
+					g.leaderId === currentUser.id ||
+					g.memberIds.includes(currentUser.id),
+			)
+		: groups;
 
 	const displayedClubs =
 		activeTab === 'all'

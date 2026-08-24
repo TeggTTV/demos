@@ -20,6 +20,7 @@ import {
 } from 'react-icons/fi';
 import PageLoader from '@/components/ui/PageLoader';
 import { motion, AnimatePresence } from 'framer-motion';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 export default function GroupActivitiesPage() {
 	const { id } = useParams() as { id: string };
@@ -64,7 +65,7 @@ export default function GroupActivitiesPage() {
 		);
 	}
 
-	if (!currentUser || !group) {
+	if (!group || (!currentUser && !USE_MOCK_DATA)) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -90,10 +91,12 @@ export default function GroupActivitiesPage() {
 	}
 
 	// Security / Privacy check: only members can view private groups
-	const isMember =
-		group.memberIds.includes(currentUser.id) ||
-		group.leaderId === currentUser.id;
-	if (group.isPrivate && !isMember) {
+	const isMember = currentUser
+		? group.memberIds.includes(currentUser.id) ||
+			group.leaderId === currentUser.id
+		: Boolean(USE_MOCK_DATA);
+
+	if (group.isPrivate && !isMember && !USE_MOCK_DATA) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -154,7 +157,7 @@ export default function GroupActivitiesPage() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					eventId,
-					userId: currentUser.id,
+					userId: currentUser?.id || 'user_demo',
 					status,
 					checkInMethod: 'MANUAL',
 				}),
@@ -380,7 +383,8 @@ export default function GroupActivitiesPage() {
 																a.eventId ===
 																	item.id &&
 																a.userId ===
-																	currentUser.id &&
+																	(currentUser?.id ||
+																		'user_demo') &&
 																(a.status ===
 																	'RSVP_YES' ||
 																	a.status ===

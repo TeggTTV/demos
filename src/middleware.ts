@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '../utils/auth';
+import { USE_MOCK_DATA } from './mock/mockConfig';
 
 const PROTECTED_ROUTES = [
 	'/groups',
@@ -41,7 +42,7 @@ export async function middleware(req: NextRequest) {
 		pathname.startsWith(route)
 	);
 
-	if (isProtected && !session) {
+	if (isProtected && !session && !USE_MOCK_DATA) {
 		const loginUrl = new URL('/auth/login', req.url);
 		loginUrl.searchParams.set('redirect', pathname);
 		return NextResponse.redirect(loginUrl);

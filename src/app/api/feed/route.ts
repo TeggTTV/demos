@@ -9,11 +9,6 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId');
 
@@ -23,6 +18,11 @@ export async function GET(req: NextRequest) {
 
 		if (USE_MOCK_DATA) {
 			return NextResponse.json({ messages: mockStore.getFeedMessages(groupId) });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {
@@ -97,11 +97,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const body = await req.json();
 		const { groupId, content, fileName, fileUrl, isAnnouncement, pinned } = body;
 
@@ -113,9 +108,11 @@ export async function POST(req: NextRequest) {
 		}
 
 		if (USE_MOCK_DATA) {
+			const session = await getSession(req);
+			const userId = session?.userId || 'user_1';
 			const newMsg = mockStore.postFeedMessage({
 				groupId,
-				userId: session.userId,
+				userId,
 				content: content || '',
 				fileName,
 				fileUrl,
@@ -123,6 +120,11 @@ export async function POST(req: NextRequest) {
 				pinned,
 			});
 			return NextResponse.json({ success: true, message: newMsg });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		// Restrict File Uploads
@@ -216,11 +218,6 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const { searchParams } = new URL(req.url);
 		const messageId = searchParams.get('messageId');
 
@@ -234,6 +231,11 @@ export async function DELETE(req: NextRequest) {
 		if (USE_MOCK_DATA) {
 			mockStore.deleteFeedMessage(messageId);
 			return NextResponse.json({ success: true });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {

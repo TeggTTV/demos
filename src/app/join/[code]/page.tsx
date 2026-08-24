@@ -15,6 +15,7 @@ import {
 	FiUsers,
 	FiCompass,
 } from 'react-icons/fi';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 export default function JoinCodePage({
 	params,
@@ -32,17 +33,17 @@ export default function JoinCodePage({
 	const router = useRouter();
 
 	const [status, setStatus] = useState<
-		'loading' | 'joining' | 'success' | 'error' | 'unauthenticated'
+		'loading' | 'unauthenticated' | 'joining' | 'success' | 'error'
 	>('loading');
 	const [clubInfo, setClubInfo] = useState<Group | null>(null);
 	const [errorMessage, setErrorMessage] = useState('');
 
 	useEffect(() => {
-		if (!hydrated) return;
-
 		let isMounted = true;
 
 		async function processInvite() {
+			if (!hydrated) return;
+
 			try {
 				// Fetch preview info
 				const res = await fetch(`/api/invites?code=${code}`);
@@ -63,7 +64,7 @@ export default function JoinCodePage({
 					setClubInfo(targetGroup);
 				}
 
-				if (!currentUser) {
+				if (!currentUser && !USE_MOCK_DATA) {
 					if (isMounted) {
 						setStatus('unauthenticated');
 					}
@@ -72,12 +73,13 @@ export default function JoinCodePage({
 
 				// If already a member
 				const isAlreadyMember =
-					targetGroup.members?.some(
+					currentUser &&
+					(targetGroup.members?.some(
 						(m: { userId: string }) => m.userId === currentUser.id,
 					) ||
-					groups
-						.find((g) => g.id === targetGroup.id)
-						?.memberIds.includes(currentUser.id);
+						groups
+							.find((g) => g.id === targetGroup.id)
+							?.memberIds.includes(currentUser.id));
 
 				if (isAlreadyMember) {
 					if (isMounted) {

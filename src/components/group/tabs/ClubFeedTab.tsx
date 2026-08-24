@@ -17,7 +17,7 @@ import { FeedTab } from '@/components/group/ClubFeedHeader';
 
 interface ClubFeedTabProps {
 	group: Group;
-	currentUser: User;
+	currentUser: User | null;
 	users: User[];
 	feedMessages: FeedMessage[];
 	clubActivities: MeetingEvent[];
@@ -177,7 +177,7 @@ export default function ClubFeedTab({
 						</div>
 					) : (
 						filteredMessages.map((msg) => {
-							const isMe = msg.userId === currentUser.id;
+							const isMe = currentUser ? msg.userId === currentUser.id : false;
 							const authorName = getUserName(msg.userId);
 							const avatar = getUserAvatar(msg.userId);
 							const authorIsLeader = group.leaderId === msg.userId;

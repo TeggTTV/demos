@@ -9,11 +9,6 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId') || searchParams.get('id');
 		const code = searchParams.get('code');
@@ -85,6 +80,11 @@ export async function GET(req: NextRequest) {
 					},
 				},
 			});
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!groupId) {
@@ -203,24 +203,29 @@ async function handleRedeem(req: NextRequest, sessionUserId: string, rawCode: st
 
 export async function POST(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const body = await req.json();
 		const { action, groupId, code } = body;
 
-		if (action === 'redeem' || (!groupId && code)) {
-			return handleRedeem(req, session.userId, code);
-		}
-
 		if (USE_MOCK_DATA) {
+			const session = await getSession(req);
+			const userId = session?.userId || 'user_1';
+			if (action === 'redeem' || (!groupId && code)) {
+				return handleRedeem(req, userId, code);
+			}
 			if (!groupId) {
 				return NextResponse.json({ error: 'Missing groupId' }, { status: 400 });
 			}
 			const newInvite = mockStore.generateInvite(groupId);
 			return NextResponse.json({ success: true, code: newInvite.code, invite: newInvite });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		if (action === 'redeem' || (!groupId && code)) {
+			return handleRedeem(req, session.userId, code);
 		}
 
 		if (!(await isDbConnected())) {
@@ -280,13 +285,18 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
 	try {
+		const body = await req.json();
+		const { code } = body;
+
+		if (USE_MOCK_DATA) {
+			const session = await getSession(req);
+			return handleRedeem(req, session?.userId || 'user_1', code);
+		}
+
 		const session = await getSession(req);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
-
-		const body = await req.json();
-		const { code } = body;
 
 		return handleRedeem(req, session.userId, code);
 	} catch (error) {
@@ -297,11 +307,6 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId') || searchParams.get('id');
 
@@ -312,6 +317,11 @@ export async function DELETE(req: NextRequest) {
 		if (USE_MOCK_DATA) {
 			mockStore.deleteInvites(groupId);
 			return NextResponse.json({ success: true });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		// Authorization lock: only group leaders/officers can delete invites

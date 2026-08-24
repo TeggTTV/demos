@@ -8,13 +8,14 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
+		if (USE_MOCK_DATA) {
+			const session = await getSession(req);
+			return NextResponse.json({ requests: mockStore.getRequests(session?.userId) });
+		}
+
 		const session = await getSession(req);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
-		if (USE_MOCK_DATA) {
-			return NextResponse.json({ requests: mockStore.getRequests(session.userId) });
 		}
 
 		if (!(await isDbConnected())) {
@@ -52,20 +53,17 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const body = await req.json();
 		const { action, groupId, requestId, message } = body;
 
 		if (USE_MOCK_DATA) {
+			const session = await getSession(req);
+			const userId = session?.userId || 'user_1';
 			if (action === 'create') {
 				if (!groupId) {
 					return NextResponse.json({ error: 'Missing groupId' }, { status: 400 });
 				}
-				const newReq = mockStore.createRequest(groupId, session.userId, message);
+				const newReq = mockStore.createRequest(groupId, userId, message);
 				return NextResponse.json({ success: true, request: newReq });
 			}
 			if (action === 'approve' || action === 'decline') {
@@ -78,6 +76,11 @@ export async function POST(req: NextRequest) {
 				);
 				return NextResponse.json({ success: true, request: res.request });
 			}
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {

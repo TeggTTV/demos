@@ -9,11 +9,6 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId') || undefined;
 		const eventId = searchParams.get('eventId') || searchParams.get('sessionId') || undefined;
@@ -22,6 +17,11 @@ export async function GET(req: NextRequest) {
 		if (USE_MOCK_DATA) {
 			const mockEvents = mockStore.getEvents({ groupId, eventId, type });
 			return NextResponse.json({ events: mockEvents });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {
@@ -97,11 +97,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const body = await req.json();
 		const {
 			groupId,
@@ -136,8 +131,14 @@ export async function POST(req: NextRequest) {
 		}
 
 		if (USE_MOCK_DATA) {
-			const newEvent = mockStore.createEvent(body, session.userId);
+			const session = await getSession(req);
+			const newEvent = mockStore.createEvent(body, session?.userId || 'user_1');
 			return NextResponse.json({ success: true, event: newEvent });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {
@@ -214,11 +215,6 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const body = await req.json();
 		const {
 			eventId,
@@ -258,6 +254,11 @@ export async function PUT(req: NextRequest) {
 				return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 			}
 			return NextResponse.json({ success: true, event: updated });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {
@@ -354,11 +355,6 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
 	try {
-		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const { searchParams } = new URL(req.url);
 		const eventId = searchParams.get('eventId') || searchParams.get('id');
 
@@ -372,6 +368,11 @@ export async function DELETE(req: NextRequest) {
 		if (USE_MOCK_DATA) {
 			mockStore.deleteEvent(eventId);
 			return NextResponse.json({ success: true });
+		}
+
+		const session = await getSession(req);
+		if (!session) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		if (!(await isDbConnected())) {

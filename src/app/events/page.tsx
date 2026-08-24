@@ -27,6 +27,8 @@ import ScrollReveal, {
 	ScrollStaggerItem,
 } from '@/components/ui/ScrollReveal';
 
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+
 export default function EventsPage() {
 	const { currentUser, groups, hydrated } = useAppContext();
 	const [events, setEvents] = useState<EventDetailItem[]>([]);
@@ -69,7 +71,7 @@ export default function EventsPage() {
 	}, []);
 
 	const isUserMemberOfGroup = (groupId: string) => {
-		if (!currentUser) return false;
+		if (!currentUser) return Boolean(USE_MOCK_DATA);
 		const targetGroup = groups.find((g) => g.id === groupId);
 		if (!targetGroup) return false;
 		return (
@@ -83,7 +85,7 @@ export default function EventsPage() {
 	};
 
 	const handleRSVPClick = async (event: EventDetailItem) => {
-		if (event.membersOnly) {
+		if (event.membersOnly && !USE_MOCK_DATA) {
 			const isMember = isUserMemberOfGroup(event.groupId);
 			if (!isMember) {
 				setMembersOnlyModalEvent(event);
@@ -91,7 +93,7 @@ export default function EventsPage() {
 			}
 		}
 
-		if (!currentUser) {
+		if (!currentUser && !USE_MOCK_DATA) {
 			setShowAuthModal(true);
 			return;
 		}
@@ -103,6 +105,7 @@ export default function EventsPage() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					eventId: event.id,
+					userId: currentUser?.id || 'user_demo',
 					status: 'RSVP_YES',
 					checkInMethod: 'CODE',
 				}),

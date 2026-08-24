@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { FiKey, FiArrowRight, FiCompass } from 'react-icons/fi';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 function JoinContent() {
 	const searchParams = useSearchParams();
@@ -33,7 +34,7 @@ function JoinContent() {
 		const clean = code.trim();
 		if (!clean) return;
 
-		if (!currentUser) {
+		if (!currentUser && !USE_MOCK_DATA) {
 			router.push(
 				`/auth/login?redirect=/join/${encodeURIComponent(clean)}`,
 			);

@@ -8,6 +8,7 @@ import { FiClock, FiSend, FiArchive, FiRefreshCw } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 import PageLoader from '@/components/ui/PageLoader';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 export default function PendingPage() {
 	const {
@@ -46,7 +47,7 @@ export default function PendingPage() {
 		);
 	}
 
-	if (!currentUser) {
+	if (!currentUser && !USE_MOCK_DATA) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -84,15 +85,19 @@ export default function PendingPage() {
 		);
 	}
 
-	const sentPending = requests.filter(
-		(r) => r.userId === currentUser.id && r.status === 'PENDING',
-	);
+	const currentUserId = currentUser?.id;
 
-	const ledGroups = groups.filter(
-		(g) =>
-			g.leaderId === currentUser.id ||
-			(g.officerIds && g.officerIds.includes(currentUser.id)),
-	);
+	const sentPending = currentUserId
+		? requests.filter((r) => r.userId === currentUserId && r.status === 'PENDING')
+		: [];
+
+	const ledGroups = currentUserId
+		? groups.filter(
+				(g) =>
+					g.leaderId === currentUserId ||
+					(g.officerIds && g.officerIds.includes(currentUserId)),
+			)
+		: groups;
 	const ledGroupIds = ledGroups.map((g) => g.id);
 
 	const receivedPending = requests.filter(
@@ -101,7 +106,8 @@ export default function PendingPage() {
 
 	const historyRequests = requests.filter(
 		(r) =>
-			(r.userId === currentUser.id || ledGroupIds.includes(r.groupId)) &&
+			((currentUserId && r.userId === currentUserId) ||
+				ledGroupIds.includes(r.groupId)) &&
 			r.status !== 'PENDING',
 	);
 

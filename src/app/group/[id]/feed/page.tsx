@@ -16,6 +16,7 @@ import ClubSettingsTab from '@/components/group/tabs/ClubSettingsTab';
 import ClubActivitiesTab from '@/components/group/tabs/ClubActivitiesTab';
 import CreateEventModal from '@/components/group/CreateEventModal';
 import ScheduleMeetingModal from '@/components/group/ScheduleMeetingModal';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 export default function GroupFeedPage() {
 	const { id } = useParams() as { id: string };
@@ -48,11 +49,13 @@ export default function GroupFeedPage() {
 	const router = useRouter();
 
 	const group = groups.find((g) => g.id === id);
-	const isLeader = group?.leaderId === currentUser?.id;
+	const isLeader = currentUser
+		? group?.leaderId === currentUser.id
+		: Boolean(USE_MOCK_DATA);
 	const isOfficer = Boolean(
 		group?.officerIds && group.officerIds.includes(currentUser?.id || ''),
 	);
-	const canManage = isLeader || isOfficer;
+	const canManage = isLeader || isOfficer || (!currentUser && USE_MOCK_DATA);
 
 	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
 
@@ -241,7 +244,7 @@ export default function GroupFeedPage() {
 		);
 	}
 
-	if (!currentUser || !group) {
+	if (!group || (!currentUser && !USE_MOCK_DATA)) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -267,10 +270,12 @@ export default function GroupFeedPage() {
 	}
 
 	// Security / Privacy check: only members can view private groups
-	const isMember =
-		group.memberIds.includes(currentUser.id) ||
-		group.leaderId === currentUser.id;
-	if (group.isPrivate && !isMember) {
+	const isMember = currentUser
+		? group.memberIds.includes(currentUser.id) ||
+			group.leaderId === currentUser.id
+		: Boolean(USE_MOCK_DATA);
+
+	if (group.isPrivate && !isMember && !USE_MOCK_DATA) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -469,7 +474,7 @@ export default function GroupFeedPage() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					eventId,
-					userId: currentUser.id,
+					userId: currentUser?.id || 'user_demo',
 					status,
 					checkInMethod: 'MANUAL',
 				}),

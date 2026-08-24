@@ -10,6 +10,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { compressImage } from '@/utils/imageCompression';
 import PageLoader from '@/components/ui/PageLoader';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { MOCK_USERS } from '@/mock/mockData';
 
 export default function ProfilePage() {
 	const { currentUser, updateProfile, hydrated } = useAppContext();
@@ -25,14 +27,15 @@ export default function ProfilePage() {
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
-		if (currentUser) {
-			setName(currentUser.name || '');
-			setAvatarUrl(currentUser.avatarUrl || '');
-			setBio(currentUser.bio || '');
-			setMajor(currentUser.major || '');
-			setYear(currentUser.year || '');
-			setPhone(currentUser.phone || '');
-			setBirthday(currentUser.birthday || '');
+		const targetUser = currentUser || (USE_MOCK_DATA ? MOCK_USERS[0] : null);
+		if (targetUser) {
+			setName(targetUser.name || '');
+			setAvatarUrl(targetUser.avatarUrl || '');
+			setBio(targetUser.bio || '');
+			setMajor(targetUser.major || '');
+			setYear(targetUser.year || '');
+			setPhone(targetUser.phone || '');
+			setBirthday(targetUser.birthday || '');
 		}
 	}, [currentUser]);
 	/* eslint-enable react-hooks/set-state-in-effect */
@@ -59,7 +62,7 @@ export default function ProfilePage() {
 		);
 	}
 
-	if (!currentUser) {
+	if (!currentUser && !USE_MOCK_DATA) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -109,7 +112,7 @@ export default function ProfilePage() {
 								<span className="font-semibold text-text-primary block">
 									{name || 'Your Name'}
 								</span>
-								<span>{currentUser.email}</span>
+								<span>{currentUser?.email || (USE_MOCK_DATA ? MOCK_USERS[0].email : '')}</span>
 							</div>
 						</div>
 
