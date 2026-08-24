@@ -98,6 +98,9 @@ export const apiClient = {
 		discordUrl?: string;
 		tags?: string[];
 		isPrivate?: boolean;
+		isPublicToGuests?: boolean;
+		isPublicToMembers?: boolean;
+		isFeatured?: boolean;
 	}): Promise<{ success: boolean; group?: Group; error?: string }> {
 		const res = await fetch('/api/groups', {
 			method: 'POST',
@@ -117,6 +120,9 @@ export const apiClient = {
 			meetingFrequency?: string;
 			meetingLocation?: string;
 			isPrivate?: boolean;
+			isPublicToGuests?: boolean;
+			isPublicToMembers?: boolean;
+			isFeatured?: boolean;
 			profanityFilter?: boolean;
 			bannerUrl?: string;
 			logoUrl?: string;

@@ -20,7 +20,25 @@ export default function LandingSpotlightSection({
 	groups,
 	currentUser,
 }: LandingSpotlightSectionProps) {
-	if (groups.length === 0) {
+	const featuredClubs = groups.filter((g) => {
+		const isFeatured = g.isFeatured !== undefined ? g.isFeatured : true;
+		const isPublicToGuests =
+			g.isPublicToGuests !== undefined ? g.isPublicToGuests : !g.isPrivate;
+		const isPublicToMembers =
+			g.isPublicToMembers !== undefined ? g.isPublicToMembers : true;
+
+		if (!isFeatured) return false;
+		if (!currentUser && (!isPublicToGuests || !isPublicToMembers)) return false;
+		if (currentUser && !isPublicToMembers) {
+			const isMember =
+				g.leaderId === currentUser.id ||
+				g.memberIds.includes(currentUser.id);
+			if (!isMember) return false;
+		}
+		return true;
+	});
+
+	if (featuredClubs.length === 0) {
 		return null;
 	}
 
@@ -36,7 +54,7 @@ export default function LandingSpotlightSection({
 							Featured Campus Clubs
 						</h2>
 					</div>
-					{groups.length > 0 && (
+					{featuredClubs.length > 0 && (
 						<Link
 							href="/search"
 							className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
@@ -46,9 +64,9 @@ export default function LandingSpotlightSection({
 					)}
 				</ScrollReveal>
 
-				{groups.length > 0 ? (
+				{featuredClubs.length > 0 ? (
 					<ScrollStaggerContainer staggerDelay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{groups.slice(0, 3).map((club) => (
+						{featuredClubs.slice(0, 3).map((club) => (
 							<ScrollStaggerItem
 								key={club.id}
 								className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all flex flex-col"

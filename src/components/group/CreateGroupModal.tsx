@@ -30,6 +30,9 @@ interface CreateGroupModalProps {
 		discordUrl?: string;
 		tags?: string[];
 		isPrivate?: boolean;
+		isPublicToGuests?: boolean;
+		isPublicToMembers?: boolean;
+		isFeatured?: boolean;
 	}) => Promise<{ success: boolean; group?: Group; error?: string }>;
 	onSuccess?: (groupId: string) => void;
 }
@@ -55,7 +58,9 @@ export default function CreateGroupModal({
 	const [instagramUrl, setInstagramUrl] = useState('');
 	const [websiteUrl, setWebsiteUrl] = useState('');
 	const [tagsInput, setTagsInput] = useState('');
-	const [isPrivate, setIsPrivate] = useState(false);
+	const [isPublicToGuests, setIsPublicToGuests] = useState(true);
+	const [isPublicToMembers, setIsPublicToMembers] = useState(true);
+	const [isFeatured, setIsFeatured] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [fileSizeError, setFileSizeError] = useState('');
@@ -123,7 +128,10 @@ export default function CreateGroupModal({
 				instagramUrl: instagramUrl.trim() || undefined,
 				discordUrl: discordUrl.trim() || undefined,
 				tags,
-				isPrivate,
+				isPrivate: !isPublicToGuests || !isPublicToMembers,
+				isPublicToGuests,
+				isPublicToMembers,
+				isFeatured,
 			});
 
 			if (res.success && res.group) {
@@ -251,25 +259,76 @@ export default function CreateGroupModal({
 										required
 									/>
 
-									{/* Privacy Setting */}
-									<div className="rounded-xl border border-border bg-surface-secondary/40 p-3.5">
-										<Checkbox
-											id="create-group-is-private-checkbox"
-											checked={isPrivate}
-											onChange={(e) =>
-												setIsPrivate(e.target.checked)
-											}
-											label={
-												<div className="ml-1">
-													<span className="font-bold text-text-primary text-xs block">
-														🔒 Private Club (Hidden from Explore &amp; Guests)
+									{/* Privacy & Discovery Options */}
+									<div className="rounded-xl border border-border bg-surface-secondary/40 p-3.5 space-y-3">
+										<span className="text-[11px] font-bold text-text-primary uppercase tracking-wider block">
+											Club Privacy &amp; Discovery Options
+										</span>
+
+										<div className="space-y-2.5">
+											{/* Toggle 1: Guests / Unauthorized */}
+											<div className="flex items-start justify-between gap-3 p-2.5 rounded-lg bg-surface border border-border">
+												<div className="grow">
+													<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+														{isPublicToGuests ? '🌐' : '🔒'} Visible to Non-Authorized &amp; Guests
 													</span>
 													<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
-														When checked, unauthenticated guests and non-members cannot see this club on the Explore directory.
+														Allow unauthenticated guests to discover this club on the explore page.
 													</span>
 												</div>
-											}
-										/>
+												<Checkbox
+													id="create-guest-visibility-checkbox"
+													checked={isPublicToGuests}
+													onChange={(e) =>
+														setIsPublicToGuests(
+															e.target.checked,
+														)
+													}
+												/>
+											</div>
+
+											{/* Toggle 2: All registered users */}
+											<div className="flex items-start justify-between gap-3 p-2.5 rounded-lg bg-surface border border-border">
+												<div className="grow">
+													<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+														{isPublicToMembers ? '👥' : '🔐'} Visible to All Campus Users
+													</span>
+													<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
+														Allow all logged-in campus users to discover this club. If off, only joined members can view.
+													</span>
+												</div>
+												<Checkbox
+													id="create-member-visibility-checkbox"
+													checked={isPublicToMembers}
+													onChange={(e) =>
+														setIsPublicToMembers(
+															e.target.checked,
+														)
+													}
+												/>
+											</div>
+
+											{/* Toggle 3: Homepage Featured Spotlight */}
+											<div className="flex items-start justify-between gap-3 p-2.5 rounded-lg bg-surface border border-border">
+												<div className="grow">
+													<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+														✨ Feature on Homepage Spotlight
+													</span>
+													<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
+														Allow this club to appear in the &quot;Featured Campus Clubs&quot; spotlight on the homepage.
+													</span>
+												</div>
+												<Checkbox
+													id="create-featured-checkbox"
+													checked={isFeatured}
+													onChange={(e) =>
+														setIsFeatured(
+															e.target.checked,
+														)
+													}
+												/>
+											</div>
+										</div>
 									</div>
 								</div>
 							) : (

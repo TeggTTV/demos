@@ -35,6 +35,9 @@ export interface Group {
 	memberIds: string[];
 	officerIds?: string[];
 	isPrivate?: boolean;
+	isPublicToGuests?: boolean;
+	isPublicToMembers?: boolean;
+	isFeatured?: boolean;
 	profanityFilter?: boolean;
 	bannerUrl?: string;
 	logoUrl?: string;
@@ -204,6 +207,9 @@ export interface AppContextType {
 		discordUrl?: string;
 		tags?: string[];
 		isPrivate?: boolean;
+		isPublicToGuests?: boolean;
+		isPublicToMembers?: boolean;
+		isFeatured?: boolean;
 	}) => Promise<{ success: boolean; group?: Group; error?: string }>;
 	deleteMessage: (messageId: string) => Promise<void>;
 	updateGroupSettings: (
@@ -216,6 +222,9 @@ export interface AppContextType {
 			meetingFrequency?: string;
 			meetingLocation?: string;
 			isPrivate?: boolean;
+			isPublicToGuests?: boolean;
+			isPublicToMembers?: boolean;
+			isFeatured?: boolean;
 			profanityFilter?: boolean;
 			bannerUrl?: string;
 			logoUrl?: string;

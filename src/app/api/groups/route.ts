@@ -50,6 +50,12 @@ export async function GET(req: NextRequest) {
 			minMembers: g.minMembers,
 			maxMembers: g.maxMembers,
 			isPrivate: g.isPrivate,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			isPublicToGuests: (g as any).isPublicToGuests !== undefined ? (g as any).isPublicToGuests : !g.isPrivate,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			isPublicToMembers: (g as any).isPublicToMembers !== undefined ? (g as any).isPublicToMembers : true,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			isFeatured: (g as any).isFeatured !== undefined ? (g as any).isFeatured : true,
 			profanityFilter: g.profanityFilter,
 			bannerUrl: g.bannerUrl,
 			logoUrl: g.logoUrl,
@@ -88,6 +94,9 @@ export async function POST(req: NextRequest) {
 			discordUrl,
 			tags,
 			isPrivate,
+			isPublicToGuests,
+			isPublicToMembers,
+			isFeatured,
 		} = body;
 
 		if (!name || !description) {
@@ -131,39 +140,57 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
-		// Create Group with leaderId strictly bound to session.userId (preventing tampering)
-		const newGroup = await prisma.group.create({
-			data: {
-				name: name.trim(),
-				tagline: tagline || null,
-				description: description.trim(),
-				category: category || 'Technology & Coding',
-				subject: category || 'General',
-				meetingFrequency: meetingFrequency || 'Weekly',
-				meetingLocation: meetingLocation || '',
-				minMembers: Number(minMembers || 1),
-				maxMembers: Number(maxMembers || 50),
-				isPrivate: Boolean(isPrivate),
-				profanityFilter: false,
-				bannerUrl: bannerUrl || null,
-				logoUrl: logoUrl || null,
-				websiteUrl: websiteUrl || null,
-				instagramUrl: instagramUrl || null,
-				discordUrl: discordUrl || null,
-				tags: tags || [],
-				officerIds: [],
-				leaderId: session.userId,
-				members: {
-					create: {
-						userId: session.userId,
-						role: 'LEADER',
-					},
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const createData: any = {
+			name: name.trim(),
+			tagline: tagline || null,
+			description: description.trim(),
+			category: category || 'Technology & Coding',
+			subject: category || 'General',
+			meetingFrequency: meetingFrequency || 'Weekly',
+			meetingLocation: meetingLocation || '',
+			minMembers: Number(minMembers || 1),
+			maxMembers: Number(maxMembers || 50),
+			isPrivate:
+				isPublicToGuests === false || isPublicToMembers === false
+					? true
+					: Boolean(isPrivate),
+			profanityFilter: false,
+			bannerUrl: bannerUrl || null,
+			logoUrl: logoUrl || null,
+			websiteUrl: websiteUrl || null,
+			instagramUrl: instagramUrl || null,
+			discordUrl: discordUrl || null,
+			tags: tags || [],
+			officerIds: [],
+			leaderId: session.userId,
+			members: {
+				create: {
+					userId: session.userId,
+					role: 'LEADER',
 				},
 			},
+		};
+
+		// Create Group with leaderId strictly bound to session.userId (preventing tampering)
+		const newGroup = await prisma.group.create({
+			data: createData,
 			include: {
 				members: true,
 			},
 		});
+
+		const effectivePrivate = newGroup.isPrivate;
+		const effectivePublicGuests =
+			isPublicToGuests !== undefined
+				? Boolean(isPublicToGuests)
+				: !effectivePrivate;
+		const effectivePublicMembers =
+			isPublicToMembers !== undefined
+				? Boolean(isPublicToMembers)
+				: true;
+		const effectiveFeatured =
+			isFeatured !== undefined ? Boolean(isFeatured) : true;
 
 		const formatted = {
 			id: newGroup.id,
@@ -176,7 +203,10 @@ export async function POST(req: NextRequest) {
 			meetingLocation: newGroup.meetingLocation,
 			minMembers: newGroup.minMembers,
 			maxMembers: newGroup.maxMembers,
-			isPrivate: newGroup.isPrivate,
+			isPrivate: effectivePrivate,
+			isPublicToGuests: effectivePublicGuests,
+			isPublicToMembers: effectivePublicMembers,
+			isFeatured: effectiveFeatured,
 			profanityFilter: newGroup.profanityFilter,
 			bannerUrl: newGroup.bannerUrl,
 			logoUrl: newGroup.logoUrl,
@@ -208,6 +238,9 @@ export async function PUT(req: NextRequest) {
 			meetingFrequency,
 			meetingLocation,
 			isPrivate,
+			isPublicToGuests,
+			isPublicToMembers,
+			isFeatured,
 			profanityFilter,
 			bannerUrl,
 			logoUrl,
@@ -399,6 +432,13 @@ export async function PUT(req: NextRequest) {
 		}
 
 		// 4. Update settings
+		const effectiveIsPrivate =
+			isPublicToGuests === false || isPublicToMembers === false
+				? true
+				: isPrivate !== undefined
+					? Boolean(isPrivate)
+					: undefined;
+
 		const updatedGroup = await prisma.group.update({
 			where: { id: groupId },
 			data: {
@@ -411,8 +451,7 @@ export async function PUT(req: NextRequest) {
 					meetingFrequency !== undefined ? meetingFrequency : undefined,
 				meetingLocation:
 					meetingLocation !== undefined ? meetingLocation : undefined,
-				isPrivate:
-					isPrivate !== undefined ? Boolean(isPrivate) : undefined,
+				isPrivate: effectiveIsPrivate,
 				profanityFilter:
 					profanityFilter !== undefined ? Boolean(profanityFilter) : undefined,
 				bannerUrl: bannerUrl !== undefined ? bannerUrl : undefined,
@@ -428,6 +467,18 @@ export async function PUT(req: NextRequest) {
 			},
 		});
 
+		const effectivePrivate = updatedGroup.isPrivate;
+		const effectivePublicGuests =
+			isPublicToGuests !== undefined
+				? Boolean(isPublicToGuests)
+				: !effectivePrivate;
+		const effectivePublicMembers =
+			isPublicToMembers !== undefined
+				? Boolean(isPublicToMembers)
+				: true;
+		const effectiveFeatured =
+			isFeatured !== undefined ? Boolean(isFeatured) : true;
+
 		const formatted = {
 			id: updatedGroup.id,
 			name: updatedGroup.name,
@@ -439,7 +490,10 @@ export async function PUT(req: NextRequest) {
 			meetingLocation: updatedGroup.meetingLocation,
 			minMembers: updatedGroup.minMembers,
 			maxMembers: updatedGroup.maxMembers,
-			isPrivate: updatedGroup.isPrivate,
+			isPrivate: effectivePrivate,
+			isPublicToGuests: effectivePublicGuests,
+			isPublicToMembers: effectivePublicMembers,
+			isFeatured: effectiveFeatured,
 			profanityFilter: updatedGroup.profanityFilter,
 			bannerUrl: updatedGroup.bannerUrl,
 			logoUrl: updatedGroup.logoUrl,

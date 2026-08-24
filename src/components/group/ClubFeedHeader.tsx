@@ -3,7 +3,7 @@
 import React from 'react';
 import { Group, MeetingEvent } from '@/types/models';
 import ClubBanner from '@/components/ui/ClubBanner';
-import { FiInstagram, FiGlobe, FiMessageCircle, FiClock, FiUsers, FiCalendar, FiShield, FiSettings } from 'react-icons/fi';
+import { FiInstagram, FiGlobe, FiMessageCircle, FiClock, FiUsers, FiCalendar, FiShield, FiSettings, FiEyeOff } from 'react-icons/fi';
 import { FaDiscord } from 'react-icons/fa';
 
 export type FeedTab =
@@ -96,6 +96,26 @@ export default function ClubFeedHeader({
 					</div>
 				</div>
 			</div>
+
+			{/* Leader Notice Banner: Shown when the club is hidden to non-members/guests */}
+			{canManage && (group.isPrivate || group.isPublicToGuests === false || group.isPublicToMembers === false) && (
+				<div className="bg-amber-500/10 border-b border-amber-500/20 px-4 sm:px-8 py-2.5">
+					<div className="mx-auto max-w-7xl flex items-center justify-between gap-3 text-xs">
+						<div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-medium">
+							<FiEyeOff className="shrink-0 text-amber-600 dark:text-amber-400" size={15} />
+							<span>
+								<strong className="font-bold">Private / Hidden Organization:</strong> This club is currently hidden from non-members and unauthorized guests. It is only visible to you because of your officer/leader role.
+							</span>
+						</div>
+						<button
+							onClick={() => setActiveTab('settings')}
+							className="text-amber-900 dark:text-amber-200 underline font-semibold text-[11px] hover:opacity-80 shrink-0 cursor-pointer"
+						>
+							Manage Privacy Settings
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* Tab Navigation */}
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

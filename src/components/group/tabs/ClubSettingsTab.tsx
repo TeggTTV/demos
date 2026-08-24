@@ -45,6 +45,9 @@ interface ClubSettingsTabProps {
 			meetingFrequency?: string;
 			meetingLocation?: string;
 			isPrivate?: boolean;
+			isPublicToGuests?: boolean;
+			isPublicToMembers?: boolean;
+			isFeatured?: boolean;
 			profanityFilter?: boolean;
 			bannerUrl?: string;
 			logoUrl?: string;
@@ -74,8 +77,18 @@ export default function ClubSettingsTab({
 	const [settingsLocation, setSettingsLocation] = useState(
 		group.meetingLocation || '',
 	);
-	const [settingsIsPrivate, setSettingsIsPrivate] = useState(
-		group.isPrivate || false,
+	const [settingsIsPublicToGuests, setSettingsIsPublicToGuests] = useState(
+		group.isPublicToGuests !== undefined
+			? group.isPublicToGuests
+			: !group.isPrivate,
+	);
+	const [settingsIsPublicToMembers, setSettingsIsPublicToMembers] = useState(
+		group.isPublicToMembers !== undefined
+			? group.isPublicToMembers
+			: true,
+	);
+	const [settingsIsFeatured, setSettingsIsFeatured] = useState(
+		group.isFeatured !== undefined ? group.isFeatured : true,
 	);
 	const [settingsEnableCustomBanner, setSettingsEnableCustomBanner] = useState(
 		group.bannerUrl?.startsWith('data:') ||
@@ -145,7 +158,10 @@ export default function ClubSettingsTab({
 			tagline: settingsTagline,
 			description: settingsDesc,
 			meetingLocation: settingsLocation,
-			isPrivate: settingsIsPrivate,
+			isPrivate: !settingsIsPublicToGuests || !settingsIsPublicToMembers,
+			isPublicToGuests: settingsIsPublicToGuests,
+			isPublicToMembers: settingsIsPublicToMembers,
+			isFeatured: settingsIsFeatured,
 			bannerUrl: banner,
 			discordUrl: settingsDiscord,
 			instagramUrl: settingsInstagram,
@@ -182,7 +198,21 @@ export default function ClubSettingsTab({
 								setSettingsTagline(group.tagline || '');
 								setSettingsDesc(group.description);
 								setSettingsLocation(group.meetingLocation || '');
-								setSettingsIsPrivate(group.isPrivate || false);
+								setSettingsIsPublicToGuests(
+									group.isPublicToGuests !== undefined
+										? group.isPublicToGuests
+										: !group.isPrivate,
+								);
+								setSettingsIsPublicToMembers(
+									group.isPublicToMembers !== undefined
+										? group.isPublicToMembers
+										: true,
+								);
+								setSettingsIsFeatured(
+									group.isFeatured !== undefined
+										? group.isFeatured
+										: true,
+								);
 								setSettingsEnableCustomBanner(
 									group.bannerUrl?.startsWith('data:') ||
 										group.bannerUrl?.startsWith('http') ||
@@ -441,17 +471,41 @@ export default function ClubSettingsTab({
 									<span className="text-text-muted block text-[10px] uppercase font-semibold">
 										Visibility &amp; Access:
 									</span>
-									<span className="font-semibold text-text-primary mt-0.5 block">
-										{group.isPrivate ? (
-											<span className="text-warning font-semibold flex items-center gap-1">
-												🔒 Private (Invite / Request Only)
-											</span>
-										) : (
-											<span className="text-success font-semibold flex items-center gap-1">
-												🌐 Public Organization
-											</span>
-										)}
-									</span>
+									<div className="mt-1 space-y-1">
+										<div className="flex items-center gap-1.5 font-medium text-[11px]">
+											{group.isPublicToGuests !== false && !group.isPrivate ? (
+												<span className="text-success flex items-center gap-1">
+													🌐 Guests: Public
+												</span>
+											) : (
+												<span className="text-warning flex items-center gap-1">
+													🔒 Guests: Hidden
+												</span>
+											)}
+										</div>
+										<div className="flex items-center gap-1.5 font-medium text-[11px]">
+											{group.isPublicToMembers !== false ? (
+												<span className="text-success flex items-center gap-1">
+													👥 Campus Users: Visible
+												</span>
+											) : (
+												<span className="text-warning flex items-center gap-1">
+													🔐 Members Only
+												</span>
+											)}
+										</div>
+										<div className="flex items-center gap-1.5 font-medium text-[11px]">
+											{group.isFeatured !== false ? (
+												<span className="text-primary flex items-center gap-1">
+													✨ Featured Spotlight: On
+												</span>
+											) : (
+												<span className="text-text-muted flex items-center gap-1">
+													🚫 Spotlight: Off
+												</span>
+											)}
+										</div>
+									</div>
 								</div>
 								<div>
 									<span className="text-text-muted block text-[10px] uppercase font-semibold">
@@ -558,25 +612,81 @@ export default function ClubSettingsTab({
 							onChange={(e) => setSettingsLocation(e.target.value)}
 						/>
 
-						{/* Privacy Setting */}
-						<div className="rounded-xl border border-border bg-surface-secondary/40 p-4">
-							<Checkbox
-								id="setting-is-private-checkbox"
-								checked={settingsIsPrivate}
-								onChange={(e) =>
-									setSettingsIsPrivate(e.target.checked)
-								}
-								label={
-									<div className="ml-1">
-										<span className="font-bold text-text-primary text-xs block">
-											🔒 Private Club Hub (Disallow Non-Members &amp; Unauthorized Guests)
+						{/* Privacy & Discovery Settings */}
+						<div className="rounded-xl border border-border bg-surface-secondary/40 p-4 space-y-4">
+							<div>
+								<span className="text-[11px] font-bold text-text-primary uppercase tracking-wider block mb-1">
+									Club Privacy &amp; Discovery Controls
+								</span>
+								<p className="text-xs text-text-muted">
+									Configure who can discover, view, and access your club page across the campus portal.
+								</p>
+							</div>
+
+							<div className="space-y-3 pt-1">
+								{/* Toggle 1: Publicity to non-authorized / guest users */}
+								<div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-surface border border-border">
+									<div className="grow">
+										<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+											{settingsIsPublicToGuests ? '🌐' : '🔒'} Visible to Non-Authorized &amp; Guest Visitors
 										</span>
 										<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
-											When enabled, this club is hidden from public explore/search and disallowed from being viewed by guest visitors and unauthorized non-members. Only approved club members and officers can access the hub.
+											Allow prospective students and guest visitors who are not logged in to view your club profile and explore details.
 										</span>
 									</div>
-								}
-							/>
+									<Checkbox
+										id="setting-guest-visibility-checkbox"
+										checked={settingsIsPublicToGuests}
+										onChange={(e) =>
+											setSettingsIsPublicToGuests(
+												e.target.checked,
+											)
+										}
+									/>
+								</div>
+
+								{/* Toggle 2: Publicity to all registered users */}
+								<div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-surface border border-border">
+									<div className="grow">
+										<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+											{settingsIsPublicToMembers ? '👥' : '🔐'} Visible to All Campus Users
+										</span>
+										<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
+											Allow all logged-in campus students to discover your club on search and view meetings. If disabled, only approved club members and officers can view.
+										</span>
+									</div>
+									<Checkbox
+										id="setting-member-visibility-checkbox"
+										checked={settingsIsPublicToMembers}
+										onChange={(e) =>
+											setSettingsIsPublicToMembers(
+												e.target.checked,
+											)
+										}
+									/>
+								</div>
+
+								{/* Toggle 3: Homepage Featured Spotlight */}
+								<div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-surface border border-border">
+									<div className="grow">
+										<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+											✨ Feature on Homepage Spotlight
+										</span>
+										<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
+											Permit this club to appear in the &quot;Featured Campus Clubs&quot; spotlight carousel on the main homepage.
+										</span>
+									</div>
+									<Checkbox
+										id="setting-homepage-featured-checkbox"
+										checked={settingsIsFeatured}
+										onChange={(e) =>
+											setSettingsIsFeatured(
+												e.target.checked,
+											)
+										}
+									/>
+								</div>
+							</div>
 						</div>
 
 						{/* Banner Setting */}

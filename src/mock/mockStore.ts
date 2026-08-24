@@ -119,8 +119,19 @@ class MockDataStore {
 			maxMembers: groupData.maxMembers || 50,
 			leaderId,
 			memberIds: [leaderId],
-			officerIds: [],
 			isPrivate: Boolean(groupData.isPrivate),
+			isPublicToGuests:
+				groupData.isPublicToGuests !== undefined
+					? Boolean(groupData.isPublicToGuests)
+					: true,
+			isPublicToMembers:
+				groupData.isPublicToMembers !== undefined
+					? Boolean(groupData.isPublicToMembers)
+					: true,
+			isFeatured:
+				groupData.isFeatured !== undefined
+					? Boolean(groupData.isFeatured)
+					: true,
 			profanityFilter: Boolean(groupData.profanityFilter),
 			bannerUrl: groupData.bannerUrl || DEFAULT_CLUB_BANNER,
 			logoUrl: groupData.logoUrl,

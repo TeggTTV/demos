@@ -809,6 +809,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			discordUrl?: string;
 			tags?: string[];
 			isPrivate?: boolean;
+			isPublicToGuests?: boolean;
+			isPublicToMembers?: boolean;
+			isFeatured?: boolean;
 		}) => {
 			try {
 				const data = await apiClient.createGroup(groupData);
@@ -839,6 +842,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				meetingFrequency?: string;
 				meetingLocation?: string;
 				isPrivate?: boolean;
+				isPublicToGuests?: boolean;
+				isPublicToMembers?: boolean;
+				isFeatured?: boolean;
 				profanityFilter?: boolean;
 				bannerUrl?: string;
 				logoUrl?: string;

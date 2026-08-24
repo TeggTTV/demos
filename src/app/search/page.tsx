@@ -78,12 +78,29 @@ function SearchContent() {
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const filteredClubs = groups.filter((g) => {
-		const isPrivate = g.isPrivate === true;
 		const isMember =
 			currentUser &&
 			(g.leaderId === currentUser.id ||
 				g.memberIds.includes(currentUser.id));
-		const isVisible = !isPrivate || isMember;
+
+		const isPublicToGuests =
+			g.isPublicToGuests !== undefined ? g.isPublicToGuests : !g.isPrivate;
+		const isPublicToMembers =
+			g.isPublicToMembers !== undefined ? g.isPublicToMembers : true;
+
+		// 1. If not logged in (guest): must have isPublicToGuests enabled and isPublicToMembers enabled
+		// 2. If logged in but not a club member: must have isPublicToMembers enabled
+		// 3. If a club member/leader: always visible
+		let isVisible = false;
+		if (isMember) {
+			isVisible = true;
+		} else if (currentUser) {
+			isVisible = isPublicToMembers;
+		} else {
+			isVisible = isPublicToGuests && isPublicToMembers;
+		}
+
+		if (!isVisible) return false;
 
 		const matchQ =
 			!query.trim() ||

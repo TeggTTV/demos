@@ -49,6 +49,9 @@ model Group {
   minMembers       Int                @default(1)
   maxMembers       Int                @default(50)
   isPrivate        Boolean            @default(false)
+  isPublicToGuests Boolean            @default(true)
+  isPublicToMembers Boolean           @default(true)
+  isFeatured       Boolean            @default(true)
   profanityFilter  Boolean            @default(false)
   bannerUrl        String?
   logoUrl          String?

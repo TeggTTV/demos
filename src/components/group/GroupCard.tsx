@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { FiShield, FiCalendar, FiMapPin, FiArrowRight } from 'react-icons/fi';
+import { FiShield, FiCalendar, FiMapPin, FiArrowRight, FiEyeOff } from 'react-icons/fi';
 import { Group, MeetingEvent, User } from '@/types/models';
 import MemberAvatarStack from '@/components/group/MemberAvatarStack';
 import ClubBanner from '@/components/ui/ClubBanner';
@@ -62,7 +62,7 @@ export default function GroupCard({
 					{club.category}
 				</div>
 
-				<div className="absolute top-3 left-3 flex items-center gap-1.5">
+				<div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap max-w-[80%]">
 					{isLeader ? (
 						<span className="bg-primary text-white px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 shadow-xs">
 							<FiShield size={10} /> Lead
@@ -72,6 +72,15 @@ export default function GroupCard({
 							Officer
 						</span>
 					) : null}
+
+					{(isLeader || isOfficer) && (club.isPrivate || club.isPublicToGuests === false || club.isPublicToMembers === false) && (
+						<span
+							title="This club is currently hidden from non-members / guest visitors and only visible to you"
+							className="bg-warning/95 backdrop-blur-xs text-black px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 shadow-xs border border-warning/30"
+						>
+							<FiEyeOff size={10} /> Hidden to Non-Members
+						</span>
+					)}
 				</div>
 			</div>
 
