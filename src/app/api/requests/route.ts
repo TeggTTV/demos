@@ -3,12 +3,18 @@ import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
 		const session = await getSession(req);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ requests: mockStore.getRequests(session.userId) });
 		}
 
 		if (!(await isDbConnected())) {
@@ -53,6 +59,26 @@ export async function POST(req: NextRequest) {
 
 		const body = await req.json();
 		const { action, groupId, requestId, message } = body;
+
+		if (USE_MOCK_DATA) {
+			if (action === 'create') {
+				if (!groupId) {
+					return NextResponse.json({ error: 'Missing groupId' }, { status: 400 });
+				}
+				const newReq = mockStore.createRequest(groupId, session.userId, message);
+				return NextResponse.json({ success: true, request: newReq });
+			}
+			if (action === 'approve' || action === 'decline') {
+				if (!requestId) {
+					return NextResponse.json({ error: 'Missing requestId' }, { status: 400 });
+				}
+				const res = mockStore.updateRequestStatus(
+					requestId,
+					action === 'approve' ? 'APPROVED' : 'DECLINED',
+				);
+				return NextResponse.json({ success: true, request: res.request });
+			}
+		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });

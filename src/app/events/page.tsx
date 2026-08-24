@@ -55,8 +55,7 @@ export default function EventsPage() {
 					setEvents(
 						data.events.filter(
 							(e: EventDetailItem) =>
-								e.price !== undefined ||
-								e.title !== undefined,
+								e.price !== undefined || e.title !== undefined,
 						),
 					);
 				}
@@ -78,7 +77,7 @@ export default function EventsPage() {
 			targetGroup.memberIds.includes(currentUser.id) ||
 			Boolean(
 				targetGroup.officerIds &&
-					targetGroup.officerIds.includes(currentUser.id),
+				targetGroup.officerIds.includes(currentUser.id),
 			)
 		);
 	};
@@ -158,7 +157,8 @@ export default function EventsPage() {
 							Campus Club Events &amp; Activities
 						</h1>
 						<p className="mt-1 text-xs sm:text-sm text-text-muted">
-							Discover workshops, hackathons, speaker panels, and general meetings across all campus clubs.
+							Discover workshops, hackathons, speaker panels, and
+							general meetings across all campus clubs.
 						</p>
 					</div>
 
@@ -225,7 +225,8 @@ export default function EventsPage() {
 							No events found
 						</h3>
 						<p className="text-xs text-text-muted leading-relaxed">
-							There are no upcoming club events matching your filter criteria. Try adjusting your search query.
+							There are no upcoming club events matching your
+							filter criteria. Try adjusting your search query.
 						</p>
 						<button
 							onClick={() => {
@@ -259,8 +260,8 @@ export default function EventsPage() {
 												</span>
 												{event.membersOnly && (
 													<span className="text-[10px] font-bold text-purple-700 bg-purple-100 dark:bg-purple-950/70 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-300/40 flex items-center gap-1 shrink-0">
-														<FiLock size={10} /> Members
-														Only
+														<FiLock size={10} />{' '}
+														Members Only
 													</span>
 												)}
 											</div>
@@ -293,7 +294,9 @@ export default function EventsPage() {
 														className="text-primary shrink-0"
 													/>
 													<span>
-														{formatTime12H(event.time)}
+														{formatTime12H(
+															event.time,
+														)}
 														{event.endTime &&
 															` - ${formatTime12H(
 																event.endTime,
@@ -345,8 +348,12 @@ export default function EventsPage() {
 													<span>...</span>
 												) : (
 													<>
-														<span>RSVP to Event</span>
-														<FiArrowRight size={12} />
+														<span>
+															RSVP to Event
+														</span>
+														<FiArrowRight
+															size={12}
+														/>
 													</>
 												)}
 											</button>
@@ -361,124 +368,172 @@ export default function EventsPage() {
 				{/* Campus Events & Activities Guide Section */}
 				<ScrollReveal direction="up">
 					<section className="mt-16 rounded-3xl border border-border bg-surface-secondary/40 p-6 sm:p-10 space-y-8">
-					<div className="max-w-3xl space-y-2">
-						<span className="text-xs font-bold text-primary uppercase tracking-wider">
-							Student Guide &amp; Resources
-						</span>
-						<h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">
-							Campus Club Events &amp; Extracurricular Participation
-						</h2>
-						<p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-							Getting involved in student organizations accelerates your academic journey, builds hands-on portfolio experience, and develops lasting friendships. Learn how attendance tracking, RSVPs, and membership requirements work on Demos.
-						</p>
-					</div>
-
-					{/* 3 Guidance Highlight Cards */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-						<div className="rounded-2xl border border-border bg-surface p-5 space-y-2.5 shadow-2xs">
-							<div className="h-9 w-9 rounded-xl bg-primary-light text-primary flex items-center justify-center font-bold text-sm">
-								🔓
-							</div>
-							<h3 className="text-sm font-bold text-text-primary">
-								Open vs. Members-Only
-							</h3>
-							<p className="text-text-secondary leading-relaxed">
-								Public campus events are open to all enrolled students. Workshops, hackathons, and executive planning meetings marked with a <span className="font-semibold text-purple-600">Members Only</span> badge require active membership in the host organization.
+						<div className="max-w-3xl space-y-2">
+							<span className="text-xs font-bold text-primary uppercase tracking-wider">
+								Student Guide &amp; Resources
+							</span>
+							<h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">
+								Campus Club Events &amp; Extracurricular
+								Participation
+							</h2>
+							<p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+								Getting involved in student organizations
+								accelerates your academic journey, builds
+								hands-on portfolio experience, and develops
+								lasting friendships. Learn how attendance
+								tracking, RSVPs, and membership requirements
+								work on Demos.
 							</p>
 						</div>
 
-						<div className="rounded-2xl border border-border bg-surface p-5 space-y-2.5 shadow-2xs">
-							<div className="h-9 w-9 rounded-xl bg-success-bg text-success flex items-center justify-center font-bold text-sm">
-								⏱️
+						{/* 3 Guidance Highlight Cards */}
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
+							<div className="rounded-2xl border border-border bg-surface p-5 space-y-2.5 shadow-2xs">
+								<div className="h-9 w-9 rounded-xl bg-primary-light text-primary flex items-center justify-center font-bold text-sm">
+									🔓
+								</div>
+								<h3 className="text-sm font-bold text-text-primary">
+									Open vs. Members-Only
+								</h3>
+								<p className="text-text-secondary leading-relaxed">
+									Public campus events are open to all
+									enrolled students. Workshops, hackathons,
+									and executive planning meetings marked with
+									a{' '}
+									<span className="font-semibold text-purple-600">
+										Members Only
+									</span>{' '}
+									badge require active membership in the host
+									organization.
+								</p>
 							</div>
-							<h3 className="text-sm font-bold text-text-primary">
-								Verified Digital Attendance
+
+							<div className="rounded-2xl border border-border bg-surface p-5 space-y-2.5 shadow-2xs">
+								<div className="h-9 w-9 rounded-xl bg-success-bg text-success flex items-center justify-center font-bold text-sm">
+									⏱️
+								</div>
+								<h3 className="text-sm font-bold text-text-primary">
+									Verified Digital Attendance
+								</h3>
+								<p className="text-text-secondary leading-relaxed">
+									Never wait in line to sign paper rosters.
+									When officers launch an active meeting
+									session, attendees can scan the projector QR
+									code or enter the event check-in PIN to
+									automatically log verified attendance
+									records.
+								</p>
+							</div>
+
+							<div className="rounded-2xl border border-border bg-surface p-5 space-y-2.5 shadow-2xs">
+								<div className="h-9 w-9 rounded-xl bg-primary-light text-primary flex items-center justify-center font-bold text-sm">
+									📊
+								</div>
+								<h3 className="text-sm font-bold text-text-primary">
+									Official Roster &amp; CSV Reports
+								</h3>
+								<p className="text-text-secondary leading-relaxed">
+									Student organization leaders can review
+									real-time presence checklists, adjust
+									attendance statuses (Present, Late, Excused,
+									Absent), and export compliant CSV
+									spreadsheets for university funding
+									allocations and student government audits.
+								</p>
+							</div>
+						</div>
+
+						{/* Student Event Participation FAQ Grid */}
+						<div className="pt-4 border-t border-border space-y-4">
+							<h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+								Frequently Asked Questions About Campus Events
 							</h3>
-							<p className="text-text-secondary leading-relaxed">
-								Never wait in line to sign paper rosters. When officers launch an active meeting session, attendees can scan the projector QR code or enter the event check-in PIN to automatically log verified attendance records.
-							</p>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-text-secondary">
+								<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
+									<h4 className="font-bold text-text-primary">
+										How do I RSVP for an upcoming campus
+										event?
+									</h4>
+									<p className="leading-relaxed">
+										Simply click the &quot;RSVP to
+										Event&quot; button on any event card. If
+										you are not signed in, you will be
+										prompted to authenticate with your
+										campus account so your RSVP can be
+										recorded on the organizer&apos;s
+										attendee roster.
+									</p>
+								</div>
+
+								<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
+									<h4 className="font-bold text-text-primary">
+										How do I join a club hosting a
+										members-only session?
+									</h4>
+									<p className="leading-relaxed">
+										Visit the club showcase in the Explore
+										directory to submit a membership
+										application, or request a 1-click invite
+										link from club officers during club rush
+										and orientation fairs.
+									</p>
+								</div>
+
+								<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
+									<h4 className="font-bold text-text-primary">
+										Can student leaders host events in
+										campus facilities?
+									</h4>
+									<p className="leading-relaxed">
+										Yes! Leaders can schedule general
+										meetings, workshops, social mixers, and
+										design sessions. Meeting entries display
+										room numbers, building locations, start
+										and end times, and direct check-in
+										codes.
+									</p>
+								</div>
+
+								<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
+									<h4 className="font-bold text-text-primary">
+										Are attendance records saved to my
+										student profile?
+									</h4>
+									<p className="leading-relaxed">
+										Yes, every verified check-in contributes
+										to your extracurricular participation
+										record, helping club officers evaluate
+										active standing, voting privileges, and
+										leadership officer eligibility.
+									</p>
+								</div>
+							</div>
 						</div>
 
-						<div className="rounded-2xl border border-border bg-surface p-5 space-y-2.5 shadow-2xs">
-							<div className="h-9 w-9 rounded-xl bg-primary-light text-primary flex items-center justify-center font-bold text-sm">
-								📊
-							</div>
-							<h3 className="text-sm font-bold text-text-primary">
-								Official Roster &amp; CSV Reports
-							</h3>
-							<p className="text-text-secondary leading-relaxed">
-								Student organization leaders can review real-time presence checklists, adjust attendance statuses (Present, Late, Excused, Absent), and export compliant CSV spreadsheets for university funding allocations and student government audits.
-							</p>
-						</div>
-					</div>
-
-					{/* Student Event Participation FAQ Grid */}
-					<div className="pt-4 border-t border-border space-y-4">
-						<h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
-							Frequently Asked Questions About Campus Events
-						</h3>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-text-secondary">
-							<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
-								<h4 className="font-bold text-text-primary">
-									How do I RSVP for an upcoming campus event?
-								</h4>
-								<p className="leading-relaxed">
-									Simply click the &quot;RSVP to Event&quot; button on any event card. If you are not signed in, you will be prompted to authenticate with your campus account so your RSVP can be recorded on the organizer&apos;s attendee roster.
-								</p>
-							</div>
-
-							<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
-								<h4 className="font-bold text-text-primary">
-									How do I join a club hosting a members-only session?
-								</h4>
-								<p className="leading-relaxed">
-									Visit the club showcase in the Explore directory to submit a membership application, or request a 1-click invite link from club officers during club rush and orientation fairs.
-								</p>
-							</div>
-
-							<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
-								<h4 className="font-bold text-text-primary">
-									Can student leaders host events in campus facilities?
-								</h4>
-								<p className="leading-relaxed">
-									Yes! Leaders can schedule general meetings, workshops, social mixers, and design sessions. Meeting entries display room numbers, building locations, start and end times, and direct check-in codes.
-								</p>
-							</div>
-
-							<div className="space-y-1 rounded-xl bg-surface p-4 border border-border/80">
-								<h4 className="font-bold text-text-primary">
-									Are attendance records saved to my student profile?
-								</h4>
-								<p className="leading-relaxed">
-									Yes, every verified check-in contributes to your extracurricular participation record, helping club officers evaluate active standing, voting privileges, and leadership officer eligibility.
-								</p>
-							</div>
-						</div>
-					</div>
-
-					{/* Navigation Links Footer */}
-					<div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs border-t border-border">
-						<span className="text-text-muted">
-							Looking for student organization directories or leadership tools?
-						</span>
-						<div className="flex items-center gap-4">
-							<Link
-								href="/search"
-								className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
-							>
-								<span>Explore All Campus Clubs</span>
-								<FiArrowRight size={12} />
-							</Link>
-							<Link
+						{/* Navigation Links Footer */}
+						<div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs border-t border-border">
+							<span className="text-text-muted">
+								Looking for student organization directories or
+								leadership tools?
+							</span>
+							<div className="flex items-center gap-4">
+								<Link
+									href="/search"
+									className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+								>
+									<span>Explore All Campus Clubs</span>
+									<FiArrowRight size={12} />
+								</Link>
+								{/* <Link
 								href="/groups"
 								className="text-xs font-semibold text-text-secondary hover:text-text-primary hover:underline"
 							>
 								My Clubs Hub
-							</Link>
+							</Link> */}
+							</div>
 						</div>
-					</div>
-				</section>
+					</section>
 				</ScrollReveal>
 			</main>
 

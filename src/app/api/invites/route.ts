@@ -4,6 +4,8 @@ import crypto from 'crypto';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -15,6 +17,44 @@ export async function GET(req: NextRequest) {
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId') || searchParams.get('id');
 		const code = searchParams.get('code');
+
+		if (USE_MOCK_DATA) {
+			if (code) {
+				const inv = mockStore
+					.getInvites()
+					.find(
+						(i) => i.code.toUpperCase() === code.trim().toUpperCase(),
+					);
+				if (!inv) {
+					return NextResponse.json(
+						{ error: 'Invalid invite code' },
+						{ status: 404 },
+					);
+				}
+				const grp = mockStore.getGroupById(inv.groupId);
+				return NextResponse.json({
+					invite: {
+						id: inv.id,
+						groupId: inv.groupId,
+						code: inv.code,
+						status: inv.status,
+						group: grp
+							? {
+									id: grp.id,
+									name: grp.name,
+									description: grp.description,
+									bannerUrl: grp.bannerUrl,
+									category: grp.category,
+								}
+							: undefined,
+					},
+				});
+			}
+
+			return NextResponse.json({
+				invites: mockStore.getInvites(groupId || undefined),
+			});
+		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -104,6 +144,14 @@ async function handleRedeem(req: NextRequest, sessionUserId: string, rawCode: st
 		);
 	}
 
+	if (USE_MOCK_DATA) {
+		const res = mockStore.redeemInvite(rawCode, sessionUserId);
+		if (!res.success) {
+			return NextResponse.json({ error: res.error }, { status: 400 });
+		}
+		return NextResponse.json({ success: true, groupId: res.groupId, group: res.group });
+	}
+
 	const cleanCode = rawCode.trim().toUpperCase();
 	const invite = await prisma.clubInvite.findUnique({
 		where: { code: cleanCode },
@@ -163,12 +211,20 @@ export async function POST(req: NextRequest) {
 		const body = await req.json();
 		const { action, groupId, code } = body;
 
-		if (!(await isDbConnected())) {
-			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
-		}
-
 		if (action === 'redeem' || (!groupId && code)) {
 			return handleRedeem(req, session.userId, code);
+		}
+
+		if (USE_MOCK_DATA) {
+			if (!groupId) {
+				return NextResponse.json({ error: 'Missing groupId' }, { status: 400 });
+			}
+			const newInvite = mockStore.generateInvite(groupId);
+			return NextResponse.json({ success: true, code: newInvite.code, invite: newInvite });
+		}
+
+		if (!(await isDbConnected())) {
+			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
 		// Create Invite Code (Delete existing invites for this group first to keep DB clean)
@@ -232,10 +288,6 @@ export async function PATCH(req: NextRequest) {
 		const body = await req.json();
 		const { code } = body;
 
-		if (!(await isDbConnected())) {
-			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
-		}
-
 		return handleRedeem(req, session.userId, code);
 	} catch (error) {
 		console.error('Invites PATCH Error:', error);
@@ -253,12 +305,13 @@ export async function DELETE(req: NextRequest) {
 		const { searchParams } = new URL(req.url);
 		const groupId = searchParams.get('groupId') || searchParams.get('id');
 
-		if (!(await isDbConnected())) {
-			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
-		}
-
 		if (!groupId) {
 			return NextResponse.json({ error: 'Missing groupId' }, { status: 400 });
+		}
+
+		if (USE_MOCK_DATA) {
+			mockStore.deleteInvites(groupId);
+			return NextResponse.json({ success: true });
 		}
 
 		// Authorization lock: only group leaders/officers can delete invites

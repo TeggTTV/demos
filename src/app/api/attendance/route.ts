@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -15,8 +17,14 @@ export async function GET(req: NextRequest) {
 		}
 
 		const { searchParams } = new URL(req.url);
-		const eventId = searchParams.get('eventId');
-		const groupId = searchParams.get('groupId');
+		const eventId = searchParams.get('eventId') || undefined;
+		const groupId = searchParams.get('groupId') || undefined;
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({
+				attendances: mockStore.getAttendances({ eventId, groupId }),
+			});
+		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json(
@@ -109,6 +117,20 @@ export async function POST(req: NextRequest) {
 		}
 
 		const userId = targetUserId || session.userId;
+
+		if (USE_MOCK_DATA) {
+			const res = mockStore.recordAttendance({
+				eventId,
+				userId,
+				status,
+				checkInMethod,
+				code,
+			});
+			if (!res.success) {
+				return NextResponse.json({ error: res.error }, { status: 400 });
+			}
+			return NextResponse.json({ success: true, record: res.record });
+		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json(
@@ -267,3 +289,6 @@ export async function POST(req: NextRequest) {
 		);
 	}
 }
+
+export const PATCH = POST;
+

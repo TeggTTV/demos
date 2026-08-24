@@ -10,6 +10,9 @@ import PageLoader from '@/components/ui/PageLoader';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { MOCK_USERS } from '@/mock/mockData';
+
 function LoginContent() {
 	const { loginUser } = useAppContext();
 	const searchParams = useSearchParams();
@@ -26,9 +29,23 @@ function LoginContent() {
 		setLoading(true);
 		setError('');
 
-		const res = await loginUser(email, password);
+		const res = await loginUser(email, password || 'password123');
 		setLoading(false);
 
+		if (res.success) {
+			router.push(redirectUrl);
+		} else {
+			setError(res.error || 'Login failed');
+		}
+	};
+
+	const handleQuickLogin = async (userEmail: string) => {
+		setEmail(userEmail);
+		setPassword('password123');
+		setLoading(true);
+		setError('');
+		const res = await loginUser(userEmail, 'password123');
+		setLoading(false);
 		if (res.success) {
 			router.push(redirectUrl);
 		} else {
@@ -57,6 +74,42 @@ function LoginContent() {
 					</p>
 				</div>
 
+				{USE_MOCK_DATA && (
+					<div className="rounded-xl border border-primary/20 bg-primary-light/40 p-3.5 space-y-2.5">
+						<div className="flex items-center justify-between">
+							<span className="text-[11px] font-bold text-primary uppercase tracking-wider">
+								⚡ Demo Mode: 1-Click Login
+							</span>
+							<span className="text-[10px] text-text-muted">
+								No password needed
+							</span>
+						</div>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+							{MOCK_USERS.slice(0, 6).map((u) => (
+								<button
+									key={u.id}
+									type="button"
+									onClick={() => handleQuickLogin(u.email)}
+									disabled={loading}
+									className="text-left px-2.5 py-2 rounded-lg bg-surface border border-border hover:border-primary text-xs transition-all flex items-center gap-2 group cursor-pointer"
+								>
+									<span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
+										{u.name.charAt(0)}
+									</span>
+									<div className="truncate">
+										<p className="font-semibold text-text-primary group-hover:text-primary truncate text-[11px]">
+											{u.name}
+										</p>
+										<p className="text-[9px] text-text-muted truncate">
+											{u.role === 'LEADER' ? '👑 Leader' : '👤 Member'} • {u.major}
+										</p>
+									</div>
+								</button>
+							))}
+						</div>
+					</div>
+				)}
+
 				<form onSubmit={handleLogin} className="space-y-4">
 					{error && (
 						<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-3 rounded-lg text-center">
@@ -79,7 +132,7 @@ function LoginContent() {
 						placeholder="••••••••"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
-						required
+						required={!USE_MOCK_DATA}
 					/>
 
 					<button

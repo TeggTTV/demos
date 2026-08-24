@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { FiCalendar, FiMapPin, FiArrowRight, FiPlusCircle } from 'react-icons/fi';
 import { Group, User } from '@/types/models';
 import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
+import MemberAvatarStack from '@/components/group/MemberAvatarStack';
 import ScrollReveal, {
 	ScrollStaggerContainer,
 	ScrollStaggerItem,
@@ -111,13 +112,16 @@ export default function LandingSpotlightSection({
 									</div>
 
 									{/* Footer stats & Action */}
-									<div className="mt-5 pt-3 border-t border-border flex items-center justify-between">
-										<span className="text-[11px] font-medium text-text-muted">
-											👥 {club.memberIds.length} Members
-										</span>
+									<div className="mt-5 pt-3 border-t border-border flex items-center justify-between gap-2">
+										<MemberAvatarStack
+											memberIds={club.memberIds}
+											leaderId={club.leaderId}
+											maxDisplay={4}
+											size="sm"
+										/>
 										<Link
 											href={`/group/${club.id}/feed`}
-											className="rounded-lg bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-all"
+											className="rounded-lg bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-all shrink-0"
 										>
 											View Club
 										</Link>

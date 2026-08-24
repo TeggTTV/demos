@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 export async function POST(req: Request) {
 	try {
@@ -10,6 +11,10 @@ export async function POST(req: Request) {
 				{ error: 'Missing userId or subscription payload' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ success: true, subscription });
 		}
 
 		if (!(await isDbConnected())) {
@@ -54,6 +59,10 @@ export async function DELETE(req: Request) {
 				{ error: 'Missing endpoint' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ success: true });
 		}
 
 		if (!(await isDbConnected())) {

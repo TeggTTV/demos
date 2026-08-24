@@ -108,6 +108,12 @@ export interface MeetingEvent {
 	bannerUrl?: string;
 	isAttendanceSession?: boolean;
 	eventType?: 'ACTIVITY' | 'ATTENDANCE_SESSION';
+	group?: {
+		id: string;
+		name: string;
+		bannerUrl?: string;
+		category?: string;
+	};
 }
 
 export interface AttendanceRecord {

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: Request) {
 	try {
@@ -11,6 +13,14 @@ export async function GET(req: Request) {
 				{ error: 'Missing userId parameter' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			const mockUser = mockStore.getUserById(userId);
+			if (mockUser && mockUser.avatarUrl) {
+				return NextResponse.redirect(new URL(mockUser.avatarUrl));
+			}
+			return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
 		}
 
 		if (!(await isDbConnected())) {
@@ -59,3 +69,31 @@ export async function GET(req: Request) {
 		return NextResponse.json({ error: error.message }, { status: 500 });
 	}
 }
+
+export async function PATCH(req: Request) {
+	try {
+		const body = await req.json();
+		const { name, avatarUrl, bio, major, year, phone, birthday, userId: bodyUserId } = body;
+
+		if (USE_MOCK_DATA) {
+			// Find first user or by bodyUserId
+			const targetId = bodyUserId || mockStore.getUsers()[0]?.id;
+			const updated = mockStore.updateUser(targetId, {
+				name,
+				avatarUrl,
+				bio,
+				major,
+				year,
+				phone,
+				birthday,
+			});
+			return NextResponse.json({ success: true, user: updated });
+		}
+
+		return NextResponse.json({ success: true });
+	} catch (error: unknown) {
+		console.error('Avatar PATCH Error:', error);
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+	}
+}
+

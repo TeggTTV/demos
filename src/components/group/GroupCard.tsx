@@ -7,6 +7,8 @@ import { FiShield, FiCalendar, FiMapPin, FiArrowRight } from 'react-icons/fi';
 import { Group, MeetingEvent, User } from '@/types/models';
 import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
 
+import MemberAvatarStack from '@/components/group/MemberAvatarStack';
+
 interface GroupCardProps {
 	club: Group;
 	currentUser: User | null;
@@ -146,11 +148,14 @@ export default function GroupCard({
 				</div>
 
 				{/* Footer */}
-				<div className="mt-5 pt-3 border-t border-border flex items-center justify-between">
-					<span className="text-[11px] font-medium text-text-muted">
-						👥 {club.memberIds.length} Members
-					</span>
-					<div className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-all shadow-2xs inline-flex items-center gap-1">
+				<div className="mt-5 pt-3 border-t border-border flex items-center justify-between gap-2">
+					<MemberAvatarStack
+						memberIds={club.memberIds}
+						leaderId={club.leaderId}
+						maxDisplay={4}
+						size="sm"
+					/>
+					<div className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-all shadow-2xs inline-flex items-center gap-1 shrink-0">
 						{isMember ? 'Enter Hub' : 'View Details'} <FiArrowRight size={12} />
 					</div>
 				</div>

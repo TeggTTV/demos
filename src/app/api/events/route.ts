@@ -4,6 +4,8 @@ import { prisma, isDbConnected } from '@/../utils/prisma';
 import type { Prisma } from '@/../generated/prisma';
 import { sendWebPushToGroupMembers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -13,9 +15,14 @@ export async function GET(req: NextRequest) {
 		}
 
 		const { searchParams } = new URL(req.url);
-		const groupId = searchParams.get('groupId');
-		const eventId = searchParams.get('eventId') || searchParams.get('sessionId');
-		const type = searchParams.get('type'); // 'activity' | 'attendance' | 'all'
+		const groupId = searchParams.get('groupId') || undefined;
+		const eventId = searchParams.get('eventId') || searchParams.get('sessionId') || undefined;
+		const type = searchParams.get('type') || undefined; // 'activity' | 'attendance' | 'all'
+
+		if (USE_MOCK_DATA) {
+			const mockEvents = mockStore.getEvents({ groupId, eventId, type });
+			return NextResponse.json({ events: mockEvents });
+		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -126,6 +133,11 @@ export async function POST(req: NextRequest) {
 				{ error: 'Missing required parameters' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			const newEvent = mockStore.createEvent(body, session.userId);
+			return NextResponse.json({ success: true, event: newEvent });
 		}
 
 		if (!(await isDbConnected())) {
@@ -240,6 +252,14 @@ export async function PUT(req: NextRequest) {
 			);
 		}
 
+		if (USE_MOCK_DATA) {
+			const updated = mockStore.updateEvent(eventId, body);
+			if (!updated) {
+				return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+			}
+			return NextResponse.json({ success: true, event: updated });
+		}
+
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
@@ -340,13 +360,18 @@ export async function DELETE(req: NextRequest) {
 		}
 
 		const { searchParams } = new URL(req.url);
-		const eventId = searchParams.get('eventId');
+		const eventId = searchParams.get('eventId') || searchParams.get('id');
 
 		if (!eventId) {
 			return NextResponse.json(
 				{ error: 'Missing eventId parameter' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			mockStore.deleteEvent(eventId);
+			return NextResponse.json({ success: true });
 		}
 
 		if (!(await isDbConnected())) {

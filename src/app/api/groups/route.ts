@@ -4,13 +4,18 @@ import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
 import { validateBase64Upload } from '@/../utils/validation';
-
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
 		const session = await getSession(req);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ groups: mockStore.getGroups() });
 		}
 
 		if (!(await isDbConnected())) {
@@ -85,6 +90,11 @@ export async function POST(req: NextRequest) {
 				{ error: 'Missing required club details (name, description)' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			const newGroup = mockStore.createGroup(body, session.userId);
+			return NextResponse.json({ success: true, group: newGroup });
 		}
 
 		if (name.trim().length < 2) {
@@ -211,6 +221,14 @@ export async function PUT(req: NextRequest) {
 				{ error: 'Missing groupId' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			const updated = mockStore.updateGroup(groupId, body);
+			if (!updated) {
+				return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+			}
+			return NextResponse.json({ success: true, group: updated });
 		}
 
 		if (!(await isDbConnected())) {
@@ -447,6 +465,11 @@ export async function DELETE(req: NextRequest) {
 				{ error: 'Missing groupId' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			mockStore.deleteGroup(groupId);
+			return NextResponse.json({ success: true });
 		}
 
 		if (!(await isDbConnected())) {

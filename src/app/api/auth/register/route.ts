@@ -4,9 +4,38 @@ import { encryptPassword } from '@/../utils/encryption';
 import { signToken, setSessionCookie } from '@/../utils/auth';
 import { isRateLimited } from '@/../utils/rateLimit';
 import { validateBase64Upload } from '@/../utils/validation';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function POST(req: Request) {
 	try {
+		if (USE_MOCK_DATA) {
+			const body = await req.json();
+			const { email, name, role, avatarUrl, bio, major, year } = body;
+			if (!email || !name) {
+				return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+			}
+			const mockRes = mockStore.register({
+				email,
+				name,
+				role: role || 'APPLICANT',
+				avatarUrl,
+				bio,
+				major,
+				year,
+			});
+			if (!mockRes.success || !mockRes.user) {
+				return NextResponse.json({ error: mockRes.error || 'Registration failed' }, { status: 400 });
+			}
+			const token = await signToken({
+				userId: mockRes.user.id,
+				email: mockRes.user.email,
+				role: mockRes.user.role,
+			});
+			const response = NextResponse.json({ success: true, user: mockRes.user });
+			setSessionCookie(response, token);
+			return response;
+		}
 		// 1. Rate Limiting by IP
 		const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
 		if (isRateLimited(`register_ip_${ip}`, 5, 5 * 60 * 1000)) {

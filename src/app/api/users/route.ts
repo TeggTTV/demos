@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/../utils/prisma';
 import { getSession } from '@/../utils/auth';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -11,6 +13,10 @@ export async function GET(req: NextRequest) {
 				{ error: 'Unauthorized' },
 				{ status: 401 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ users: mockStore.getUsers() });
 		}
 
 		// Update calling user's lastActive timestamp

@@ -39,7 +39,11 @@ export function ClubCardSkeleton() {
 
 				{/* Footer skeleton */}
 				<div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-					<div className="h-3.5 w-20 bg-surface-secondary/60 rounded-md animate-pulse" />
+					<div className="flex -space-x-1.5">
+						<div className="h-6 w-6 rounded-full bg-surface-secondary/80 animate-pulse border-2 border-surface" />
+						<div className="h-6 w-6 rounded-full bg-surface-secondary/60 animate-pulse border-2 border-surface" />
+						<div className="h-6 w-6 rounded-full bg-surface-secondary/40 animate-pulse border-2 border-surface" />
+					</div>
 					<div className="h-8 w-24 bg-surface-secondary/80 rounded-xl animate-pulse" />
 				</div>
 			</div>

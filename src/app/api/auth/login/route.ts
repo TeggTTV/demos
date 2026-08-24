@@ -3,9 +3,31 @@ import { prisma, isDbConnected } from '@/../utils/prisma';
 import { decryptPassword } from '@/../utils/encryption';
 import { signToken, setSessionCookie } from '@/../utils/auth';
 import { isRateLimited } from '@/../utils/rateLimit';
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function POST(req: Request) {
 	try {
+		// Mock Mode Authentication
+		if (USE_MOCK_DATA) {
+			const body = await req.json();
+			const { email, password } = body;
+			if (!email) {
+				return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+			}
+			const mockRes = mockStore.login(email, password);
+			if (!mockRes.success || !mockRes.user) {
+				return NextResponse.json({ error: mockRes.error || 'Invalid credentials' }, { status: 401 });
+			}
+			const token = await signToken({
+				userId: mockRes.user.id,
+				email: mockRes.user.email,
+				role: mockRes.user.role,
+			});
+			const response = NextResponse.json({ success: true, user: mockRes.user });
+			setSessionCookie(response, token);
+			return response;
+		}
 		// 1. Get client IP for rate limiting
 		const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
 

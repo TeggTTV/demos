@@ -4,7 +4,8 @@ import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToGroupMembers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
 import { validateBase64Upload } from '@/../utils/validation';
-
+import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -18,6 +19,10 @@ export async function GET(req: NextRequest) {
 
 		if (!groupId) {
 			return NextResponse.json({ error: 'Missing groupId parameter' }, { status: 400 });
+		}
+
+		if (USE_MOCK_DATA) {
+			return NextResponse.json({ messages: mockStore.getFeedMessages(groupId) });
 		}
 
 		if (!(await isDbConnected())) {
@@ -105,6 +110,19 @@ export async function POST(req: NextRequest) {
 				{ error: 'Missing required parameters (groupId, content/file)' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			const newMsg = mockStore.postFeedMessage({
+				groupId,
+				userId: session.userId,
+				content: content || '',
+				fileName,
+				fileUrl,
+				isAnnouncement,
+				pinned,
+			});
+			return NextResponse.json({ success: true, message: newMsg });
 		}
 
 		// Restrict File Uploads
@@ -211,6 +229,11 @@ export async function DELETE(req: NextRequest) {
 				{ error: 'Missing messageId parameter' },
 				{ status: 400 },
 			);
+		}
+
+		if (USE_MOCK_DATA) {
+			mockStore.deleteFeedMessage(messageId);
+			return NextResponse.json({ success: true });
 		}
 
 		if (!(await isDbConnected())) {
