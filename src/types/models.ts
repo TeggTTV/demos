@@ -167,7 +167,7 @@ export interface AppContextType {
 		year?: string,
 	) => Promise<{ success: boolean; error?: string }>;
 	logoutUser: () => void;
-	sendJoinRequest: (groupId: string, message?: string) => Promise<void>;
+	sendJoinRequest: (groupId: string, message?: string) => Promise<{ success: boolean; error?: string }>;
 	approveRequest: (requestId: string) => Promise<void>;
 	declineRequest: (requestId: string) => Promise<void>;
 	postMessage: (

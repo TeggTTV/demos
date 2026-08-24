@@ -2,7 +2,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 
 interface ScheduleMeetingModalProps {
@@ -23,8 +22,8 @@ interface ScheduleMeetingModalProps {
 	setMeetingDesc: (val: string) => void;
 	meetingEndDate: string;
 	setMeetingEndDate: (val: string) => void;
-	meetingStatus: string;
-	setMeetingStatus: (val: string) => void;
+	meetingStatus?: string;
+	setMeetingStatus?: (val: string) => void;
 	creatingEvent: boolean;
 }
 
@@ -46,8 +45,6 @@ export default function ScheduleMeetingModal({
 	setMeetingDesc,
 	meetingEndDate,
 	setMeetingEndDate,
-	meetingStatus,
-	setMeetingStatus,
 	creatingEvent,
 }: ScheduleMeetingModalProps) {
 	return (
@@ -78,10 +75,7 @@ export default function ScheduleMeetingModal({
 							</button>
 						</div>
 
-						<form
-							onSubmit={onSubmit}
-							className="space-y-4"
-						>
+						<form onSubmit={onSubmit} className="space-y-4">
 							<Input
 								label="Meeting Title"
 								required
@@ -93,35 +87,24 @@ export default function ScheduleMeetingModal({
 							/>
 
 							<div className="grid grid-cols-2 gap-3">
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Date
-									</label>
-									<input
-										type="date"
-										required
-										value={meetingDate}
-										onChange={(e) =>
-											setMeetingDate(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-									/>
-								</div>
-
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										Time
-									</label>
-									<input
-										type="time"
-										required
-										value={meetingTime}
-										onChange={(e) =>
-											setMeetingTime(e.target.value)
-										}
-										className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-									/>
-								</div>
+								<Input
+									label="Date"
+									type="date"
+									required
+									value={meetingDate}
+									onChange={(e) =>
+										setMeetingDate(e.target.value)
+									}
+								/>
+								<Input
+									label="Time"
+									type="time"
+									required
+									value={meetingTime}
+									onChange={(e) =>
+										setMeetingTime(e.target.value)
+									}
+								/>
 							</div>
 
 							<div className="grid grid-cols-2 gap-3">
@@ -152,32 +135,14 @@ export default function ScheduleMeetingModal({
 								placeholder="Agenda or notes for this meeting..."
 							/>
 
-							<div className="grid grid-cols-2 gap-3">
-								<div>
-									<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-										End Date (Optional)
-									</label>
-									<input
-										type="date"
-										value={meetingEndDate}
-										onChange={(e) =>
-											setMeetingEndDate(
-												e.target.value,
-											)
-										}
-										className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-									/>
-								</div>
-
-								<Select
-									label="Status"
-									value={meetingStatus}
-									onChange={(e) => setMeetingStatus(e.target.value)}
-								>
-									<option value="PUBLISHED">Published / Open</option>
-									<option value="NOT_SENT">Draft / Closed</option>
-								</Select>
-							</div>
+							<Input
+								label="End Date (Optional)"
+								type="date"
+								value={meetingEndDate}
+								onChange={(e) =>
+									setMeetingEndDate(e.target.value)
+								}
+							/>
 
 							<div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-2">
 								<button

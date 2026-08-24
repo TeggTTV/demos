@@ -22,6 +22,7 @@ import {
 	BANNER_IMAGE_PRESETS,
 } from '@/constants/bannerPresets';
 import ClubBanner from '@/components/ui/ClubBanner';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 
 interface ClubSettingsTabProps {
 	group: Group;
@@ -100,6 +101,7 @@ export default function ClubSettingsTab({
 		group.websiteUrl || '',
 	);
 	const [fileSizeErrorSettings, setFileSizeErrorSettings] = useState('');
+	const [showDeleteInviteModal, setShowDeleteInviteModal] = useState(false);
 	const [updatingSettings, setUpdatingSettings] = useState(false);
 	const [settingsSuccess, setSettingsSuccess] = useState(false);
 
@@ -238,19 +240,7 @@ export default function ClubSettingsTab({
 								{activeInviteCode && (
 									<button
 										type="button"
-										onClick={async () => {
-											if (
-												confirm(
-													'Are you sure you want to delete all invite links for this club? Existing codes/links and QR codes will no longer work.',
-												)
-											) {
-												const res =
-													await deleteClubInvites(group.id);
-												if (res.success) {
-													setGeneratedInviteCode('');
-												}
-											}
-										}}
+										onClick={() => setShowDeleteInviteModal(true)}
 										className="rounded-lg bg-danger px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 shadow-2xs transition-all cursor-pointer"
 									>
 										Delete Link
@@ -754,6 +744,22 @@ export default function ClubSettingsTab({
 					</form>
 				)}
 			</div>
+
+			<ConfirmModal
+				isOpen={showDeleteInviteModal}
+				title="Delete All Invite Links"
+				message="Are you sure you want to delete all invite links for this club? Existing codes, links, and QR codes will immediately stop working."
+				confirmText="Delete Invite Links"
+				isDestructive
+				onConfirm={async () => {
+					const res = await deleteClubInvites(group.id);
+					if (res.success) {
+						setGeneratedInviteCode('');
+					}
+					setShowDeleteInviteModal(false);
+				}}
+				onClose={() => setShowDeleteInviteModal(false)}
+			/>
 		</main>
 	);
 }

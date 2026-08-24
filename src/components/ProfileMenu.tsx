@@ -203,14 +203,6 @@ export default function ProfileMenu() {
 									>
 										Create Account
 									</Link>
-									<Link
-										href="/settings"
-										onClick={() => setProfileOpen(false)}
-										className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors"
-									>
-										<FiSettings size={15} />
-										Settings
-									</Link>
 								</div>
 							</>
 						)}

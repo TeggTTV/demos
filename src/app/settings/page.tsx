@@ -25,6 +25,7 @@ import {
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import PageLoader from '@/components/ui/PageLoader';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 
 const NOTIFICATION_KEYS: NotificationType[] = [
 	'feed_message',
@@ -60,6 +61,7 @@ export default function SettingsPage() {
 	const [isInstalled, setIsInstalled] = useState(false);
 	const [testSent, setTestSent] = useState(false);
 	const [saveSuccess, setSaveSuccess] = useState(false);
+	const [showClearConfirm, setShowClearConfirm] = useState(false);
 
 	// Detect PWA install state and install prompt
 	/* eslint-disable react-hooks/set-state-in-effect */
@@ -504,15 +506,7 @@ export default function SettingsPage() {
 							</p>
 						</div>
 						<button
-							onClick={() => {
-								if (
-									confirm(
-										'Are you sure you want to clear all notification history?',
-									)
-								) {
-									clearAllNotifications();
-								}
-							}}
+							onClick={() => setShowClearConfirm(true)}
 							className="inline-flex items-center gap-1.5 rounded-xl border border-danger/20 bg-danger-bg px-3.5 py-2 text-xs font-semibold text-danger hover:bg-danger/10 transition-colors cursor-pointer"
 						>
 							<FiTrash2 size={13} />
@@ -521,6 +515,19 @@ export default function SettingsPage() {
 					</div>
 				</div>
 			</main>
+
+			<ConfirmModal
+				isOpen={showClearConfirm}
+				title="Clear Notification History"
+				message="Are you sure you want to clear all in-app notification history on this device? This cannot be undone."
+				confirmText="Clear Notifications"
+				isDestructive
+				onConfirm={() => {
+					clearAllNotifications();
+					setShowClearConfirm(false);
+				}}
+				onClose={() => setShowClearConfirm(false)}
+			/>
 
 			<Footer />
 		</div>

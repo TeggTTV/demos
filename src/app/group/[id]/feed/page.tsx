@@ -16,6 +16,7 @@ import ClubSettingsTab from '@/components/group/tabs/ClubSettingsTab';
 import ClubActivitiesTab from '@/components/group/tabs/ClubActivitiesTab';
 import CreateEventModal from '@/components/group/CreateEventModal';
 import ScheduleMeetingModal from '@/components/group/ScheduleMeetingModal';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 export default function GroupFeedPage() {
@@ -172,6 +173,9 @@ export default function GroupFeedPage() {
 		'data' | 'login' | 'costs'
 	>('data');
 	const [creatingEvent, setCreatingEvent] = useState(false);
+	const [activityToDelete, setActivityToDelete] = useState<string | null>(
+		null,
+	);
 
 	// Schedule Meeting Modal State
 	const [createMeetingModal, setCreateMeetingModal] = useState(false);
@@ -461,10 +465,7 @@ export default function GroupFeedPage() {
 	};
 
 	const handleDeleteActivity = async (activityId: string) => {
-		if (confirm('Are you sure you want to delete this activity?')) {
-			await deleteMeetingEvent(activityId);
-			fetchEvents(id, 'activity');
-		}
+		setActivityToDelete(activityId);
 	};
 
 	const handleRSVP = async (eventId: string, status: string) => {
@@ -663,6 +664,22 @@ export default function GroupFeedPage() {
 				meetingStatus={meetingStatus}
 				setMeetingStatus={setMeetingStatus}
 				creatingEvent={creatingEvent}
+			/>
+
+			<ConfirmModal
+				isOpen={Boolean(activityToDelete)}
+				title="Delete Activity"
+				message="Are you sure you want to delete this activity? This will permanently delete scheduled sessions and turnout records for this event."
+				confirmText="Delete Activity"
+				isDestructive
+				onConfirm={async () => {
+					if (activityToDelete) {
+						await deleteMeetingEvent(activityToDelete);
+						fetchEvents(id, 'activity');
+						setActivityToDelete(null);
+					}
+				}}
+				onClose={() => setActivityToDelete(null)}
 			/>
 
 			<Footer />

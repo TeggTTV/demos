@@ -121,14 +121,27 @@ function SearchContent() {
 		return isVisible && matchQ && matchCat && matchDays;
 	});
 
+	const [joinError, setJoinError] = useState('');
+	const [isSubmittingJoin, setIsSubmittingJoin] = useState(false);
+
 	const handleRequestJoin = async (groupId: string) => {
-		await sendJoinRequest(groupId, joinMessage);
-		setJoinSuccess(true);
-		setTimeout(() => {
-			setJoinSuccess(false);
-			setSelectedClub(null);
-			setJoinMessage('');
-		}, 1500);
+		setIsSubmittingJoin(true);
+		setJoinError('');
+		setJoinSuccess(false);
+
+		const res = await sendJoinRequest(groupId, joinMessage);
+		setIsSubmittingJoin(false);
+
+		if (res.success) {
+			setJoinSuccess(true);
+			setTimeout(() => {
+				setJoinSuccess(false);
+				setSelectedClub(null);
+				setJoinMessage('');
+			}, 1500);
+		} else {
+			setJoinError(res.error || 'Failed to submit application. Please try again.');
+		}
 	};
 
 	const handleCreateClubClick = () => {
@@ -317,12 +330,17 @@ function SearchContent() {
 
 			<ClubDetailModal
 				club={selectedClub}
-				onClose={() => setSelectedClub(null)}
+				onClose={() => {
+					setSelectedClub(null);
+					setJoinError('');
+				}}
 				currentUser={currentUser}
 				requests={requests}
 				joinMessage={joinMessage}
 				setJoinMessage={setJoinMessage}
 				joinSuccess={joinSuccess}
+				joinError={joinError}
+				isSubmitting={isSubmittingJoin}
 				onRequestJoin={handleRequestJoin}
 			/>
 

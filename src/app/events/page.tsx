@@ -22,6 +22,7 @@ import EventDetailModal, {
 import MembersOnlyModal from '@/components/modals/MembersOnlyModal';
 import AuthGateModal from '@/components/modals/AuthGateModal';
 import { EventCardSkeleton } from '@/components/ui/Skeleton';
+import { Input } from '@/components/ui/Input';
 import ScrollReveal, {
 	ScrollStaggerContainer,
 	ScrollStaggerItem,
@@ -179,17 +180,12 @@ export default function EventsPage() {
 				{/* Search & Category Filter Bar */}
 				<div className="space-y-4">
 					<div className="flex flex-col sm:flex-row gap-3">
-						<div className="grow relative">
-							<FiSearch
-								className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-								size={16}
-							/>
-							<input
-								type="text"
+						<div className="grow">
+							<Input
+								icon={FiSearch}
 								placeholder="Search events by title, description, club name, or campus room..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								className="w-full rounded-xl border border-border bg-surface pl-10 pr-4 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
 							/>
 						</div>
 					</div>

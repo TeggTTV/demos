@@ -54,32 +54,36 @@ export default function ClubBanner({
 
 	if (isImageUrl) {
 		return (
-			<Image
-				src={trimmed}
-				alt={alt}
-				fill
-				unoptimized
-				priority={priority}
-				className={className}
-				onError={() => setHasError(true)}
-			/>
+			<div className="relative w-full h-full">
+				<Image
+					src={trimmed}
+					alt={alt}
+					fill
+					unoptimized
+					priority={priority}
+					className={className}
+					onError={() => setHasError(true)}
+				/>
+				<div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15 pointer-events-none" />
+			</div>
 		);
 	}
 
 	if (isGradientOrColor) {
 		return (
-			<div
-				className="w-full h-full"
-				style={{ background: trimmed }}
-			/>
+			<div className="relative w-full h-full" style={{ background: trimmed }}>
+				<div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
+			</div>
 		);
 	}
 
 	// Fallback when bannerUrl is missing, invalid, or failed to load
 	return (
 		<div
-			className="w-full h-full"
+			className="relative w-full h-full"
 			style={{ background: fallbackGradient }}
-		/>
+		>
+			<div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
+		</div>
 	);
 }

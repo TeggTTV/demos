@@ -268,7 +268,17 @@ export default function CreateEventModal({
 						</div>
 
 						{/* Form Step Body */}
-						<form onSubmit={onSubmit} className="space-y-4">
+						<form
+							onSubmit={(e) => {
+								if (currentStepIndex < STEPS.length - 1) {
+									e.preventDefault();
+									goToNextStep();
+								} else {
+									onSubmit(e);
+								}
+							}}
+							className="space-y-4"
+						>
 							{modalActiveTab === 'data' && (
 								<EventBasicDetailsStep
 									eventTitle={eventTitle}

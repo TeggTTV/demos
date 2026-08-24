@@ -213,6 +213,10 @@ export async function POST(req: NextRequest) {
 	}
 }
 
+export async function PATCH(req: NextRequest) {
+	return PUT(req);
+}
+
 export async function PUT(req: NextRequest) {
 	try {
 		const body = await req.json();

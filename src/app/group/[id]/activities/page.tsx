@@ -585,11 +585,11 @@ export default function GroupActivitiesPage() {
 																{/* Price Badge */}
 																{item.price && (
 																	<span className="text-[10px] font-bold bg-primary/20 text-primary-200 px-2 py-0.5 rounded-lg shadow-2xs mb-0.5">
-																		{item.price.includes(
-																			'p',
-																		)
-																			? item.price
-																			: `$${item.price} p/p`}
+																		{item.price === '0' || item.price.toLowerCase() === 'free'
+																			? 'Free'
+																			: item.price.startsWith('$')
+																				? item.price
+																				: `$${item.price}`}
 																	</span>
 																)}
 

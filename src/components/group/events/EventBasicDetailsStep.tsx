@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiChevronDown, FiCheckCircle } from 'react-icons/fi';
+import { FiChevronDown, FiCheckCircle } from 'react-icons/fi';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
@@ -66,69 +66,38 @@ export default function EventBasicDetailsStep({
 			/>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-				<div>
-					<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-						Date
-					</label>
-					<input
-						type="date"
-						required
-						value={eventDate}
-						onChange={(e) => setEventDate(e.target.value)}
-						className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none"
-					/>
-				</div>
+				<Input
+					label="Date"
+					type="date"
+					required
+					value={eventDate}
+					onChange={(e) => setEventDate(e.target.value)}
+				/>
 
-				<div>
-					<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-						End Date (Optional)
-					</label>
-					<div className="relative">
-						<input
-							type="date"
-							value={activityEndDate}
-							onChange={(e) => setActivityEndDate(e.target.value)}
-							className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none pr-8"
-						/>
-						{activityEndDate && (
-							<button
-								type="button"
-								onClick={() => setActivityEndDate('')}
-								className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-0.5 cursor-pointer"
-							>
-								<FiX size={14} />
-							</button>
-						)}
-					</div>
-				</div>
+				<Input
+					label="End Date (Optional)"
+					type="date"
+					value={activityEndDate}
+					onChange={(e) => setActivityEndDate(e.target.value)}
+				/>
 			</div>
 
 			<div className="grid grid-cols-2 gap-3">
-				<div>
-					<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-						Start Time
-					</label>
-					<input
-						type="time"
-						disabled={activityAllDay}
-						value={eventTime}
-						onChange={(e) => setEventTime(e.target.value)}
-						className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none disabled:opacity-50"
-					/>
-				</div>
+				<Input
+					label="Start Time"
+					type="time"
+					disabled={activityAllDay}
+					value={eventTime}
+					onChange={(e) => setEventTime(e.target.value)}
+				/>
 
-				<div>
-					<label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
-						End Time
-					</label>
-					<input
-						type="time"
-						disabled={activityAllDay}
-						value={activityEndTime}
-						onChange={(e) => setActivityEndTime(e.target.value)}
-						className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none disabled:opacity-50"
-					/>
-				</div>
+				<Input
+					label="End Time"
+					type="time"
+					disabled={activityAllDay}
+					value={activityEndTime}
+					onChange={(e) => setActivityEndTime(e.target.value)}
+				/>
 			</div>
 
 			<div className="grid grid-cols-2 gap-4 py-1">
@@ -162,7 +131,9 @@ export default function EventBasicDetailsStep({
 					<div className="relative">
 						<motion.button
 							type="button"
-							onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
+							onClick={() =>
+								setIsLocDropdownOpen(!isLocDropdownOpen)
+							}
 							animate={{
 								scale: isLocDropdownOpen ? 1.01 : 1,
 								boxShadow: isLocDropdownOpen
@@ -239,7 +210,9 @@ export default function EventBasicDetailsStep({
 										<button
 											type="button"
 											onClick={() => {
-												setActivityLocationType('fixed');
+												setActivityLocationType(
+													'fixed',
+												);
 												setIsLocDropdownOpen(false);
 											}}
 											className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
@@ -251,14 +224,17 @@ export default function EventBasicDetailsStep({
 											<span className="flex items-center gap-2">
 												📍 Fixed location
 											</span>
-											{activityLocationType === 'fixed' && (
+											{activityLocationType ===
+												'fixed' && (
 												<FiCheckCircle size={12} />
 											)}
 										</button>
 										<button
 											type="button"
 											onClick={() => {
-												setActivityLocationType('house');
+												setActivityLocationType(
+													'house',
+												);
 												setIsLocDropdownOpen(false);
 											}}
 											className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
@@ -270,18 +246,22 @@ export default function EventBasicDetailsStep({
 											<span className="flex items-center gap-2">
 												🏠 Member&apos;s house
 											</span>
-											{activityLocationType === 'house' && (
+											{activityLocationType ===
+												'house' && (
 												<FiCheckCircle size={12} />
 											)}
 										</button>
 										<button
 											type="button"
 											onClick={() => {
-												setActivityLocationType('custom');
+												setActivityLocationType(
+													'custom',
+												);
 												setIsLocDropdownOpen(false);
 											}}
 											className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-												activityLocationType === 'custom'
+												activityLocationType ===
+												'custom'
 													? 'bg-primary/10 text-primary'
 													: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
 											}`}
@@ -289,7 +269,8 @@ export default function EventBasicDetailsStep({
 											<span className="flex items-center gap-2">
 												✏️ Type address myself
 											</span>
-											{activityLocationType === 'custom' && (
+											{activityLocationType ===
+												'custom' && (
 												<FiCheckCircle size={12} />
 											)}
 										</button>
@@ -300,14 +281,14 @@ export default function EventBasicDetailsStep({
 					</div>
 				</div>
 
-				<Select
+				{/* <Select
 					label="Visibility"
 					value={activityStatus}
 					onChange={(e) => setActivityStatus(e.target.value)}
 				>
 					<option value="PUBLISHED">Published / Open</option>
 					<option value="NOT_SENT">Draft / Closed</option>
-				</Select>
+				</Select> */}
 			</div>
 
 			<Textarea

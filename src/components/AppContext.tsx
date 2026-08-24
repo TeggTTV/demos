@@ -550,8 +550,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Join Request Handlers ─── */
 	const sendJoinRequest = useCallback(
-		async (groupId: string, message?: string) => {
-			if (!currentUser) return;
+		async (groupId: string, message?: string): Promise<{ success: boolean; error?: string }> => {
+			if (!currentUser) return { success: false, error: 'Please log in to join clubs.' };
 			try {
 				const data = await apiClient.sendJoinRequest(groupId, message);
 				if (data.request) {
@@ -563,9 +563,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						groupId,
 						url: `/pending`,
 					});
+					return { success: true };
 				}
+				return {
+					success: false,
+					error: 'Failed to submit application',
+				};
 			} catch (e) {
 				console.error('sendJoinRequest error:', e);
+				const errorMsg =
+					e instanceof Error ? e.message : 'Network error occurred';
+				return { success: false, error: errorMsg };
 			}
 		},
 		[currentUser, triggerNotification],
@@ -714,7 +722,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					pinned,
 				});
 				if (data.success && data.message) {
-					setFeedMessages((prev) => [data.message!, ...prev]);
+					setFeedMessages((prev) => [...prev, data.message!]);
 				}
 			} catch (e) {
 				console.error('postMessage error:', e);

@@ -60,12 +60,29 @@ export default function ClubFeedTab({
 
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-	const groupMessages = feedMessages.filter((m) => m.groupId === group.id);
+	const groupMessages = feedMessages
+		.filter((m) => m.groupId === group.id)
+		.sort(
+			(a, b) =>
+				new Date(a.createdAt).getTime() -
+				new Date(b.createdAt).getTime(),
+		);
 
-	const getUserName = (uid: string) =>
-		users.find((u) => u.id === uid)?.name || 'Club Member';
-	const getUserAvatar = (uid: string) =>
-		users.find((u) => u.id === uid)?.avatarUrl;
+	const getUserName = (msg: FeedMessage) => {
+		if (msg.user?.name) return msg.user.name;
+		const found = users.find((u) => u.id === msg.userId);
+		if (found?.name) return found.name;
+		if (currentUser && currentUser.id === msg.userId) return currentUser.name;
+		return 'Club Member';
+	};
+
+	const getUserAvatar = (msg: FeedMessage) => {
+		if (msg.user?.avatarUrl) return msg.user.avatarUrl;
+		const found = users.find((u) => u.id === msg.userId);
+		if (found?.avatarUrl) return found.avatarUrl;
+		if (currentUser && currentUser.id === msg.userId) return currentUser.avatarUrl;
+		return undefined;
+	};
 
 	const filteredMessages = groupMessages.filter((m) => {
 		if (feedFilter === 'announcements') return m.isAnnouncement;
@@ -178,8 +195,8 @@ export default function ClubFeedTab({
 					) : (
 						filteredMessages.map((msg) => {
 							const isMe = currentUser ? msg.userId === currentUser.id : false;
-							const authorName = getUserName(msg.userId);
-							const avatar = getUserAvatar(msg.userId);
+							const authorName = getUserName(msg);
+							const avatar = getUserAvatar(msg);
 							const authorIsLeader = group.leaderId === msg.userId;
 							const authorIsOfficer = Boolean(
 								group.officerIds &&
@@ -268,7 +285,11 @@ export default function ClubFeedTab({
 											)}
 
 											<p className="whitespace-pre-wrap">
-												{msg.content}
+												{msg.content || (
+													<span className="italic text-text-muted">
+														(Attached file with no message)
+													</span>
+												)}
 											</p>
 
 											{/* File attachment preview */}
@@ -301,7 +322,7 @@ export default function ClubFeedTab({
 				>
 					{fileInput && (
 						<div className="flex items-center justify-between p-2 rounded-lg bg-primary-light text-xs text-primary">
-							<span className="flex items-center gap-1.5 truncate">
+							<span className="flex items-center gap-1.5 truncate font-medium">
 								<FiPaperclip /> {fileInput.name}
 							</span>
 							<button
@@ -328,23 +349,15 @@ export default function ClubFeedTab({
 						/>
 
 						{fileSizeErrorFeed && (
-							<div className="absolute bottom-full mb-2 left-0 right-0 z-10 flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium">
+							<div className="absolute bottom-full mb-2 left-0 right-0 z-10 flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-bg px-3 py-2 text-[11px] text-danger font-medium shadow-md">
 								<span className="shrink-0 mt-0.5">⚠️</span>
 								<span className="grow">
-									{fileSizeErrorFeed}{' '}
-									<a
-										href="https://joeyjazwinski.com/developer-tools/image-compressor"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="underline font-semibold hover:text-danger/80 transition-colors"
-									>
-										Compress images here →
-									</a>
+									{fileSizeErrorFeed}
 								</span>
 								<button
 									type="button"
 									onClick={() => setFileSizeErrorFeed('')}
-									className="text-danger hover:text-danger-hover font-bold px-1"
+									className="text-danger hover:text-danger-hover font-bold px-1 cursor-pointer"
 								>
 									✕
 								</button>
@@ -352,18 +365,28 @@ export default function ClubFeedTab({
 						)}
 						<label
 							className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-secondary cursor-pointer transition-colors"
-							title="Attach File or Flyer"
+							title="Attach File, Document, Image, or Spreadsheet"
 						>
 							<FiPaperclip size={18} />
 							<input
 								type="file"
+								accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
 								className="hidden"
 								onChange={(e) => {
 									if (e.target.files?.[0]) {
 										const file = e.target.files[0];
-										if (file.size > 200000) {
+										const ext = file.name.split('.').pop()?.toLowerCase() || '';
+										const allowedExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'csv'];
+										
+										if (!allowedExts.includes(ext)) {
+											setFileSizeErrorFeed('Disallowed file type. Supported formats: Images, PDFs, Docs, and Spreadsheets (.xlsx, .xls, .csv).');
+											e.target.value = '';
+											return;
+										}
+
+										if (file.size > 2000000) {
 											setFileSizeErrorFeed(
-												'File is too large (max 200 KB).',
+												'File is too large (max 2 MB).',
 											);
 											e.target.value = '';
 											return;

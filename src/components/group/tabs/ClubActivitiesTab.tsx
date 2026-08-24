@@ -1,16 +1,17 @@
 'use client';
 
+import React, { useState } from 'react';
 import {
 	FiPlus,
-	FiGift,
-	FiChevronRight,
 	FiCalendar,
 	FiClock,
 	FiMapPin,
 	FiCheckCircle,
+	FiEye,
 } from 'react-icons/fi';
 import { Group, User, MeetingEvent, AttendanceRecord } from '@/types/models';
 import { getEnglishWeekday, getEnglishMonth } from '@/utils/dateUtils';
+import ActivityDetailModal from '@/components/group/modals/ActivityDetailModal';
 
 interface ClubActivitiesTabProps {
 	group: Group;
@@ -19,8 +20,8 @@ interface ClubActivitiesTabProps {
 	clubActivities: MeetingEvent[];
 	attendances: AttendanceRecord[];
 	canManage: boolean;
-	showBirthdaysTab: boolean;
-	setShowBirthdaysTab: (val: boolean) => void;
+	showBirthdaysTab?: boolean;
+	setShowBirthdaysTab?: (val: boolean) => void;
 	onOpenCreateModal: () => void;
 	onEditActivity: (activity: MeetingEvent) => void;
 	onDeleteActivity: (activityId: string) => Promise<void>;
@@ -28,77 +29,37 @@ interface ClubActivitiesTabProps {
 }
 
 export default function ClubActivitiesTab({
-	group,
 	currentUser,
-	users,
 	clubActivities,
 	attendances,
 	canManage,
-	showBirthdaysTab,
 	onOpenCreateModal,
 	onEditActivity,
 	onDeleteActivity,
 	onRSVP,
 }: ClubActivitiesTabProps) {
-	// Gather and sort items
-	const clubEvts = clubActivities.map((e) => ({
-		...e,
-		isBirthday: false as const,
-		dateTime: new Date(`${e.date}T${e.time || '00:00'}`),
-	}));
+	const [viewActivity, setViewActivity] = useState<MeetingEvent | null>(null);
 
-	interface BirthdayEvent {
-		id: string;
-		isBirthday: true;
-		title: string;
-		date: string;
-		dateTime: Date;
-		age: number;
-	}
+	// Gather and sort items: From closest coming up (most recent) to most past
+	const items = clubActivities
+		.map((e) => ({
+			...e,
+			dateTime: new Date(`${e.date}T${e.time || '00:00'}`),
+		}))
+		.sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
 
-	const bdayEvts: BirthdayEvent[] = [];
-	if (showBirthdaysTab) {
-		const groupMembers = users.filter(
-			(u) => group.memberIds.includes(u.id) || group.leaderId === u.id,
-		);
-		groupMembers.forEach((mem) => {
-			if (mem.birthday) {
-				const bParts = mem.birthday.split('-');
-				if (bParts.length === 3) {
-					const birthYear = parseInt(bParts[0]);
-					const birthMonth = parseInt(bParts[1]) - 1;
-					const birthDay = parseInt(bParts[2]);
-
-					const bDate = new Date(2026, birthMonth, birthDay);
-					const age = 2026 - birthYear;
-
-					bdayEvts.push({
-						id: `bday_${mem.id}_${mem.birthday}`,
-						isBirthday: true,
-						title: mem.name,
-						date: `2026-${String(birthMonth + 1).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`,
-						dateTime: bDate,
-						age,
-					});
-				}
-			}
-		});
-	}
-
-	type TimelineItem =
-		| (MeetingEvent & { isBirthday: false; dateTime: Date })
-		| BirthdayEvent;
-
-	const items: TimelineItem[] = [...clubEvts, ...bdayEvts].sort(
-		(a, b) => a.dateTime.getTime() - b.dateTime.getTime(),
-	);
-
-	const grouped: { [key: string]: TimelineItem[] } = {};
+	const grouped: { [key: string]: typeof items } = {};
 	items.forEach((item) => {
 		const mStr = `${getEnglishMonth(item.dateTime)} ${item.dateTime.getFullYear()}`;
 		if (!grouped[mStr]) grouped[mStr] = [];
 		grouped[mStr].push(item);
 	});
+
+	const formatPrice = (price?: string) => {
+		if (!price || price === '0' || price.toLowerCase() === 'free')
+			return 'Free';
+		return price.startsWith('$') ? price : `$${price}`;
+	};
 
 	return (
 		<main className="grow mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -115,20 +76,10 @@ export default function ClubActivitiesTab({
 				</div>
 
 				<div className="flex items-center gap-3">
-					{/* <Checkbox
-						checked={showBirthdaysTab}
-						onChange={(e) => setShowBirthdaysTab(e.target.checked)}
-						label={
-							<span className="font-semibold text-xs text-text-secondary">
-								Show birthdays
-							</span>
-						}
-					/> */}
-
 					{canManage && (
 						<button
 							onClick={onOpenCreateModal}
-							className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm cursor-pointer"
+							className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
 						>
 							<FiPlus size={14} /> Add Activity
 						</button>
@@ -138,62 +89,18 @@ export default function ClubActivitiesTab({
 
 			{items.length === 0 ? (
 				<div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-text-muted italic text-xs">
-					No activities scheduled yet.
+					No activities or events found. Create the first one!
 				</div>
 			) : (
-				Object.keys(grouped).map((monthHeader) => (
-					<div key={monthHeader} className="space-y-4">
-						<h3 className="text-xs font-bold text-primary tracking-wide uppercase px-1 border-l-2 border-primary pl-2">
-							{monthHeader}
+				Object.keys(grouped).map((monthYear) => (
+					<div key={monthYear} className="space-y-3">
+						<h3 className="text-xs font-bold text-text-muted uppercase tracking-wider pl-1">
+							{monthYear}
 						</h3>
 
-						<div className="divide-y divide-border rounded-2xl border border-border bg-surface overflow-hidden shadow-2xs">
-							{grouped[monthHeader].map((item) => {
+						<div className="rounded-2xl border border-border bg-surface divide-y divide-border overflow-hidden shadow-2xs">
+							{grouped[monthYear].map((item) => {
 								const dateObj = item.dateTime;
-
-								if (item.isBirthday) {
-									return (
-										<div
-											key={item.id}
-											className="flex items-center justify-between p-4 hover:bg-pink-500/5 transition-colors group"
-										>
-											<div className="flex items-center gap-4">
-												<div className="text-center w-16 shrink-0 border-r border-border/60 pr-4">
-													<span className="block text-[10px] font-bold text-pink-500 uppercase">
-														{getEnglishWeekday(
-															dateObj,
-														)}
-													</span>
-													<span className="block text-2xl font-extrabold text-pink-500/90 leading-tight">
-														{dateObj.getDate()}
-													</span>
-													<span className="block text-[9px] text-text-muted font-medium">
-														{getEnglishMonth(
-															dateObj,
-														)}
-													</span>
-												</div>
-												<div>
-													<div className="flex items-center gap-1.5 font-bold text-text-primary text-sm">
-														<FiGift
-															className="text-pink-500"
-															size={14}
-														/>
-														<span>
-															{item.title}
-														</span>
-													</div>
-													<span className="text-xs text-text-muted mt-0.5 block font-medium">
-														Turns {item.age} years
-														old
-													</span>
-												</div>
-											</div>
-											<FiChevronRight className="text-text-muted/40" />
-										</div>
-									);
-								}
-
 								const isUserGoing = attendances.some(
 									(a) =>
 										a.eventId === item.id &&
@@ -215,15 +122,14 @@ export default function ClubActivitiesTab({
 										a.status === 'ABSENT',
 								).length;
 								const maybeCount = evAtts.filter(
-									(a) =>
-										a.status === 'RSVP_MAYBE' ||
-										a.status === 'EXCUSED',
+									(a) => a.status === 'RSVP_MAYBE',
 								).length;
 
 								return (
 									<div
 										key={item.id}
-										className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 hover:bg-surface-secondary/20 transition-colors group"
+										className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 hover:bg-surface-secondary/20 transition-colors group cursor-pointer"
+										onClick={() => setViewActivity(item)}
 									>
 										<div className="flex items-start gap-4">
 											<div className="text-center w-16 shrink-0 border-r border-border/60 pr-4 mt-1">
@@ -243,21 +149,12 @@ export default function ClubActivitiesTab({
 													<span className="font-bold text-text-primary text-sm group-hover:text-primary transition-colors">
 														{item.title}
 													</span>
-													{item.status ===
-														'NOT_SENT' && (
-														<span className="text-[9px] font-bold bg-primary-light text-primary px-1.5 py-0.5 rounded-md border border-primary/20">
-															Draft / Not sent
-														</span>
-													)}
 												</div>
 
 												<div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-[11px] text-text-muted font-medium">
 													<span className="flex items-center gap-1">
 														<FiCalendar size={11} />
-														{item.date}{' '}
-														{item.endDate
-															? `- ${item.endDate}`
-															: ''}
+														{item.date}
 													</span>
 													<span className="flex items-center gap-1">
 														<FiClock size={11} />
@@ -280,23 +177,34 @@ export default function ClubActivitiesTab({
 													<span className="text-danger flex items-center gap-0.5">
 														✗ {noCount}
 													</span>
-													<span className="text-warning flex items-center gap-0.5">
-														o {maybeCount}
-													</span>
+													{maybeCount > 0 && (
+														<span className="text-warning flex items-center gap-0.5">
+															o {maybeCount}
+														</span>
+													)}
 												</div>
 											</div>
 										</div>
 
-										<div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 border-border/40 pt-3 sm:pt-0">
-											{item.price && (
-												<span className="text-[10px] font-bold bg-primary-light text-primary px-2 py-0.5 rounded-lg border border-primary/20 shadow-2xs">
-													{item.price.includes('p')
-														? item.price
-														: `$${item.price} p/p`}
-												</span>
-											)}
+										<div
+											className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 border-border/40 pt-3 sm:pt-0"
+											onClick={(e) => e.stopPropagation()}
+										>
+											<span className="text-[10px] font-bold bg-primary-light text-primary px-2.5 py-1 rounded-lg border border-primary/20 shadow-2xs">
+												{formatPrice(item.price)}
+											</span>
 
 											<div className="flex items-center gap-1.5">
+												<button
+													onClick={() =>
+														setViewActivity(item)
+													}
+													className="p-1.5 rounded-lg border border-border bg-surface text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-all cursor-pointer"
+													title="View Details"
+												>
+													<FiEye size={13} />
+												</button>
+
 												{canManage ? (
 													<>
 														<button
@@ -357,6 +265,15 @@ export default function ClubActivitiesTab({
 					</div>
 				))
 			)}
+
+			<ActivityDetailModal
+				isOpen={Boolean(viewActivity)}
+				activity={viewActivity}
+				onClose={() => setViewActivity(null)}
+				currentUser={currentUser}
+				attendances={attendances}
+				onRSVP={onRSVP}
+			/>
 		</main>
 	);
 }

@@ -24,6 +24,8 @@ interface ClubDetailModalProps {
 	joinMessage: string;
 	setJoinMessage: (msg: string) => void;
 	joinSuccess: boolean;
+	joinError?: string;
+	isSubmitting?: boolean;
 	onRequestJoin: (groupId: string) => Promise<void>;
 }
 
@@ -35,6 +37,8 @@ export default function ClubDetailModal({
 	joinMessage,
 	setJoinMessage,
 	joinSuccess,
+	joinError,
+	isSubmitting = false,
 	onRequestJoin,
 }: ClubDetailModalProps) {
 	if (!club) return null;
@@ -237,15 +241,27 @@ export default function ClubDetailModal({
 									onChange={(e) => setJoinMessage(e.target.value)}
 								/>
 								{joinSuccess && (
-									<div className="text-xs text-success bg-success-bg p-2 rounded-lg text-center font-medium">
+									<div className="text-xs text-success bg-success-bg border border-success/20 p-2.5 rounded-lg text-center font-medium">
 										Application submitted successfully!
 									</div>
 								)}
+								{joinError && (
+									<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-2.5 rounded-lg text-center font-medium">
+										{joinError}
+									</div>
+								)}
 								<button
+									disabled={isSubmitting}
 									onClick={() => onRequestJoin(club.id)}
-									className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-hover shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+									className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-hover shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
 								>
-									<FiSend size={14} /> Submit Application
+									{isSubmitting ? (
+										<span>Submitting application...</span>
+									) : (
+										<>
+											<FiSend size={14} /> Submit Application
+										</>
+									)}
 								</button>
 							</div>
 						)}

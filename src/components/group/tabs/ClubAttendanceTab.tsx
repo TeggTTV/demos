@@ -10,13 +10,16 @@ import {
 	FiCalendar,
 	FiArrowLeft,
 	FiTrash2,
-	FiCheckCircle,
+	FiCheck,
+	FiMapPin,
+	FiUsers,
 	FiLink,
 } from 'react-icons/fi';
 import { Group, User, MeetingEvent, AttendanceRecord } from '@/types/models';
 import { exportAttendanceCSV } from '@/utils/csvExport';
 import QRCodeSVG from '@/components/ui/QRCode';
 import { Checkbox } from '@/components/ui/Checkbox';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 
 interface ClubAttendanceTabProps {
 	group: Group;
@@ -67,11 +70,8 @@ export default function ClubAttendanceTab({
 	const [copiedLink, setCopiedLink] = useState(false);
 	const [showQRCode, setShowQRCode] = useState(false);
 	const [checkInInput, setCheckInInput] = useState('');
-	const [checkInResult, setCheckInResult] = useState<{
-		success?: boolean;
-		message?: string;
-		error?: string;
-	} | null>(null);
+	const [showDeleteSessionConfirm, setShowDeleteSessionConfirm] =
+		useState(false);
 
 	const currentSelectedEvent = clubEvents.find(
 		(e) => e.id === selectedEventId,
@@ -99,31 +99,39 @@ export default function ClubAttendanceTab({
 			? `${window.location.origin}/group/${group.id}/feed?tab=attendance&event=${currentSelectedEvent.id}&code=${currentSelectedEvent.checkInCode}`
 			: '';
 
-	const eventAttendances = currentSelectedEvent
+	const myAttendance = currentSelectedEvent && currentUser
+		? attendances.find(
+				(a) =>
+					a.eventId === currentSelectedEvent.id &&
+					a.userId === currentUser.id,
+		  )
+		: null;
+	const sessionAttendances = currentSelectedEvent
 		? attendances.filter((a) => a.eventId === currentSelectedEvent.id)
 		: [];
 
-	const userIsCheckedIn = Boolean(
-		currentSelectedEvent &&
-		attendances.some(
-			(a) =>
-				a.eventId === currentSelectedEvent.id &&
-				a.userId === currentUser?.id &&
-				(a.status === 'PRESENT' || a.status === 'LATE'),
-		),
+	const rosterMemberIds = Array.from(
+		new Set([
+			...(group.leaderId ? [group.leaderId] : []),
+			...(group.officerIds || []),
+			...(group.memberIds || []),
+		]),
 	);
 
-	const getUserName = (uid: string) =>
-		users.find((u) => u.id === uid)?.name || 'Club Member';
+	const presentCount = sessionAttendances.filter(
+		(a) => a.status === 'PRESENT',
+	).length;
+	const lateCount = sessionAttendances.filter(
+		(a) => a.status === 'LATE',
+	).length;
 
-	const handleSelfCheckIn = async (e: React.FormEvent) => {
+	const handleMemberCheckIn = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!currentSelectedEvent || !checkInInput.trim()) return;
 		const res = await checkInToEvent(
 			currentSelectedEvent.id,
 			checkInInput.trim(),
 		);
-		setCheckInResult(res);
 		if (res.success) {
 			setCheckInInput('');
 		}
@@ -228,16 +236,16 @@ export default function ClubAttendanceTab({
 										}
 										className="w-full text-left p-5 rounded-2xl border border-border bg-surface hover:border-primary hover:shadow-md transition-all cursor-pointer space-y-3 group"
 									>
-										<div className="flex items-center justify-between">
-											<span className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate">
+										<div className="flex items-center justify-between gap-3 min-w-0">
+											<span className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate shrink min-w-0">
 												{evt.title}
 											</span>
 											{evt.isActive ? (
-												<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-success-bg text-success border border-success/20 animate-pulse">
+												<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-success-bg text-success border border-success/20 animate-pulse shrink-0 whitespace-nowrap">
 													● Active
 												</span>
 											) : (
-												<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-secondary text-text-muted border border-border">
+												<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-secondary text-text-muted border border-border shrink-0 whitespace-nowrap">
 													Closed
 												</span>
 											)}
@@ -341,17 +349,11 @@ export default function ClubAttendanceTab({
 													: 'Open Check-in'}
 											</button>
 											<button
-												onClick={() => {
-													if (
-														confirm(
-															'Are you sure you want to delete this meeting session?',
-														)
-													) {
-														deleteMeetingEvent(
-															currentSelectedEvent.id,
-														);
-													}
-												}}
+												onClick={() =>
+													setShowDeleteSessionConfirm(
+														true,
+													)
+												}
 												className="text-text-muted hover:text-danger p-1.5 cursor-pointer"
 												title="Delete meeting session"
 											>
@@ -568,16 +570,15 @@ export default function ClubAttendanceTab({
 
 												{/* PIN Section */}
 												{!showQRCode && (
-													<div>
-														<div className="my-3 text-center">
-															<span className="text-3xl sm:text-5xl font-extrabold tracking-widest font-mono text-primary select-all">
-																{
-																	currentSelectedEvent.checkInCode
-																}
+													<div className="space-y-4">
+														<div className="flex flex-col items-center justify-center my-4">
+															<span className="text-[11px] font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
+																Click PIN Code to Copy
 															</span>
-														</div>
-														<div className="flex gap-2 mt-3">
-															<button
+															<motion.button
+																whileHover={{ scale: 1.05 }}
+																whileTap={{ scale: 0.95 }}
+																type="button"
 																onClick={() => {
 																	navigator.clipboard.writeText(
 																		currentSelectedEvent.checkInCode,
@@ -593,14 +594,31 @@ export default function ClubAttendanceTab({
 																		2000,
 																	);
 																}}
-																className="grow rounded-lg bg-primary py-2 text-xs font-semibold text-white shadow-2xs cursor-pointer hover:bg-primary-hover transition-all"
+																className="relative inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-surface-secondary border-2 border-primary/40 hover:border-primary text-3xl sm:text-5xl font-extrabold tracking-widest font-mono text-primary cursor-pointer transition-all shadow-md group"
+																title="Click to copy PIN code"
 															>
-																{copiedPin
-																	? 'Copied Code!'
-																	: 'Copy PIN Code'}
-															</button>
-															{checkInUrl && (
-																<button
+																<span>
+																	{
+																		currentSelectedEvent.checkInCode
+																	}
+																</span>
+																{copiedPin && (
+																	<motion.span
+																		initial={{ opacity: 0, y: -5 }}
+																		animate={{ opacity: 1, y: 0 }}
+																		className="absolute -top-3 right-2 bg-success text-white text-[10px] font-extrabold tracking-normal font-sans px-2 py-0.5 rounded-full shadow-md"
+																	>
+																		✓ Copied!
+																	</motion.span>
+																)}
+															</motion.button>
+														</div>
+
+														{checkInUrl && (
+															<div className="flex justify-center">
+																<motion.button
+																	whileHover={{ scale: 1.03 }}
+																	whileTap={{ scale: 0.96 }}
 																	onClick={() => {
 																		navigator.clipboard.writeText(
 																			checkInUrl,
@@ -616,21 +634,17 @@ export default function ClubAttendanceTab({
 																			2000,
 																		);
 																	}}
-																	className="rounded-lg border border-primary/30 bg-surface px-4 py-2 text-xs font-semibold text-primary shadow-2xs cursor-pointer hover:bg-surface-secondary transition-all flex items-center gap-1.5"
+																	className="rounded-xl border border-primary/30 bg-surface px-5 py-2 text-xs font-semibold text-primary shadow-2xs cursor-pointer hover:bg-surface-secondary transition-all flex items-center gap-1.5"
 																>
-																	<FiLink
-																		size={
-																			13
-																		}
-																	/>
+																	<FiLink size={13} />
 																	<span>
 																		{copiedLink
 																			? 'Link Copied!'
-																			: 'Copy Link'}
+																			: 'Copy Check-In Link'}
 																	</span>
-																</button>
-															)}
-														</div>
+																</motion.button>
+															</div>
+														)}
 													</div>
 												)}
 											</div>
@@ -640,45 +654,43 @@ export default function ClubAttendanceTab({
 													<span className="text-xs font-bold text-text-primary uppercase tracking-wider block">
 														Self Check-In
 													</span>
-													<p className="text-xs text-text-muted mt-0.5">
-														Enter the check-in PIN
-														displayed by club
-														officers on the
-														projector/smart board or
-														scan the QR code to
-														verify your attendance.
+													<p className="text-[11px] text-text-muted mt-0.5">
+														Enter the 4-digit code provided by your club officer to record attendance.
 													</p>
 												</div>
 
-												{userIsCheckedIn ? (
-													<div className="py-4 text-center rounded-xl bg-success-bg border border-success/20">
-														<span className="text-sm font-bold text-success flex items-center justify-center gap-2">
-															<FiCheckCircle
-																size={20}
-															/>
-															You are checked into
-															this meeting!
-														</span>
+												{myAttendance ? (
+													<div className="p-4 rounded-xl bg-success-bg border border-success/20 flex items-center justify-between gap-3">
+														<div className="space-y-0.5">
+															<span className="text-xs font-bold text-success flex items-center gap-1.5">
+																<FiCheck /> You are checked in!
+															</span>
+															<span className="text-[11px] text-text-muted block">
+																Recorded as{' '}
+																<strong>
+																	{
+																		myAttendance.status
+																	}
+																</strong>{' '}
+																via{' '}
+																{
+																	myAttendance.checkInMethod
+																}
+															</span>
+														</div>
 													</div>
 												) : (
 													<form
 														onSubmit={
-															handleSelfCheckIn
+															handleMemberCheckIn
 														}
-														className="space-y-3 max-w-md"
+														className="space-y-3"
 													>
-														{checkInResult?.error && (
-															<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-2.5 rounded-xl text-center font-medium">
-																{
-																	checkInResult.error
-																}
-															</div>
-														)}
-														<div className="flex items-center gap-2">
+														<div className="flex gap-2">
 															<input
 																type="text"
-																required
-																placeholder="Enter PIN"
+																maxLength={6}
+																placeholder="ENTER PIN"
 																value={
 																	checkInInput
 																}
@@ -690,7 +702,9 @@ export default function ClubAttendanceTab({
 																}
 																className="grow rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-mono font-bold text-center text-text-primary uppercase tracking-widest focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:font-sans placeholder:font-normal placeholder:tracking-normal"
 															/>
-															<button
+															<motion.button
+																whileHover={{ scale: 1.03 }}
+																whileTap={{ scale: 0.96 }}
 																type="submit"
 																disabled={
 																	!currentSelectedEvent.isActive ||
@@ -699,15 +713,11 @@ export default function ClubAttendanceTab({
 																className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all disabled:opacity-50 cursor-pointer shrink-0"
 															>
 																Check In
-															</button>
+															</motion.button>
 														</div>
 														{!currentSelectedEvent.isActive && (
 															<p className="text-[11px] text-text-muted italic">
-																This meeting
-																session is
-																currently
-																inactive or
-																concluded.
+																This meeting session is currently inactive or concluded.
 															</p>
 														)}
 													</form>
@@ -719,8 +729,7 @@ export default function ClubAttendanceTab({
 										<div className="space-y-3 pt-4 border-t border-border">
 											<div className="flex items-center justify-between">
 												<h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-													Meeting Roster &amp;
-													Verification
+													Meeting Roster &amp; Verification
 												</h4>
 												<span className="text-xs text-text-muted">
 													{canManage
@@ -730,22 +739,21 @@ export default function ClubAttendanceTab({
 											</div>
 
 											<div className="rounded-xl border border-border overflow-hidden">
-												<table className="w-full text-left text-xs">
+												<table className="w-full text-left text-xs table-fixed">
 													<thead className="bg-surface-secondary/70 border-b border-border text-text-muted text-[11px]">
 														<tr>
-															<th className="p-3">
+															<th className="p-3 w-[45%] sm:w-[35%]">
 																Member
 															</th>
-															<th className="p-3">
+															<th className="p-3 w-[25%] sm:w-[20%]">
 																Status
 															</th>
 															{canManage && (
 																<>
-																	<th className="p-3 hidden sm:table-cell">
+																	<th className="p-3 hidden sm:table-cell sm:w-[20%]">
 																		Method
 																	</th>
-																	<th className="p-3 text-right">
-																		Officer
+																	<th className="p-3 text-right w-[30%] sm:w-[25%]">
 																		Actions
 																	</th>
 																</>
@@ -753,16 +761,16 @@ export default function ClubAttendanceTab({
 														</tr>
 													</thead>
 													<tbody className="divide-y divide-border">
-														{group.memberIds.map(
+														{rosterMemberIds.map(
 															(mId) => {
-																const memberUser =
+																const mem =
 																	users.find(
 																		(u) =>
 																			u.id ===
 																			mId,
 																	);
 																const attRecord =
-																	eventAttendances.find(
+																	sessionAttendances.find(
 																		(a) =>
 																			a.userId ===
 																			mId,
@@ -773,77 +781,76 @@ export default function ClubAttendanceTab({
 
 																return (
 																	<tr
-																		key={
-																			mId
-																		}
-																		className="hover:bg-surface-secondary/30 transition-colors"
+																		key={mId}
+																		className="hover:bg-surface-secondary/20 transition-colors"
 																	>
-																		<td className="p-3 flex items-center gap-2">
-																			{memberUser?.avatarUrl ? (
-																				<Image
-																					src={
-																						memberUser.avatarUrl
+																		<td className="p-3 font-semibold text-text-primary truncate">
+																			<div className="flex items-center gap-2.5 min-w-0">
+																				{mem?.avatarUrl ? (
+																					<Image
+																						src={
+																							mem.avatarUrl
+																						}
+																						alt=""
+																						width={
+																							28
+																						}
+																						height={
+																							28
+																						}
+																						className="h-7 w-7 rounded-full object-cover border border-border shrink-0"
+																						unoptimized
+																					/>
+																				) : (
+																					<div className="h-7 w-7 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
+																						{mem
+																							?.name?.[0] ||
+																							'M'}
+																					</div>
+																				)}
+																				<span
+																					className="truncate block"
+																					title={
+																						mem?.name ||
+																						'Member'
 																					}
-																					alt=""
-																					width={
-																						24
-																					}
-																					height={
-																						24
-																					}
-																					className="h-6 w-6 rounded-full object-cover border border-border"
-																					unoptimized
-																				/>
-																			) : (
-																				<div className="h-6 w-6 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold">
-																					{memberUser
-																						?.name?.[0] ||
-																						'M'}
-																				</div>
-																			)}
-																			<div>
-																				<span className="font-semibold text-text-primary block">
-																					{memberUser?.name ||
+																				>
+																					{mem?.name ||
 																						'Member'}
-																				</span>
-																				<span className="text-[10px] text-text-muted">
-																					{
-																						memberUser?.email
-																					}
 																				</span>
 																			</div>
 																		</td>
 
 																		<td className="p-3">
-																			<span
-																				className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-																					status ===
-																					'PRESENT'
-																						? 'bg-success-bg text-success border border-success/20'
-																						: status ===
-																							  'LATE'
-																							? 'bg-warning-bg text-warning border border-warning/20'
-																							: status ===
-																								  'EXCUSED'
-																								? 'bg-primary-light text-primary border border-primary/20'
-																								: 'bg-surface-secondary text-text-muted border border-border'
-																				}`}
-																			>
-																				{
-																					status
-																				}
-																			</span>
+																			{status ===
+																				'PRESENT' && (
+																				<span className="inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success-bg border border-success/20 px-2 py-0.5 rounded-full whitespace-nowrap">
+																					✓ Present
+																				</span>
+																			)}
+																			{status ===
+																				'LATE' && (
+																				<span className="inline-flex items-center gap-1 text-[10px] font-bold text-warning bg-warning-bg border border-warning/20 px-2 py-0.5 rounded-full whitespace-nowrap">
+																					⏰ Late
+																				</span>
+																			)}
+																			{status ===
+																				'ABSENT' && (
+																				<span className="inline-flex items-center text-[10px] font-medium text-text-muted bg-surface-secondary border border-border px-2 py-0.5 rounded-full whitespace-nowrap">
+																					Absent
+																				</span>
+																			)}
 																		</td>
 
 																		{canManage && (
-																			<td className="p-3 text-text-muted hidden sm:table-cell text-[11px]">
+																			<td className="p-3 text-text-muted text-[11px] hidden sm:table-cell truncate">
 																				{attRecord?.checkInMethod ||
 																					'—'}
 																			</td>
 																		)}
 
 																		{canManage && (
-																			<td className="p-3 text-right">
+																			<td className="p-3 text-right whitespace-nowrap">
 																				<div className="inline-flex items-center gap-1">
 																					<button
 																						onClick={() =>
@@ -853,7 +860,7 @@ export default function ClubAttendanceTab({
 																								'PRESENT',
 																							)
 																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer ${
+																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-all ${
 																							status ===
 																							'PRESENT'
 																								? 'bg-success text-white border-success'
@@ -870,7 +877,7 @@ export default function ClubAttendanceTab({
 																								'LATE',
 																							)
 																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer ${
+																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-all ${
 																							status ===
 																							'LATE'
 																								? 'bg-warning text-white border-warning'
@@ -884,17 +891,17 @@ export default function ClubAttendanceTab({
 																							updateAttendanceStatus(
 																								currentSelectedEvent.id,
 																								mId,
-																								'EXCUSED',
+																								'ABSENT',
 																							)
 																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer ${
+																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-all ${
 																							status ===
-																							'EXCUSED'
-																								? 'bg-primary text-white border-primary'
-																								: 'border-border text-text-secondary hover:text-primary'
+																							'ABSENT'
+																								? 'bg-surface-secondary text-text-primary border-border'
+																								: 'border-border text-text-muted hover:text-danger'
 																						}`}
 																					>
-																						Excused
+																						Absent
 																					</button>
 																				</div>
 																			</td>
@@ -911,96 +918,61 @@ export default function ClubAttendanceTab({
 								)}
 
 								{activeSubTab === 'info' && (
-									<div className="space-y-4 pt-2">
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
-												<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
-													Time &amp; Location
+									<div className="space-y-5 pt-2">
+										<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+											{/* Schedule Card */}
+											<div className="rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-secondary/40 p-4 space-y-2 shadow-2xs">
+												<span className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+													<FiCalendar /> Time &amp; Schedule
 												</span>
-												<div className="text-xs text-text-secondary space-y-2">
-													<p className="flex items-center gap-2">
-														📅{' '}
-														<strong>Date:</strong>{' '}
-														{
-															currentSelectedEvent.date
-														}
+												<div className="text-xs text-text-secondary space-y-1.5">
+													<p className="font-semibold text-text-primary">
+														{currentSelectedEvent.date}
 													</p>
-													<p className="flex items-center gap-2">
-														⏰{' '}
-														<strong>
-															Start Time:
-														</strong>{' '}
-														{
-															currentSelectedEvent.time
-														}
-													</p>
-													{currentSelectedEvent.endDate && (
-														<p className="flex items-center gap-2">
-															📅{' '}
-															<strong>
-																End Date:
-															</strong>{' '}
-															{
-																currentSelectedEvent.endDate
-															}
-														</p>
-													)}
-													<p className="flex items-center gap-2">
-														📍{' '}
-														<strong>
-															Location:
-														</strong>{' '}
-														{currentSelectedEvent.location ||
-															'Campus Center'}
+													<p className="text-[11px] text-text-muted flex items-center gap-1">
+														<FiClock size={11} /> {currentSelectedEvent.time || '18:00'}
 													</p>
 												</div>
 											</div>
 
-											<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-3">
-												<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
-													Session Status &amp; Cost
+											{/* Location Card */}
+											<div className="rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-secondary/40 p-4 space-y-2 shadow-2xs">
+												<span className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+													<FiMapPin /> Location
 												</span>
-												<div className="text-xs text-text-secondary space-y-2">
-													<p className="flex items-center gap-2">
-														💵{' '}
-														<strong>Price:</strong>{' '}
-														{currentSelectedEvent.price
-															? `$${currentSelectedEvent.price}`
-															: 'Free'}
+												<div className="text-xs text-text-secondary space-y-1.5">
+													<p className="font-semibold text-text-primary truncate">
+														{currentSelectedEvent.location || 'Campus Meeting Room'}
 													</p>
-													<p className="flex items-center gap-2">
-														🔔{' '}
-														<strong>Status:</strong>{' '}
-														{currentSelectedEvent.status ===
-														'CLOSED'
-															? 'Closed'
-															: currentSelectedEvent.status ===
-																  'PUBLISHED'
-																? 'Published'
-																: 'Draft / Not sent'}
+													<p className="text-[11px] text-text-muted">
+														Campus Venue
 													</p>
-													<p className="flex items-center gap-2">
-														👤{' '}
-														<strong>
-															Created By:
-														</strong>{' '}
-														{getUserName(
-															currentSelectedEvent.createdById,
-														)}
+												</div>
+											</div>
+
+											{/* Turnout Stats Card */}
+											<div className="rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-secondary/40 p-4 space-y-2 shadow-2xs">
+												<span className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+													<FiUsers /> Session Turnout
+												</span>
+												<div className="text-xs text-text-secondary space-y-1.5">
+													<p className="font-semibold text-text-primary text-sm">
+														{presentCount + lateCount} / {rosterMemberIds.length} members
+													</p>
+													<p className="text-[11px] text-text-muted">
+														{presentCount} Present, {lateCount} Late
 													</p>
 												</div>
 											</div>
 										</div>
 
 										{currentSelectedEvent.description && (
-											<div className="rounded-xl border border-border bg-surface-secondary/20 p-4 space-y-2">
+											<div className="rounded-2xl border border-border bg-surface-secondary/20 p-4 space-y-1.5">
 												<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
-													Description
+													Meeting Notes &amp; Agenda
 												</span>
-												<p className="text-xs text-text-secondary whitespace-pre-wrap">
-													{
-														currentSelectedEvent.description
-													}
+												<p className="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
+													{currentSelectedEvent.description}
 												</p>
 											</div>
 										)}
@@ -1011,6 +983,22 @@ export default function ClubAttendanceTab({
 					</motion.div>
 				)}
 			</AnimatePresence>
+
+			<ConfirmModal
+				isOpen={showDeleteSessionConfirm}
+				title="Delete Meeting Session"
+				message="Are you sure you want to delete this meeting session? All recorded attendance and check-ins for this session will be permanently removed."
+				confirmText="Delete Session"
+				isDestructive
+				onConfirm={async () => {
+					if (currentSelectedEvent) {
+						await deleteMeetingEvent(currentSelectedEvent.id);
+						setSelectedEventId(null);
+					}
+					setShowDeleteSessionConfirm(false);
+				}}
+				onClose={() => setShowDeleteSessionConfirm(false)}
+			/>
 		</main>
 	);
 }
