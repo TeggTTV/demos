@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { Group, MeetingEvent } from '@/types/models';
-import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
+import ClubBanner from '@/components/ui/ClubBanner';
 import { FiInstagram, FiGlobe } from 'react-icons/fi';
 import { FaDiscord } from 'react-icons/fa';
 
@@ -36,23 +35,13 @@ export default function ClubFeedHeader({
 		<div className="border-b border-border bg-surface">
 			{/* Banner */}
 			<div className="h-40 sm:h-32 w-full relative bg-surface-secondary overflow-hidden">
-				{group.bannerUrl?.startsWith('data:') ||
-				group.bannerUrl?.startsWith('http') ? (
-					<Image
-						src={group.bannerUrl}
-						alt={group.name}
-						fill
-						priority
-						className="object-cover"
-					/>
-				) : (
-					<div
-						className="w-full h-full"
-						style={{
-							background: group.bannerUrl || DEFAULT_CLUB_BANNER,
-						}}
-					/>
-				)}
+				<ClubBanner
+					bannerUrl={group.bannerUrl}
+					alt={group.name}
+					category={group.category}
+					priority
+					className="object-cover"
+				/>
 
 				<div className="absolute bottom-4 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row sm:items-end justify-between gap-3 text-white">
 					<div>

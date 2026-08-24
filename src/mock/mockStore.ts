@@ -16,6 +16,7 @@ import {
 	MOCK_REQUESTS,
 	MOCK_INVITES,
 } from './mockData';
+import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
 
 class MockDataStore {
 	private users: User[] = [...MOCK_USERS];
@@ -121,9 +122,7 @@ class MockDataStore {
 			officerIds: [],
 			isPrivate: Boolean(groupData.isPrivate),
 			profanityFilter: Boolean(groupData.profanityFilter),
-			bannerUrl:
-				groupData.bannerUrl ||
-				'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+			bannerUrl: groupData.bannerUrl || DEFAULT_CLUB_BANNER,
 			logoUrl: groupData.logoUrl,
 			websiteUrl: groupData.websiteUrl,
 			instagramUrl: groupData.instagramUrl,

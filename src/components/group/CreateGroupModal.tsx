@@ -7,7 +7,11 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { BANNER_COLOR_PRESETS } from '@/constants/bannerPresets';
+import {
+	BANNER_COLOR_PRESETS,
+	BANNER_IMAGE_PRESETS,
+} from '@/constants/bannerPresets';
+import ClubBanner from '@/components/ui/ClubBanner';
 import { CLUB_CATEGORIES, compileFrequency } from '@/constants/categories';
 import { Group } from '@/types/models';
 
@@ -225,6 +229,7 @@ export default function CreateGroupModal({
 											src={customBannerPreview}
 											alt="Banner Preview"
 											fill
+											unoptimized
 											className="object-cover"
 										/>
 										<button
@@ -232,19 +237,21 @@ export default function CreateGroupModal({
 											onClick={() =>
 												setCustomBannerPreview('')
 											}
-											className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-md px-2 py-0.5 text-[10px] font-semibold cursor-pointer"
+											className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-md px-2 py-0.5 text-[10px] font-semibold cursor-pointer z-10"
 										>
 											Remove
 										</button>
 									</>
 								) : (
-									<div
-										className="w-full h-full flex items-center justify-center text-white font-bold text-sm shadow-inner"
-										style={{
-											background: selectedBannerColor,
-										}}
-									>
-										{name || 'Banner Preview'}
+									<div className="relative w-full h-full flex items-center justify-center">
+										<ClubBanner
+											bannerUrl={selectedBannerColor}
+											alt={name || 'Banner Preview'}
+											category={category}
+										/>
+										<div className="absolute inset-0 flex items-center justify-center bg-black/20 text-white font-bold text-sm shadow-inner drop-shadow">
+											{name || 'Banner Preview'}
+										</div>
 									</div>
 								)}
 							</div>
@@ -298,20 +305,32 @@ export default function CreateGroupModal({
 								</div>
 							) : (
 								<Select
-									label="Color Theme Preset"
+									label="Banner Style Preset"
 									value={selectedBannerColor}
 									onChange={(e) =>
 										setSelectedBannerColor(e.target.value)
 									}
 								>
-									{BANNER_COLOR_PRESETS.map((preset) => (
-										<option
-											key={preset.id}
-											value={preset.value}
-										>
-											{preset.name}
-										</option>
-									))}
+									<optgroup label="📸 Campus & Activity Photo Banners">
+										{BANNER_IMAGE_PRESETS.map((preset) => (
+											<option
+												key={preset.id}
+												value={preset.url}
+											>
+												{preset.name} ({preset.category})
+											</option>
+										))}
+									</optgroup>
+									<optgroup label="🎨 Modern Gradient Presets">
+										{BANNER_COLOR_PRESETS.map((preset) => (
+											<option
+												key={preset.id}
+												value={preset.value}
+											>
+												{preset.name}
+											</option>
+										))}
+									</optgroup>
 								</Select>
 							)}
 						</div>

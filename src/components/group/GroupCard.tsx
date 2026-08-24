@@ -1,13 +1,11 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FiShield, FiCalendar, FiMapPin, FiArrowRight } from 'react-icons/fi';
 import { Group, MeetingEvent, User } from '@/types/models';
-import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
-
 import MemberAvatarStack from '@/components/group/MemberAvatarStack';
+import ClubBanner from '@/components/ui/ClubBanner';
 
 interface GroupCardProps {
 	club: Group;
@@ -52,23 +50,12 @@ export default function GroupCard({
 		>
 			{/* Banner */}
 			<div className="h-32 w-full relative bg-surface-secondary overflow-hidden">
-				{club.bannerUrl?.startsWith('data:') ||
-				club.bannerUrl?.startsWith('http') ? (
-					<Image
-						src={club.bannerUrl}
-						alt={club.name}
-						fill
-						className="object-cover group-hover:scale-102 transition-transform duration-300"
-					/>
-				) : (
-					<div
-						className="w-full h-full"
-						style={{
-							background:
-								club.bannerUrl || DEFAULT_CLUB_BANNER,
-						}}
-					/>
-				)}
+				<ClubBanner
+					bannerUrl={club.bannerUrl}
+					alt={club.name}
+					category={club.category}
+					className="object-cover group-hover:scale-102 transition-transform duration-300"
+				/>
 				<div className="absolute top-3 right-3 bg-surface/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full text-[10px] font-bold text-primary border border-border">
 					{club.category}
 				</div>

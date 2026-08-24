@@ -208,7 +208,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: true,
-		bannerUrl: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
 		websiteUrl: 'https://acm.campus.edu',
 		discordUrl: 'https://discord.gg/campus-acm',
 		tags: [
@@ -246,7 +247,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: false,
-		bannerUrl: 'linear-gradient(135deg, #be123c 0%, #f43f5e 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1558655146-d09347e92766?w=1200&auto=format&fit=crop&q=80',
 		instagramUrl: 'https://instagram.com/campusdesign',
 		tags: [
 			'UI/UX',
@@ -282,7 +284,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: false,
-		bannerUrl: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&auto=format&fit=crop&q=80',
 		discordUrl: 'https://discord.gg/campus-robotics',
 		tags: [
 			'Robotics',
@@ -319,7 +322,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: false,
-		bannerUrl: 'linear-gradient(135deg, #065f46 0%, #10b981 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1200&auto=format&fit=crop&q=80',
 		websiteUrl: 'https://venturesociety.campus.edu',
 		tags: [
 			'Startups',
@@ -355,7 +359,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: false,
-		bannerUrl: 'linear-gradient(135deg, #9333ea 0%, #c026d3 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80',
 		instagramUrl: 'https://instagram.com/cadenceacapella',
 		tags: [
 			'Music',
@@ -391,7 +396,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: false,
-		bannerUrl: 'linear-gradient(135deg, #0d9488 0%, #06b6d4 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200&auto=format&fit=crop&q=80',
 		websiteUrl: 'https://ecoaction.campus.edu',
 		tags: [
 			'Sustainability',
@@ -428,7 +434,8 @@ export const MOCK_GROUPS: Group[] = [
 		],
 		isPrivate: false,
 		profanityFilter: true,
-		bannerUrl: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+		bannerUrl:
+			'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80',
 		discordUrl: 'https://discord.gg/campus-esports',
 		tags: [
 			'Gaming',

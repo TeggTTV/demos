@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import {
 	FiCalendar,
@@ -15,7 +14,7 @@ import {
 import { FaDiscord } from 'react-icons/fa';
 import { Textarea } from '@/components/ui/Textarea';
 import { Group, User, JoinRequest } from '@/types/models';
-import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
+import ClubBanner from '@/components/ui/ClubBanner';
 
 interface ClubDetailModalProps {
 	club: Group | null;
@@ -59,23 +58,12 @@ export default function ClubDetailModal({
 			<div className="w-full max-w-2xl rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden my-8">
 				{/* Modal Banner */}
 				<div className="h-44 w-full relative bg-surface-secondary overflow-hidden">
-					{club.bannerUrl?.startsWith('data:') ||
-					club.bannerUrl?.startsWith('http') ? (
-						<Image
-							src={club.bannerUrl}
-							alt={club.name}
-							fill
-							className="object-cover"
-						/>
-					) : (
-						<div
-							className="w-full h-full"
-							style={{
-								background:
-									club.bannerUrl || DEFAULT_CLUB_BANNER,
-							}}
-						/>
-					)}
+					<ClubBanner
+						bannerUrl={club.bannerUrl}
+						alt={club.name}
+						category={club.category}
+						className="object-cover"
+					/>
 					<button
 						onClick={onClose}
 						className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-all cursor-pointer z-10"

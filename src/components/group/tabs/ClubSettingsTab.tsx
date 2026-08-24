@@ -17,7 +17,11 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
 import QRCodeSVG from '@/components/ui/QRCode';
 import { ClubInvite, Group } from '@/types/models';
-import { BANNER_COLOR_PRESETS } from '@/constants/bannerPresets';
+import {
+	BANNER_COLOR_PRESETS,
+	BANNER_IMAGE_PRESETS,
+} from '@/constants/bannerPresets';
+import ClubBanner from '@/components/ui/ClubBanner';
 
 interface ClubSettingsTabProps {
 	group: Group;
@@ -611,24 +615,27 @@ export default function ClubSettingsTab({
 											src={settingsBannerPreview}
 											alt="Banner Preview"
 											fill
+											unoptimized
 											className="object-cover"
 										/>
 										<button
 											type="button"
 											onClick={() => setSettingsBannerPreview('')}
-											className="absolute top-1 right-1 bg-black/60 text-white rounded px-2 py-0.5 text-[10px] cursor-pointer"
+											className="absolute top-1 right-1 bg-black/60 text-white rounded px-2 py-0.5 text-[10px] cursor-pointer z-10"
 										>
 											Remove
 										</button>
 									</>
 								) : (
-									<div
-										className="w-full h-full flex items-center justify-center text-white font-bold text-xs shadow-inner"
-										style={{
-											background: settingsBannerColor,
-										}}
-									>
-										{settingsName || 'Banner Preview'}
+									<div className="relative w-full h-full flex items-center justify-center">
+										<ClubBanner
+											bannerUrl={settingsBannerColor}
+											alt={settingsName || 'Banner Preview'}
+											category={group.category}
+										/>
+										<div className="absolute inset-0 flex items-center justify-center bg-black/20 text-white font-bold text-xs shadow-inner drop-shadow">
+											{settingsName || 'Banner Preview'}
+										</div>
 									</div>
 								)}
 							</div>
@@ -684,14 +691,26 @@ export default function ClubSettingsTab({
 										setSettingsBannerColor(e.target.value)
 									}
 								>
-									{BANNER_COLOR_PRESETS.map((preset) => (
-										<option
-											key={preset.id}
-											value={preset.value}
-										>
-											{preset.name}
-										</option>
-									))}
+									<optgroup label="📸 Campus & Activity Photo Banners">
+										{BANNER_IMAGE_PRESETS.map((preset) => (
+											<option
+												key={preset.id}
+												value={preset.url}
+											>
+												{preset.name} ({preset.category})
+											</option>
+										))}
+									</optgroup>
+									<optgroup label="🎨 Modern Gradient Presets">
+										{BANNER_COLOR_PRESETS.map((preset) => (
+											<option
+												key={preset.id}
+												value={preset.value}
+											>
+												{preset.name}
+											</option>
+										))}
+									</optgroup>
 								</Select>
 							)}
 						</div>
