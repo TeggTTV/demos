@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
 	FiLock,
@@ -13,6 +13,7 @@ import {
 	FiArrowRight,
 } from 'react-icons/fi';
 import { formatTime12H } from '@/utils/dateUtils';
+import { useDialogAccessibility } from '@/components/ui/useDialogAccessibility';
 
 export interface EventDetailItem {
 	id: string;
@@ -44,6 +45,9 @@ export default function EventDetailModal({
 	onClose,
 	onRSVPClick,
 }: EventDetailModalProps) {
+	const dialogRef = useRef<HTMLDivElement>(null);
+	useDialogAccessibility(Boolean(selectedEvent), onClose, dialogRef);
+
 	if (!selectedEvent) return null;
 
 	const formatDate = (dateStr: string) => {
@@ -62,8 +66,13 @@ export default function EventDetailModal({
 
 	return (
 		<AnimatePresence>
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto" onMouseDown={onClose}>
 				<motion.div
+					ref={dialogRef}
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="event-detail-title"
+					onMouseDown={(event) => event.stopPropagation()}
 					initial={{ opacity: 0, scale: 0.95 }}
 					animate={{ opacity: 1, scale: 1 }}
 					exit={{ opacity: 0, scale: 0.95 }}
@@ -78,17 +87,18 @@ export default function EventDetailModal({
 										{selectedEvent.group?.name || 'Club Event'}
 									</span>
 									{selectedEvent.membersOnly && (
-										<span className="text-[10px] font-bold text-purple-700 bg-purple-100 dark:bg-purple-950/70 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-300/40 flex items-center gap-1">
+										<span className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary-light px-2 py-0.5 text-[10px] font-bold text-primary">
 											<FiLock size={10} /> Members Only
 										</span>
 									)}
 								</div>
-								<h2 className="text-xl font-extrabold text-text-primary mt-2">
+									<h2 id="event-detail-title" className="text-xl font-extrabold text-text-primary mt-2">
 									{selectedEvent.title}
 								</h2>
 							</div>
 							<button
 								onClick={onClose}
+								aria-label="Close event details"
 								className="h-8 w-8 rounded-full bg-surface-secondary text-text-muted flex items-center justify-center hover:bg-border/60 hover:text-text-primary transition-all cursor-pointer"
 							>
 								✕

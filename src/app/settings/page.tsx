@@ -199,7 +199,7 @@ export default function SettingsPage() {
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
 
-			<main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8 py-10">
+			<main id="main-content" className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8 py-10">
 				<div className="space-y-8">
 					{/* Header */}
 					<div>

@@ -65,6 +65,7 @@ export function Slider({
 						props.onBlur?.(e);
 					}}
 					className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-transparent accent-primary focus:outline-none transition-all relative z-10 ${className}`}
+					aria-valuetext={label ? `${label}: ${value}` : String(value)}
 					{...props}
 				/>
 			</motion.div>

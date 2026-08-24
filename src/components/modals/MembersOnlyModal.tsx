@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiShield, FiExternalLink } from 'react-icons/fi';
 import Link from 'next/link';
+import { useDialogAccessibility } from '@/components/ui/useDialogAccessibility';
 
 export interface MembersOnlyModalEvent {
 	id?: string;
@@ -24,11 +25,19 @@ export default function MembersOnlyModal({
 	event,
 	onClose,
 }: MembersOnlyModalProps) {
+	const dialogRef = useRef<HTMLDivElement>(null);
+	useDialogAccessibility(Boolean(event), onClose, dialogRef);
+
 	return (
 		<AnimatePresence>
 			{event && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" onMouseDown={onClose}>
 					<motion.div
+						ref={dialogRef}
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="members-only-title"
+						onMouseDown={(event) => event.stopPropagation()}
 						initial={{ opacity: 0, scale: 0.95 }}
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, scale: 0.95 }}
@@ -37,11 +46,11 @@ export default function MembersOnlyModal({
 						{/* Header with X button */}
 						<div className="flex items-start justify-between gap-4">
 							<div className="flex items-center gap-3">
-								<div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-950/70 text-purple-600 flex items-center justify-center shrink-0 border border-purple-200 dark:border-purple-800/40">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-light text-primary">
 									<FiShield size={20} />
 								</div>
 								<div>
-									<h3 className="text-base font-bold text-text-primary">
+									<h3 id="members-only-title" className="text-base font-bold text-text-primary">
 										Members Only Event
 									</h3>
 									<span className="text-xs font-semibold text-primary">
@@ -51,6 +60,7 @@ export default function MembersOnlyModal({
 							</div>
 							<button
 								onClick={onClose}
+								aria-label="Close members-only dialog"
 								className="h-8 w-8 rounded-full bg-surface-secondary text-text-muted hover:text-text-primary flex items-center justify-center hover:bg-border/60 transition-colors cursor-pointer"
 							>
 								✕

@@ -17,6 +17,8 @@ export default function PageLoader({
 	return (
 		<div
 			className={`flex min-h-[40vh] flex-col items-center justify-center p-8 text-center ${className}`}
+			role="status"
+			aria-live="polite"
 		>
 			<div className="relative flex flex-col items-center justify-center space-y-3">
 				{/* Soft ambient glow */}
@@ -27,11 +29,7 @@ export default function PageLoader({
 					<motion.div
 						className="absolute h-12 w-12 rounded-full border-2 border-transparent border-t-primary border-r-primary/40"
 						animate={{ rotate: 360 }}
-						transition={{
-							repeat: Infinity,
-							duration: 0.9,
-							ease: 'linear',
-						}}
+						transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
 					/>
 					<div className="h-6 w-6 rounded-full bg-primary-light flex items-center justify-center text-[10px] font-bold text-primary">
 						D

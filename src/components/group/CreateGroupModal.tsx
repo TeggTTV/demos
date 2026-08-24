@@ -33,6 +33,7 @@ interface CreateGroupModalProps {
 		instagramUrl?: string;
 		discordUrl?: string;
 		tags?: string[];
+		isPrivate?: boolean;
 	}) => Promise<{ success: boolean; group?: Group; error?: string }>;
 	onSuccess?: (groupId: string) => void;
 }
@@ -58,6 +59,7 @@ export default function CreateGroupModal({
 	const [instagramUrl, setInstagramUrl] = useState('');
 	const [websiteUrl, setWebsiteUrl] = useState('');
 	const [tagsInput, setTagsInput] = useState('');
+	const [isPrivate, setIsPrivate] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [fileSizeError, setFileSizeError] = useState('');
@@ -111,6 +113,7 @@ export default function CreateGroupModal({
 				instagramUrl,
 				websiteUrl,
 				tags,
+				isPrivate,
 			});
 
 			if (res.success && res.group) {
@@ -434,6 +437,25 @@ export default function CreateGroupModal({
 							value={tagsInput}
 							onChange={(e) => setTagsInput(e.target.value)}
 						/>
+
+						{/* Privacy Setting */}
+						<div className="rounded-xl border border-border bg-surface-secondary/40 p-3.5">
+							<Checkbox
+								id="create-group-is-private-checkbox"
+								checked={isPrivate}
+								onChange={(e) => setIsPrivate(e.target.checked)}
+								label={
+									<div className="ml-1">
+										<span className="font-bold text-text-primary text-xs block">
+											🔒 Private Club Hub (Hidden from Explore &amp; Guests)
+										</span>
+										<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
+											When checked, non-members and guests cannot discover this club on the Explore directory or view the club hub without an invite or officer approval.
+										</span>
+									</div>
+								}
+							/>
+						</div>
 
 						<div className="pt-2 flex justify-end gap-2">
 							<button

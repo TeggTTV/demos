@@ -46,7 +46,9 @@ export default function ClubRosterTab({ group, users }: ClubRosterTabProps) {
 							type="text"
 							placeholder="Search members by name, email, or major..."
 							value={rosterSearchQuery}
-							onChange={(e) => setRosterSearchQuery(e.target.value)}
+							onChange={(e) =>
+								setRosterSearchQuery(e.target.value)
+							}
 							className="w-full rounded-xl border border-border bg-surface-secondary pl-8 pr-3.5 py-2 text-xs text-text-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:text-text-muted"
 						/>
 					</div>
@@ -65,7 +67,7 @@ export default function ClubRosterTab({ group, users }: ClubRosterTabProps) {
 							onClick={() => setRosterRoleFilter('leaders')}
 							className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 								rosterRoleFilter === 'leaders'
-									? 'bg-primary-500 text-white shadow-2xs'
+									? 'bg-primary text-white shadow-2xs'
 									: 'bg-surface-secondary text-text-muted hover:text-text-primary'
 							}`}
 						>
@@ -109,11 +111,14 @@ export default function ClubRosterTab({ group, users }: ClubRosterTabProps) {
 							const isLeaderMem = group.leaderId === mId;
 							const isOfficerMem = Boolean(
 								group.officerIds &&
-									group.officerIds.includes(mId),
+								group.officerIds.includes(mId),
 							);
 							if (rosterRoleFilter === 'leaders' && !isLeaderMem)
 								return false;
-							if (rosterRoleFilter === 'officers' && !isOfficerMem)
+							if (
+								rosterRoleFilter === 'officers' &&
+								!isOfficerMem
+							)
 								return false;
 							if (
 								rosterRoleFilter === 'members' &&
@@ -133,7 +138,7 @@ export default function ClubRosterTab({ group, users }: ClubRosterTabProps) {
 							const isLeaderMem = group.leaderId === mId;
 							const isOfficerMem = Boolean(
 								group.officerIds &&
-									group.officerIds.includes(mId),
+								group.officerIds.includes(mId),
 							);
 
 							return (
@@ -180,7 +185,9 @@ export default function ClubRosterTab({ group, users }: ClubRosterTabProps) {
 										{mem?.major && (
 											<span className="text-[10px] text-primary/80 font-medium block truncate">
 												{mem.major}{' '}
-												{mem.year ? `• Year ${mem.year}` : ''}
+												{mem.year
+													? `• Year ${mem.year}`
+													: ''}
 											</span>
 										)}
 									</div>

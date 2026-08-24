@@ -579,10 +579,10 @@ export default function ClubSettingsTab({
 								label={
 									<div className="ml-1">
 										<span className="font-bold text-text-primary text-xs block">
-											Private Club Hub (Hidden from Explore &amp; Requires Approval / Invite)
+											🔒 Private Club Hub (Disallow Non-Members &amp; Unauthorized Guests)
 										</span>
 										<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
-											When checked, the club is hidden from the public showcase directory. Non-members cannot view the feed or roster unless they have an invite code.
+											When enabled, this club is hidden from public explore/search and disallowed from being viewed by guest visitors and unauthorized non-members. Only approved club members and officers can access the hub.
 										</span>
 									</div>
 								}

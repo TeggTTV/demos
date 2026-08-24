@@ -130,7 +130,7 @@ export default function PendingPage() {
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
 
-			<main className="flex-1 mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
+			<main id="main-content" className="flex-1 mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
 				<div className="flex items-center justify-between mb-1">
 					<h1 className="text-2xl font-bold text-text-primary">
 						Club Applications &amp; Requests

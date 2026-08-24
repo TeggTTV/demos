@@ -3,7 +3,7 @@
 import React from 'react';
 import { Group, MeetingEvent } from '@/types/models';
 import ClubBanner from '@/components/ui/ClubBanner';
-import { FiInstagram, FiGlobe } from 'react-icons/fi';
+import { FiInstagram, FiGlobe, FiMessageCircle, FiClock, FiUsers, FiCalendar, FiShield, FiSettings } from 'react-icons/fi';
 import { FaDiscord } from 'react-icons/fa';
 
 export type FeedTab =
@@ -99,7 +99,7 @@ export default function ClubFeedHeader({
 
 			{/* Tab Navigation */}
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="flex items-center space-x-6 overflow-x-auto pt-3 border-t border-border/40 scrollbar-none">
+				<div className="flex items-center space-x-6 overflow-x-auto pt-3 border-t border-border/40 scrollbar-none" role="tablist" aria-label="Club hub sections">
 					<button
 						onClick={() => setActiveTab('feed')}
 						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
@@ -107,8 +107,10 @@ export default function ClubFeedHeader({
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
+						role="tab"
+						aria-selected={activeTab === 'feed'}
 					>
-						💬 Feed
+						<span className="inline-flex items-center gap-1.5"><FiMessageCircle aria-hidden="true" /> Feed</span>
 					</button>
 					<button
 						onClick={() => setActiveTab('attendance')}
@@ -117,8 +119,10 @@ export default function ClubFeedHeader({
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
+						role="tab"
+						aria-selected={activeTab === 'attendance'}
 					>
-						⏱️ Attendance
+						<FiClock aria-hidden="true" /> Attendance
 						{clubEvents.some((e) => e.isActive) && (
 							<span className="h-2 w-2 rounded-full bg-success animate-pulse" />
 						)}
@@ -130,8 +134,10 @@ export default function ClubFeedHeader({
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
+						role="tab"
+						aria-selected={activeTab === 'roster'}
 					>
-						👥 Member Roster
+						<span className="inline-flex items-center gap-1.5"><FiUsers aria-hidden="true" /> Member roster</span>
 					</button>
 					<button
 						onClick={() => setActiveTab('activities')}
@@ -140,8 +146,10 @@ export default function ClubFeedHeader({
 								? 'border-primary text-primary'
 								: 'border-transparent text-text-muted hover:text-text-primary'
 						}`}
+						role="tab"
+						aria-selected={activeTab === 'activities'}
 					>
-						📅 Activities
+						<span className="inline-flex items-center gap-1.5"><FiCalendar aria-hidden="true" /> Activities</span>
 					</button>
 					{canManage && (
 						<button
@@ -151,8 +159,10 @@ export default function ClubFeedHeader({
 									? 'border-primary text-primary'
 									: 'border-transparent text-text-muted hover:text-text-primary'
 							}`}
+							role="tab"
+							aria-selected={activeTab === 'roles'}
 						>
-							🛡️ Member Roles
+							<span className="inline-flex items-center gap-1.5"><FiShield aria-hidden="true" /> Member roles</span>
 						</button>
 					)}
 					{isLeader && (
@@ -163,8 +173,10 @@ export default function ClubFeedHeader({
 									? 'border-primary text-primary'
 									: 'border-transparent text-text-muted hover:text-text-primary'
 							}`}
+							role="tab"
+							aria-selected={activeTab === 'settings'}
 						>
-							⚙️ Club Settings
+							<span className="inline-flex items-center gap-1.5"><FiSettings aria-hidden="true" /> Club settings</span>
 						</button>
 					)}
 				</div>

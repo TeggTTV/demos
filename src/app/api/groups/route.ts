@@ -9,20 +9,29 @@ import { mockStore } from '@/mock/mockStore';
 
 export async function GET(req: NextRequest) {
 	try {
-		if (USE_MOCK_DATA) {
-			return NextResponse.json({ groups: mockStore.getGroups() });
-		}
-
 		const session = await getSession(req);
-		if (!session) {
-			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+		if (USE_MOCK_DATA) {
+			const allGroups = mockStore.getGroups();
+			if (!session) {
+				// Guest: only public groups
+				return NextResponse.json({
+					groups: allGroups.filter((g) => !g.isPrivate),
+				});
+			}
+			return NextResponse.json({ groups: allGroups });
 		}
 
 		if (!(await isDbConnected())) {
 			return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 		}
 
+		const whereCondition = session
+			? undefined
+			: { isPrivate: false };
+
 		const dbGroups = await prisma.group.findMany({
+			where: whereCondition,
 			include: {
 				members: true,
 			},
@@ -78,6 +87,7 @@ export async function POST(req: NextRequest) {
 			instagramUrl,
 			discordUrl,
 			tags,
+			isPrivate,
 		} = body;
 
 		if (!name || !description) {
@@ -133,7 +143,7 @@ export async function POST(req: NextRequest) {
 				meetingLocation: meetingLocation || '',
 				minMembers: Number(minMembers || 1),
 				maxMembers: Number(maxMembers || 50),
-				isPrivate: false,
+				isPrivate: Boolean(isPrivate),
 				profanityFilter: false,
 				bannerUrl: bannerUrl || null,
 				logoUrl: logoUrl || null,

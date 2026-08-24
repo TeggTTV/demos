@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { useAppContext } from '@/components/AppContext';
+import { useDialogAccessibility } from '@/components/ui/useDialogAccessibility';
 
 interface AuthGateModalProps {
 	isOpen: boolean;
@@ -21,6 +22,9 @@ export default function AuthGateModal({
 	const [password, setPassword] = useState('');
 	const [authError, setAuthError] = useState('');
 	const [loading, setLoading] = useState(false);
+	const dialogRef = useRef<HTMLDivElement>(null);
+
+	useDialogAccessibility(isOpen, onClose, dialogRef);
 
 	if (!isOpen) return null;
 
@@ -45,14 +49,15 @@ export default function AuthGateModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-			<div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onMouseDown={onClose}>
+			<div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="auth-gate-title" className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl" onMouseDown={(event) => event.stopPropagation()}>
 				<div className="flex items-center justify-between border-b border-border pb-4 mb-4">
-					<h3 className="text-lg font-bold text-text-primary">
+					<h3 id="auth-gate-title" className="text-lg font-bold text-text-primary">
 						Sign In Required
 					</h3>
 					<button
 						onClick={onClose}
+						aria-label="Close sign-in dialog"
 						className="rounded-lg p-1 text-text-muted hover:bg-surface-secondary hover:text-text-primary transition-all cursor-pointer"
 					>
 						✕

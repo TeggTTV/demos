@@ -83,7 +83,7 @@ function SearchContent() {
 			currentUser &&
 			(g.leaderId === currentUser.id ||
 				g.memberIds.includes(currentUser.id));
-		const isVisible = !isPrivate || isMember || USE_MOCK_DATA;
+		const isVisible = !isPrivate || isMember;
 
 		const matchQ =
 			!query.trim() ||
@@ -143,7 +143,7 @@ function SearchContent() {
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
 
-			<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+			<main id="main-content" className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 				{/* Top Bar Header */}
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
 					<div>

@@ -1,60 +1,34 @@
 'use client';
 
 import React, { useId, useState } from 'react';
-import { motion } from 'framer-motion';
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
 	label?: string;
+	hint?: React.ReactNode;
+	error?: React.ReactNode;
 }
 
-export function Textarea({
-	label,
-	className = '',
-	id,
-	...props
-}: TextareaProps) {
+export function Textarea({ label, hint, error, className = '', id, ...props }: TextareaProps) {
 	const [isFocused, setIsFocused] = useState(false);
-	// eslint-disable-next-line react-hooks/rules-of-hooks
-	const textareaId = id || useId();
+	const generatedId = useId();
+	const textareaId = id || generatedId;
+	const descriptionId = error ? `${textareaId}-error` : hint ? `${textareaId}-hint` : undefined;
 
 	return (
-		<div className="space-y-1.5 w-full">
-			{label && (
-				<label
-					htmlFor={textareaId}
-					className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider"
-				>
-					{label}
-				</label>
-			)}
-			<motion.div
-				animate={{
-					scale: isFocused ? 1.01 : 1,
-					boxShadow: isFocused
-						? '0 4px 12px rgba(79, 70, 229, 0.08)'
-						: '0 0px 0px rgba(0,0,0,0)',
-				}}
-				transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-				className={`rounded-lg border bg-surface-secondary transition-colors ${
-					isFocused
-						? 'border-primary/50 ring-2 ring-primary/10'
-						: 'border-border'
-				}`}
-			>
+		<div className="w-full space-y-1.5">
+			{label && <label htmlFor={textareaId} className="block text-xs font-semibold text-text-secondary">{label}</label>}
+			<div className={`rounded-lg border bg-surface-secondary transition-colors ${error ? 'border-danger' : isFocused ? 'border-primary/60 ring-2 ring-primary/15' : 'border-border'}`}>
 				<textarea
 					id={textareaId}
-					onFocus={(e) => {
-						setIsFocused(true);
-						props.onFocus?.(e);
-					}}
-					onBlur={(e) => {
-						setIsFocused(false);
-						props.onBlur?.(e);
-					}}
-					className={`w-full bg-transparent px-3 py-2.5 text-xs text-text-primary placeholder-text-muted focus:outline-none resize-none ${className}`}
+					onFocus={(event) => { setIsFocused(true); props.onFocus?.(event); }}
+					onBlur={(event) => { setIsFocused(false); props.onBlur?.(event); }}
+					className={`min-h-28 w-full resize-y bg-transparent px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none ${className}`}
+					aria-invalid={Boolean(error) || undefined}
+					aria-describedby={descriptionId}
 					{...props}
 				/>
-			</motion.div>
+			</div>
+			{error ? <p id={`${textareaId}-error`} className="text-sm text-danger" role="alert">{error}</p> : hint ? <p id={`${textareaId}-hint`} className="text-sm text-text-muted">{hint}</p> : null}
 		</div>
 	);
 }

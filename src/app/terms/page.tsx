@@ -70,7 +70,14 @@ export default function TermsPage() {
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							3. Limitation of Liability
+							3. Organization Visibility &amp; Privacy Settings
+						</h2>
+						<p>
+							Club officers are responsible for properly configuring their organization&apos;s visibility settings. Organizations marked as public will have their profile and showcase information made accessible to guest visitors and site members on the campus directory. Organizations desiring restricted access must enable the Private setting, which disallows non-members and unauthorized guests from viewing the club hub.
+						</p>
+
+						<h2 className="text-lg font-bold text-text-primary pt-2">
+							4. Limitation of Liability
 						</h2>
 						<p>
 							Demos provides services &quot;as is&quot; to assist

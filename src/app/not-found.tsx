@@ -10,7 +10,7 @@ export default function NotFound() {
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
 
-			<main className="grow flex items-center justify-center px-4 sm:px-6 lg:px-8 py-16 relative overflow-hidden">
+			<main id="main-content" className="grow flex items-center justify-center px-4 sm:px-6 lg:px-8 py-16 relative overflow-hidden">
 				{/* Soft background glow */}
 				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -48,7 +48,7 @@ export default function NotFound() {
 							href="/search"
 							className="rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all text-center"
 						>
-							Browse Groups
+							Browse clubs
 						</Link>
 						<Link
 							href="/"

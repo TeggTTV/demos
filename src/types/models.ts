@@ -203,6 +203,7 @@ export interface AppContextType {
 		instagramUrl?: string;
 		discordUrl?: string;
 		tags?: string[];
+		isPrivate?: boolean;
 	}) => Promise<{ success: boolean; group?: Group; error?: string }>;
 	deleteMessage: (messageId: string) => Promise<void>;
 	updateGroupSettings: (

@@ -33,7 +33,8 @@ export default function Home() {
 		<div className="flex min-h-screen flex-col bg-background">
 			<Nav />
 
-			<LandingHero
+			<main id="main-content">
+				<LandingHero
 				searchQuery={searchQuery}
 				setSearchQuery={setSearchQuery}
 				onSearchSubmit={handleSearchSubmit}
@@ -51,7 +52,8 @@ export default function Home() {
 
 			<LandingGuideSection />
 
-			<LandingFaqSection />
+				<LandingFaqSection />
+			</main>
 
 			<Footer />
 

@@ -9,7 +9,6 @@ const PROTECTED_ROUTES = [
 	'/pending',
 	'/profile',
 	'/settings',
-	'/search',
 	'/join',
 ];
 

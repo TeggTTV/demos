@@ -800,6 +800,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			instagramUrl?: string;
 			discordUrl?: string;
 			tags?: string[];
+			isPrivate?: boolean;
 		}) => {
 			try {
 				const data = await apiClient.createGroup(groupData);

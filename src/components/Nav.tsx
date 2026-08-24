@@ -31,7 +31,7 @@ export default function Nav() {
 				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 					<div className="flex h-14 items-center justify-between">
 						{/* Logo */}
-						<Link href="/" className="flex items-center space-x-2">
+						<Link href="/" className="flex items-center space-x-2" aria-label="Demos home">
 							<div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg">
 								<Image
 									src="/icon1.png"
@@ -52,18 +52,19 @@ export default function Nav() {
 						</Link>
 
 						{/* Center Nav (Desktop) */}
-						<div className="hidden md:flex items-center space-x-1">
+						<div className="hidden md:flex items-center space-x-1" aria-label="Primary navigation">
 							{navLinks.map((link) => {
 								const active = pathname === link.href;
 								return (
 									<Link
 										key={link.href}
 										href={link.href}
-										className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+									className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 											active
 												? 'bg-primary-light text-primary font-semibold'
 												: 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
-										}`}
+									}`}
+									aria-current={active ? 'page' : undefined}
 									>
 										{link.label}
 									</Link>
@@ -79,6 +80,7 @@ export default function Nav() {
 									setNotificationDrawerOpen(!notificationDrawerOpen)
 								}
 								aria-label="Open notifications"
+								aria-expanded={notificationDrawerOpen}
 								className="relative p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
 							>
 								<FiBell size={20} />
@@ -93,12 +95,22 @@ export default function Nav() {
 
 							{/* Profile Menu */}
 							<ProfileMenu />
+							{!currentUser && (
+								<Link
+									href="/auth/register"
+									className="hidden rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:inline-flex"
+								>
+									Get started
+								</Link>
+							)}
 
 							{/* Mobile Menu Toggle */}
 							<button
 								onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
 								className="md:hidden p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors focus:outline-none cursor-pointer"
 								aria-label="Toggle menu"
+								aria-expanded={mobileMenuOpen}
+								aria-controls="mobile-navigation"
 							>
 								{mobileMenuOpen ? (
 									<FiX size={20} />
@@ -118,6 +130,7 @@ export default function Nav() {
 							animate={{ height: 'auto', opacity: 1 }}
 							exit={{ height: 0, opacity: 0 }}
 							className="md:hidden border-t border-border bg-surface overflow-hidden"
+							id="mobile-navigation"
 						>
 							<div className="px-4 py-3 space-y-1.5">
 								{navLinks.map((link) => {
@@ -127,11 +140,12 @@ export default function Nav() {
 											key={link.href}
 											href={link.href}
 											onClick={() => setMobileMenuOpen(false)}
-											className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+										className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
 												active
 													? 'bg-primary-light text-primary font-semibold'
 													: 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
-											}`}
+										}`}
+										aria-current={active ? 'page' : undefined}
 										>
 											{link.label}
 										</Link>

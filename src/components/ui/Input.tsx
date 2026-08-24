@@ -2,65 +2,81 @@
 
 import React, { useId, useState } from 'react';
 import { IconType } from 'react-icons';
-import { motion } from 'framer-motion';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 	label?: string;
 	icon?: IconType;
+	hint?: React.ReactNode;
+	error?: React.ReactNode;
 }
 
 export function Input({
 	label,
 	icon: Icon,
+	hint,
+	error,
 	className = '',
 	id,
 	...props
 }: InputProps) {
 	const [isFocused, setIsFocused] = useState(false);
-	// eslint-disable-next-line react-hooks/rules-of-hooks
-	const inputId = id || useId();
+	const generatedId = useId();
+	const inputId = id || generatedId;
+	const descriptionId = error
+		? `${inputId}-error`
+		: hint
+			? `${inputId}-hint`
+			: undefined;
 
 	return (
-		<div className="space-y-1.5 w-full">
+		<div className="w-full space-y-1.5">
 			{label && (
 				<label
 					htmlFor={inputId}
-					className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider"
+					className="block text-xs font-semibold text-text-secondary"
 				>
 					{label}
 				</label>
 			)}
-			<motion.div
-				animate={{
-					scale: isFocused ? 1.02 : 1,
-					boxShadow: isFocused
-						? '0 4px 12px rgba(79, 70, 229, 0.12)'
-						: '0 0px 0px rgba(0,0,0,0)',
-				}}
-				transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-				className={`flex items-center gap-2 rounded-lg border bg-surface-secondary px-3 py-2.5 transition-colors ${
-					isFocused
-						? 'border-primary/50 ring-2 ring-primary/10'
-						: 'border-border'
-				}`}
+			<div
+				className={`flex min-h-11 items-center gap-2 rounded-lg border bg-surface-secondary px-3 py-2 transition-colors ${error ? 'border-danger' : isFocused ? 'border-primary/60 ring-2 ring-primary/15' : 'border-border'}`}
 			>
 				{Icon && (
-					<Icon className="text-text-muted shrink-0" size={16} />
+					<Icon
+						className="shrink-0 text-text-muted"
+						size={16}
+						aria-hidden="true"
+					/>
 				)}
 				<input
 					id={inputId}
-					onFocus={(e) => {
+					onFocus={(event) => {
 						setIsFocused(true);
-						props.onFocus?.(e);
+						props.onFocus?.(event);
 					}}
-					onBlur={(e) => {
+					onBlur={(event) => {
 						setIsFocused(false);
-						props.onBlur?.(e);
+						props.onBlur?.(event);
 					}}
-					className={`grow bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none w-full ${className}`}
+					className={`w-full grow bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none ${className}`}
+					aria-invalid={Boolean(error) || undefined}
+					aria-describedby={descriptionId}
 					{...props}
 				/>
-			</motion.div>
+			</div>
+			{error ? (
+				<p
+					id={`${inputId}-error`}
+					className="text-sm text-danger"
+					role="alert"
+				>
+					{error}
+				</p>
+			) : hint ? (
+				<p id={`${inputId}-hint`} className="text-sm text-text-muted">
+					{hint}
+				</p>
+			) : null}
 		</div>
 	);
 }

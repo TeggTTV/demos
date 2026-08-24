@@ -184,7 +184,30 @@ export default function ClubDetailModal({
 
 					{/* Join / Action Box */}
 					<div className="pt-3 border-t border-border">
-						{isMember ? (
+						{!currentUser ? (
+							<div className="rounded-xl border border-primary/20 bg-primary-light/40 p-4 text-center space-y-2">
+								<p className="text-xs font-semibold text-text-primary">
+									Want to join or connect with {club.name}?
+								</p>
+								<p className="text-[11px] text-text-muted">
+									Sign in or register with your campus email to apply for membership, chat in club hubs, and participate in events.
+								</p>
+								<div className="pt-1 flex items-center justify-center gap-2">
+									<Link
+										href="/auth/login"
+										className="rounded-lg bg-surface border border-border px-3.5 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-secondary transition-colors"
+									>
+										Log In
+									</Link>
+									<Link
+										href="/auth/register"
+										className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover transition-colors shadow-2xs"
+									>
+										Create Account
+									</Link>
+								</div>
+							</div>
+						) : isMember ? (
 							<div className="flex items-center justify-between p-4 rounded-xl bg-success-bg border border-success/20">
 								<span className="text-xs font-semibold text-success flex items-center gap-1.5">
 									<FiCheck /> You are an active member of this club!

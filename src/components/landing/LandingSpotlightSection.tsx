@@ -20,7 +20,7 @@ export default function LandingSpotlightSection({
 	groups,
 	currentUser,
 }: LandingSpotlightSectionProps) {
-	if (groups.length <= 5) {
+	if (groups.length === 0) {
 		return null;
 	}
 

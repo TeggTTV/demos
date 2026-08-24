@@ -106,7 +106,22 @@ export default function PrivacyPage() {
 						</ul>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							3. How Information is Used
+							3. Public Directory &amp; Organization Privacy Controls
+						</h2>
+						<p>
+							Demos allows guest visitors and non-members to browse our public campus club showcase directory. However, club officers maintain full privacy control over their organization:
+						</p>
+						<ul className="list-disc pl-5 space-y-1">
+							<li>
+								<strong>Public Organizations (Default):</strong> Basic club details (name, category, tagline, description, meeting frequency, and general social links) are visible on the Explore directory to campus guests and site members.
+							</li>
+							<li>
+								<strong>Private / Members-Only Organizations:</strong> Club leaders and officers can set their club to Private at any time in Club Settings. When marked private, the organization is completely disallowed from being viewed by guest visitors, unauthorized users, and non-members. Internal message feeds, documents, rosters, and event sessions remain strictly confidential to approved members and invite code holders.
+							</li>
+						</ul>
+
+						<h2 className="text-lg font-bold text-text-primary pt-2">
+							4. How Information is Used
 						</h2>
 						<p>
 							Your information is utilized solely to facilitate
@@ -116,7 +131,7 @@ export default function PrivacyPage() {
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							4. Data Security &amp; Sharing
+							5. Data Security &amp; Sharing
 						</h2>
 						<p>
 							We do not sell or rent your personal data to third
@@ -125,7 +140,7 @@ export default function PrivacyPage() {
 						</p>
 
 						<h2 className="text-lg font-bold text-text-primary pt-2">
-							5. Your Rights &amp; Consent
+							6. Your Rights &amp; Consent
 						</h2>
 						<p>
 							By using Demos, you consent to our data collection

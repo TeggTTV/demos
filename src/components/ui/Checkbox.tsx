@@ -23,7 +23,7 @@ export function Checkbox({
 	return (
 		<label
 			htmlFor={checkboxId}
-			className="flex items-center space-x-2 text-xs text-text-secondary cursor-pointer hover:text-text-primary select-none transition-colors"
+			className="flex min-h-11 items-center gap-2 text-sm text-text-secondary cursor-pointer select-none transition-colors"
 		>
 			<div className="relative">
 				<input
@@ -31,12 +31,12 @@ export function Checkbox({
 					id={checkboxId}
 					checked={checked}
 					onChange={onChange}
-					className="sr-only"
+					className="peer sr-only"
 					{...props}
 				/>
 				{/* Custom check box */}
 				<div
-					className={`h-4.5 w-4.5 rounded border flex items-center justify-center transition-all ${
+					className={`flex h-5 w-5 items-center justify-center rounded border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 ${
 						checked
 							? 'border-primary bg-primary'
 							: 'border-border bg-surface-secondary'
@@ -48,11 +48,7 @@ export function Checkbox({
 								initial={{ scale: 0, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
 								exit={{ scale: 0, opacity: 0 }}
-								transition={{
-									type: 'spring',
-									stiffness: 500,
-									damping: 25,
-								}}
+								transition={{ duration: 0.15 }}
 								className="h-3 w-3 text-white"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -69,7 +65,7 @@ export function Checkbox({
 					</AnimatePresence>
 				</div>
 			</div>
-			{label && <span className="font-medium">{label}</span>}
+			{label && <span className="font-medium leading-snug">{label}</span>}
 		</label>
 	);
 }

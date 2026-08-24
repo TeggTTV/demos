@@ -9,7 +9,6 @@ import DataConsentBanner from '@/components/DataConsentBanner';
 export const viewport: Viewport = {
 	width: 'device-width',
 	initialScale: 1,
-	maximumScale: 1,
 	themeColor: '#4f46e5',
 };
 
@@ -115,10 +114,11 @@ export default function RootLayout({
 				<meta name="theme-color" content="#4f46e5" />
 				<link rel="manifest" href="/manifest.json" />
 			</head>
-			<body
+		<body
 				className="min-h-full flex flex-col bg-background text-foreground font-sans"
 				suppressHydrationWarning
-			>
+		>
+			<a href="#main-content" className="skip-link">Skip to content</a>
 				<AppProvider>
 					{children}
 					<PwaInstallBanner />

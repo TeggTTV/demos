@@ -44,9 +44,11 @@ export default function GroupCard({
 	};
 
 	return (
-		<div
+		<button
+			type="button"
 			onClick={handleCardClick}
-			className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all flex flex-col cursor-pointer"
+			className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-lg"
+			aria-label={`${isMember ? 'Enter' : 'View'} ${club.name} club hub`}
 		>
 			{/* Banner */}
 			<div className="h-32 w-full relative bg-surface-secondary overflow-hidden">
@@ -147,6 +149,6 @@ export default function GroupCard({
 					</div>
 				</div>
 			</div>
-		</div>
+		</button>
 	);
 }
