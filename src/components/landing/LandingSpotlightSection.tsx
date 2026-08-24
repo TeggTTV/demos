@@ -22,19 +22,12 @@ export default function LandingSpotlightSection({
 }: LandingSpotlightSectionProps) {
 	const featuredClubs = groups.filter((g) => {
 		const isFeatured = g.isFeatured !== undefined ? g.isFeatured : true;
-		const isPublicToGuests =
-			g.isPublicToGuests !== undefined ? g.isPublicToGuests : !g.isPrivate;
-		const isPublicToMembers =
-			g.isPublicToMembers !== undefined ? g.isPublicToMembers : true;
+		const isPrivate =
+			Boolean(g.isPrivate) ||
+			g.isPublicToGuests === false ||
+			g.isPublicToMembers === false;
 
-		if (!isFeatured) return false;
-		if (!currentUser && (!isPublicToGuests || !isPublicToMembers)) return false;
-		if (currentUser && !isPublicToMembers) {
-			const isMember =
-				g.leaderId === currentUser.id ||
-				g.memberIds.includes(currentUser.id);
-			if (!isMember) return false;
-		}
+		if (!isFeatured || isPrivate) return false;
 		return true;
 	});
 

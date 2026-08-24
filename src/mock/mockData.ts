@@ -207,6 +207,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_jordan_miller',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: true,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
@@ -246,6 +249,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_sophia_patel',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: false,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1558655146-d09347e92766?w=1200&auto=format&fit=crop&q=80',
@@ -283,6 +289,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_aisha_m',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: false,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&auto=format&fit=crop&q=80',
@@ -321,6 +330,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_alex_chen',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: false,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1200&auto=format&fit=crop&q=80',
@@ -358,6 +370,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_liam_oc',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: false,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80',
@@ -395,6 +410,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_david_kim',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: false,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200&auto=format&fit=crop&q=80',
@@ -433,6 +451,9 @@ export const MOCK_GROUPS: Group[] = [
 			'user_david_kim',
 		],
 		isPrivate: false,
+		isPublicToGuests: true,
+		isPublicToMembers: true,
+		isFeatured: true,
 		profanityFilter: true,
 		bannerUrl:
 			'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80',

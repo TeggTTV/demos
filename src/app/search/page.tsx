@@ -23,10 +23,24 @@ import ScrollReveal, {
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 function SearchContent() {
-	const { currentUser, groups, requests, sendJoinRequest, events, hydrated } =
-		useAppContext();
+	const {
+		currentUser,
+		groups,
+		requests,
+		sendJoinRequest,
+		events,
+		hydrated,
+		fetchGroups,
+		fetchEvents,
+	} = useAppContext();
 	const searchParams = useSearchParams();
 	const router = useRouter();
+
+	// One-time refresh when redirecting to explore page to ensure fresh club data
+	useEffect(() => {
+		fetchGroups();
+		fetchEvents(undefined, 'all');
+	}, [fetchGroups, fetchEvents]);
 
 	const [query, setQuery] = useState(searchParams.get('q') || '');
 	const [selectedCategory, setSelectedCategory] = useState(

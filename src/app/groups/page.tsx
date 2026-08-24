@@ -20,7 +20,15 @@ import {
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
 
 function GroupsContent() {
-	const { currentUser, groups, createGroup, events, hydrated } = useAppContext();
+	const {
+		currentUser,
+		groups,
+		createGroup,
+		events,
+		hydrated,
+		fetchGroups,
+		fetchEvents,
+	} = useAppContext();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -29,6 +37,11 @@ function GroupsContent() {
 	);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+	useEffect(() => {
+		fetchGroups();
+		fetchEvents(undefined, 'all');
+	}, [fetchGroups, fetchEvents]);
 
 	useEffect(() => {
 		if (searchParams.get('create') === 'true') {

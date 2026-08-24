@@ -60,7 +60,6 @@ export default function CreateGroupModal({
 	const [tagsInput, setTagsInput] = useState('');
 	const [isPublicToGuests, setIsPublicToGuests] = useState(true);
 	const [isPublicToMembers, setIsPublicToMembers] = useState(true);
-	const [isFeatured, setIsFeatured] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [fileSizeError, setFileSizeError] = useState('');
@@ -131,7 +130,6 @@ export default function CreateGroupModal({
 				isPrivate: !isPublicToGuests || !isPublicToMembers,
 				isPublicToGuests,
 				isPublicToMembers,
-				isFeatured,
 			});
 
 			if (res.success && res.group) {
@@ -302,27 +300,6 @@ export default function CreateGroupModal({
 													checked={isPublicToMembers}
 													onChange={(e) =>
 														setIsPublicToMembers(
-															e.target.checked,
-														)
-													}
-												/>
-											</div>
-
-											{/* Toggle 3: Homepage Featured Spotlight */}
-											<div className="flex items-start justify-between gap-3 p-2.5 rounded-lg bg-surface border border-border">
-												<div className="grow">
-													<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-														✨ Feature on Homepage Spotlight
-													</span>
-													<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
-														Allow this club to appear in the &quot;Featured Campus Clubs&quot; spotlight on the homepage.
-													</span>
-												</div>
-												<Checkbox
-													id="create-featured-checkbox"
-													checked={isFeatured}
-													onChange={(e) =>
-														setIsFeatured(
 															e.target.checked,
 														)
 													}

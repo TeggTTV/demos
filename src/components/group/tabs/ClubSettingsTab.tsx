@@ -87,9 +87,6 @@ export default function ClubSettingsTab({
 			? group.isPublicToMembers
 			: true,
 	);
-	const [settingsIsFeatured, setSettingsIsFeatured] = useState(
-		group.isFeatured !== undefined ? group.isFeatured : true,
-	);
 	const [settingsEnableCustomBanner, setSettingsEnableCustomBanner] = useState(
 		group.bannerUrl?.startsWith('data:') ||
 			group.bannerUrl?.startsWith('http') ||
@@ -135,6 +132,29 @@ export default function ClubSettingsTab({
 			setGeneratedInviteCode(existingInvite.code);
 		}
 	}, [existingInvite, generatedInviteCode]);
+
+	// Sync local settings state when group object is refreshed
+	useEffect(() => {
+		if (!isEditingSettings) {
+			setSettingsName(group.name);
+			setSettingsTagline(group.tagline || '');
+			setSettingsDesc(group.description);
+			setSettingsLocation(group.meetingLocation || '');
+			setSettingsIsPublicToGuests(
+				group.isPublicToGuests !== undefined
+					? group.isPublicToGuests
+					: !group.isPrivate,
+			);
+			setSettingsIsPublicToMembers(
+				group.isPublicToMembers !== undefined
+					? group.isPublicToMembers
+					: true,
+			);
+			setSettingsDiscord(group.discordUrl || '');
+			setSettingsInstagram(group.instagramUrl || '');
+			setSettingsWebsite(group.websiteUrl || '');
+		}
+	}, [group, isEditingSettings]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const inviteUrl =
@@ -161,7 +181,6 @@ export default function ClubSettingsTab({
 			isPrivate: !settingsIsPublicToGuests || !settingsIsPublicToMembers,
 			isPublicToGuests: settingsIsPublicToGuests,
 			isPublicToMembers: settingsIsPublicToMembers,
-			isFeatured: settingsIsFeatured,
 			bannerUrl: banner,
 			discordUrl: settingsDiscord,
 			instagramUrl: settingsInstagram,
@@ -206,11 +225,6 @@ export default function ClubSettingsTab({
 								setSettingsIsPublicToMembers(
 									group.isPublicToMembers !== undefined
 										? group.isPublicToMembers
-										: true,
-								);
-								setSettingsIsFeatured(
-									group.isFeatured !== undefined
-										? group.isFeatured
 										: true,
 								);
 								setSettingsEnableCustomBanner(
@@ -494,17 +508,6 @@ export default function ClubSettingsTab({
 												</span>
 											)}
 										</div>
-										<div className="flex items-center gap-1.5 font-medium text-[11px]">
-											{group.isFeatured !== false ? (
-												<span className="text-primary flex items-center gap-1">
-													✨ Featured Spotlight: On
-												</span>
-											) : (
-												<span className="text-text-muted flex items-center gap-1">
-													🚫 Spotlight: Off
-												</span>
-											)}
-										</div>
 									</div>
 								</div>
 								<div>
@@ -666,26 +669,6 @@ export default function ClubSettingsTab({
 									/>
 								</div>
 
-								{/* Toggle 3: Homepage Featured Spotlight */}
-								<div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-surface border border-border">
-									<div className="grow">
-										<span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-											✨ Feature on Homepage Spotlight
-										</span>
-										<span className="text-[11px] text-text-muted leading-relaxed block mt-0.5">
-											Permit this club to appear in the &quot;Featured Campus Clubs&quot; spotlight carousel on the main homepage.
-										</span>
-									</div>
-									<Checkbox
-										id="setting-homepage-featured-checkbox"
-										checked={settingsIsFeatured}
-										onChange={(e) =>
-											setSettingsIsFeatured(
-												e.target.checked,
-											)
-										}
-									/>
-								</div>
 							</div>
 						</div>
 
