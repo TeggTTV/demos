@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma, isDbConnected } from '@/../utils/prisma';
 import { sendWebPushToUsers } from '@/utils/serverPush';
 import { getSession } from '@/../utils/auth';
@@ -54,7 +53,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
 	try {
 		const body = await req.json();
-		const { action, groupId, requestId, message } = body;
+		const { groupId, requestId, message } = body;
+		const action = body.action || (groupId ? 'create' : undefined);
 
 		if (USE_MOCK_DATA) {
 			const session = await getSession(req);
@@ -223,6 +223,26 @@ export async function POST(req: NextRequest) {
 		);
 	} catch (error) {
 		console.error('Requests POST Error:', error);
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+	}
+}
+
+export async function PATCH(req: NextRequest) {
+	try {
+		const body = await req.json();
+		const { requestId, status } = body;
+		const action = status === 'APPROVED' ? 'approve' : status === 'DECLINED' ? 'decline' : body.action;
+
+		// Delegate to POST with normalized action
+		return POST(
+			new NextRequest(req.url, {
+				method: 'POST',
+				headers: req.headers,
+				body: JSON.stringify({ ...body, action, requestId }),
+			}),
+		);
+	} catch (error) {
+		console.error('Requests PATCH Error:', error);
 		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }
