@@ -1,10 +1,7 @@
-'use client';
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronDown, FiCheckCircle } from 'react-icons/fi';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
 
@@ -25,8 +22,8 @@ interface EventBasicDetailsStepProps {
 	setActivityAllDay: (val: boolean) => void;
 	activityLocationType: string;
 	setActivityLocationType: (val: string) => void;
-	activityStatus: string;
-	setActivityStatus: (val: string) => void;
+	activityStatus?: string;
+	setActivityStatus?: (val: string) => void;
 	eventDesc: string;
 	setEventDesc: (val: string) => void;
 }
@@ -48,8 +45,6 @@ export default function EventBasicDetailsStep({
 	setActivityAllDay,
 	activityLocationType,
 	setActivityLocationType,
-	activityStatus,
-	setActivityStatus,
 	eventDesc,
 	setEventDesc,
 }: EventBasicDetailsStepProps) {

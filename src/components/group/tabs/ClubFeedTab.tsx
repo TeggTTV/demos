@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -59,6 +59,7 @@ export default function ClubFeedTab({
 	const [resourceTitle, setResourceTitle] = useState('');
 
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	const groupMessages = feedMessages
 		.filter((m) => m.groupId === group.id)
@@ -67,6 +68,29 @@ export default function ClubFeedTab({
 				new Date(a.createdAt).getTime() -
 				new Date(b.createdAt).getTime(),
 		);
+
+	const filteredMessages = groupMessages.filter((m) => {
+		if (feedFilter === 'announcements') return m.isAnnouncement;
+		if (feedFilter === 'files') return Boolean(m.fileName);
+		if (feedFilter === 'links')
+			return m.content.startsWith('🔗 Resource shared:');
+		return true;
+	});
+
+	const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+		if (messagesEndRef.current) {
+			messagesEndRef.current.scrollIntoView({ behavior });
+		} else if (messagesContainerRef.current) {
+			messagesContainerRef.current.scrollTop =
+				messagesContainerRef.current.scrollHeight;
+		}
+	};
+
+	// Auto-scroll on initial load and when message count or filtered messages change
+	useEffect(() => {
+		// Use auto on initial load, smooth on subsequent updates
+		scrollToBottom(isLoading ? 'auto' : 'smooth');
+	}, [groupMessages.length, filteredMessages.length, isLoading, feedFilter]);
 
 	const getUserName = (msg: FeedMessage) => {
 		if (msg.user?.name) return msg.user.name;
@@ -83,14 +107,6 @@ export default function ClubFeedTab({
 		if (currentUser && currentUser.id === msg.userId) return currentUser.avatarUrl;
 		return undefined;
 	};
-
-	const filteredMessages = groupMessages.filter((m) => {
-		if (feedFilter === 'announcements') return m.isAnnouncement;
-		if (feedFilter === 'files') return Boolean(m.fileName);
-		if (feedFilter === 'links')
-			return m.content.startsWith('🔗 Resource shared:');
-		return true;
-	});
 
 	const handlePost = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -121,6 +137,7 @@ export default function ClubFeedTab({
 		setMessageText('');
 		setFileInput(null);
 		setIsAnnouncement(false);
+		setTimeout(() => scrollToBottom('smooth'), 50);
 	};
 
 	const handlePostResource = async (e: React.FormEvent) => {
@@ -131,6 +148,7 @@ export default function ClubFeedTab({
 		await postMessage(group.id, content, undefined, undefined, false, false);
 		setResourceLink('');
 		setResourceTitle('');
+		setTimeout(() => scrollToBottom('smooth'), 50);
 	};
 
 	return (
@@ -314,6 +332,7 @@ export default function ClubFeedTab({
 							);
 						})
 					)}
+					<div ref={messagesEndRef} />
 				</div>
 
 				<form
