@@ -6,6 +6,7 @@ import {
 	FeedMessage,
 	JoinRequest,
 	ClubInvite,
+	Poll,
 } from '@/types/models';
 import {
 	MOCK_USERS,
@@ -15,6 +16,7 @@ import {
 	MOCK_FEED_MESSAGES,
 	MOCK_REQUESTS,
 	MOCK_INVITES,
+	MOCK_POLLS,
 } from './mockData';
 import { DEFAULT_CLUB_BANNER } from '@/constants/bannerPresets';
 
@@ -26,6 +28,7 @@ class MockDataStore {
 	private feedMessages: FeedMessage[] = [...MOCK_FEED_MESSAGES];
 	private requests: JoinRequest[] = [...MOCK_REQUESTS];
 	private invites: ClubInvite[] = [...MOCK_INVITES];
+	private polls: Poll[] = [...MOCK_POLLS];
 
 	// ─── Users ───
 	getUsers(): User[] {
@@ -343,6 +346,15 @@ class MockDataStore {
 	getFeedMessages(groupId: string): FeedMessage[] {
 		return this.feedMessages
 			.filter((m) => m.groupId === groupId)
+			.map((m) => {
+				if (m.pollId) {
+					return {
+						...m,
+						poll: this.getPollById(m.pollId),
+					};
+				}
+				return m;
+			})
 			.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 	}
 
@@ -354,6 +366,8 @@ class MockDataStore {
 		fileUrl?: string;
 		isAnnouncement?: boolean;
 		pinned?: boolean;
+		subAppType?: 'poll' | 'announcement' | 'resource' | 'general';
+		pollId?: string;
 	}): FeedMessage {
 		const user = this.getUserById(payload.userId);
 		const newMsg: FeedMessage = {
@@ -365,6 +379,9 @@ class MockDataStore {
 			fileUrl: payload.fileUrl,
 			isAnnouncement: Boolean(payload.isAnnouncement),
 			pinned: Boolean(payload.pinned),
+			subAppType: payload.subAppType || (payload.pollId ? 'poll' : 'general'),
+			pollId: payload.pollId,
+			poll: payload.pollId ? this.getPollById(payload.pollId) : undefined,
 			createdAt: new Date().toISOString(),
 			user: user
 				? {
@@ -382,6 +399,204 @@ class MockDataStore {
 		const init = this.feedMessages.length;
 		this.feedMessages = this.feedMessages.filter((m) => m.id !== id);
 		return this.feedMessages.length < init;
+	}
+
+	// ─── Polls Sub-App ───
+	getPolls(groupId?: string): Poll[] {
+		let result = [...this.polls];
+		if (groupId) {
+			result = result.filter((p) => p.groupId === groupId);
+		}
+		return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+	}
+
+	getPollById(id: string): Poll | undefined {
+		return this.polls.find((p) => p.id === id);
+	}
+
+	createPoll(
+		payload: {
+			groupId: string;
+			title: string;
+			description?: string;
+			category?: string;
+			options: string[];
+			isMultipleChoice?: boolean;
+			isAnonymous?: boolean;
+			allowUserOptions?: boolean;
+			expiresAt?: string;
+			pinned?: boolean;
+			postToFeed?: boolean;
+		},
+		userId: string,
+	): { success: boolean; poll?: Poll; error?: string } {
+		const user = this.getUserById(userId);
+		if (!payload.title || !payload.title.trim()) {
+			return { success: false, error: 'Poll title is required' };
+		}
+		const validOptions = (payload.options || []).filter((opt) => opt.trim().length > 0);
+		if (validOptions.length < 2) {
+			return { success: false, error: 'Poll must have at least 2 options' };
+		}
+
+		const newPoll: Poll = {
+			id: `poll_${Date.now()}`,
+			groupId: payload.groupId,
+			creatorId: userId,
+			title: payload.title.trim(),
+			description: payload.description?.trim() || '',
+			category: payload.category || 'General',
+			isMultipleChoice: Boolean(payload.isMultipleChoice),
+			isAnonymous: Boolean(payload.isAnonymous),
+			allowUserOptions: Boolean(payload.allowUserOptions),
+			expiresAt: payload.expiresAt,
+			isClosed: false,
+			pinned: Boolean(payload.pinned),
+			createdAt: new Date().toISOString(),
+			creator: user
+				? {
+						id: user.id,
+						name: user.name,
+						avatarUrl: user.avatarUrl,
+					}
+				: undefined,
+			options: validOptions.map((optText, index) => ({
+				id: `opt_${Date.now()}_${index}`,
+				text: optText.trim(),
+				votes: [],
+			})),
+		};
+
+		this.polls.unshift(newPoll);
+
+		// If postToFeed is true, automatically create a feed message
+		if (payload.postToFeed !== false) {
+			this.postFeedMessage({
+				groupId: payload.groupId,
+				userId,
+				content: `📊 Poll: ${newPoll.title}`,
+				subAppType: 'poll',
+				pollId: newPoll.id,
+			});
+		}
+
+		return { success: true, poll: newPoll };
+	}
+
+	votePoll(
+		pollId: string,
+		optionIds: string[],
+		userId: string,
+	): { success: boolean; poll?: Poll; error?: string } {
+		const pollIndex = this.polls.findIndex((p) => p.id === pollId);
+		if (pollIndex === -1) {
+			return { success: false, error: 'Poll not found' };
+		}
+
+		const poll = this.polls[pollIndex];
+		if (poll.isClosed) {
+			return { success: false, error: 'This poll is closed for voting.' };
+		}
+
+		if (poll.expiresAt && new Date(poll.expiresAt).getTime() < Date.now()) {
+			poll.isClosed = true;
+			return { success: false, error: 'This poll has expired.' };
+		}
+
+		const updatedOptions = poll.options.map((opt) => {
+			// Remove existing vote for this user
+			const filteredVotes = opt.votes.filter((uid) => uid !== userId);
+			if (optionIds.includes(opt.id)) {
+				filteredVotes.push(userId);
+			}
+			return {
+				...opt,
+				votes: filteredVotes,
+			};
+		});
+
+		const updatedPoll: Poll = {
+			...poll,
+			options: updatedOptions,
+		};
+
+		this.polls[pollIndex] = updatedPoll;
+		return { success: true, poll: updatedPoll };
+	}
+
+	addPollOption(
+		pollId: string,
+		optionText: string,
+		userId: string,
+	): { success: boolean; poll?: Poll; error?: string } {
+		const pollIndex = this.polls.findIndex((p) => p.id === pollId);
+		if (pollIndex === -1) {
+			return { success: false, error: 'Poll not found' };
+		}
+
+		const poll = this.polls[pollIndex];
+		if (poll.isClosed) {
+			return { success: false, error: 'This poll is closed.' };
+		}
+		if (!poll.allowUserOptions) {
+			return { success: false, error: 'Member options are not allowed on this poll.' };
+		}
+		if (!optionText || !optionText.trim()) {
+			return { success: false, error: 'Option text cannot be empty.' };
+		}
+
+		const newOption = {
+			id: `opt_${Date.now()}`,
+			text: optionText.trim(),
+			votes: [userId], // Automatically vote for the option created by the user
+		};
+
+		// If single choice, remove previous vote from other options
+		let updatedOptions = [...poll.options];
+		if (!poll.isMultipleChoice) {
+			updatedOptions = updatedOptions.map((opt) => ({
+				...opt,
+				votes: opt.votes.filter((uid) => uid !== userId),
+			}));
+		}
+
+		updatedOptions.push(newOption);
+
+		const updatedPoll: Poll = {
+			...poll,
+			options: updatedOptions,
+		};
+
+		this.polls[pollIndex] = updatedPoll;
+		return { success: true, poll: updatedPoll };
+	}
+
+	togglePollClose(
+		pollId: string,
+		isClosed?: boolean,
+	): { success: boolean; poll?: Poll; error?: string } {
+		const pollIndex = this.polls.findIndex((p) => p.id === pollId);
+		if (pollIndex === -1) return { success: false, error: 'Poll not found' };
+		const poll = this.polls[pollIndex];
+		poll.isClosed = isClosed !== undefined ? isClosed : !poll.isClosed;
+		return { success: true, poll };
+	}
+
+	togglePollPin(
+		pollId: string,
+		pinned?: boolean,
+	): { success: boolean; poll?: Poll; error?: string } {
+		const pollIndex = this.polls.findIndex((p) => p.id === pollId);
+		if (pollIndex === -1) return { success: false, error: 'Poll not found' };
+		const poll = this.polls[pollIndex];
+		poll.pinned = pinned !== undefined ? pinned : !poll.pinned;
+		return { success: true, poll };
+	}
+
+	deletePoll(pollId: string): boolean {
+		const initial = this.polls.length;
+		this.polls = this.polls.filter((p) => p.id !== pollId);
+		return this.polls.length < initial;
 	}
 
 	// ─── Join Requests ───

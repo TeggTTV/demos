@@ -67,6 +67,34 @@ export interface ClubInvite {
 	expiresAt?: string;
 }
 
+export interface PollOption {
+	id: string;
+	text: string;
+	votes: string[]; // userIds who voted for this option
+}
+
+export interface Poll {
+	id: string;
+	groupId: string;
+	creatorId: string;
+	title: string;
+	description?: string;
+	category?: string;
+	options: PollOption[];
+	isMultipleChoice?: boolean;
+	isAnonymous?: boolean;
+	allowUserOptions?: boolean;
+	expiresAt?: string;
+	isClosed?: boolean;
+	pinned?: boolean;
+	createdAt: string;
+	creator?: {
+		id: string;
+		name: string;
+		avatarUrl?: string | null;
+	};
+}
+
 export interface FeedMessage {
 	id: string;
 	groupId: string;
@@ -76,6 +104,9 @@ export interface FeedMessage {
 	fileName?: string;
 	isAnnouncement?: boolean;
 	pinned?: boolean;
+	subAppType?: 'poll' | 'announcement' | 'resource' | 'general';
+	pollId?: string;
+	poll?: Poll;
 	createdAt: string;
 	user?: {
 		id: string;
@@ -149,6 +180,7 @@ export interface AppContextType {
 	events: MeetingEvent[];
 	attendances: AttendanceRecord[];
 	invites: ClubInvite[];
+	polls: Poll[];
 	notifications: AppNotification[];
 	notificationSettings: NotificationSettings;
 	unreadNotificationCount: number;
@@ -180,7 +212,9 @@ export interface AppContextType {
 		fileUrl?: string,
 		isAnnouncement?: boolean,
 		pinned?: boolean,
-	) => Promise<void>;
+		subAppType?: 'poll' | 'announcement' | 'resource' | 'general',
+		pollId?: string,
+	) => Promise<FeedMessage | undefined>;
 	updateProfile: (
 		name: string,
 		avatarUrl: string,
@@ -191,6 +225,41 @@ export interface AppContextType {
 		birthday?: string,
 	) => Promise<void>;
 	fetchFeedMessages: (groupId: string) => Promise<void>;
+	fetchPolls: (groupId: string) => Promise<Poll[]>;
+	createPoll: (
+		groupId: string,
+		pollData: {
+			title: string;
+			description?: string;
+			category?: string;
+			options: string[];
+			isMultipleChoice?: boolean;
+			isAnonymous?: boolean;
+			allowUserOptions?: boolean;
+			expiresAt?: string;
+			pinned?: boolean;
+			postToFeed?: boolean;
+		},
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	votePoll: (
+		pollId: string,
+		optionIds: string[],
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	addPollOption: (
+		pollId: string,
+		optionText: string,
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	togglePollClose: (
+		pollId: string,
+		isClosed?: boolean,
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	togglePollPin: (
+		pollId: string,
+		pinned?: boolean,
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	deletePoll: (
+		pollId: string,
+	) => Promise<{ success: boolean; error?: string }>;
 	createGroup: (groupData: {
 		name: string;
 		tagline?: string;

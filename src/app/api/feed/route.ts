@@ -58,12 +58,25 @@ export async function GET(req: NextRequest) {
 				fileName: true,
 				isAnnouncement: true,
 				pinned: true,
+				subAppType: true,
+				pollId: true,
 				createdAt: true,
 				user: {
 					select: {
 						id: true,
 						name: true,
 						avatarUrl: true,
+					},
+				},
+				poll: {
+					include: {
+						creator: {
+							select: {
+								id: true,
+								name: true,
+								avatarUrl: true,
+							},
+						},
 					},
 				},
 			},
@@ -98,11 +111,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
 	try {
 		const body = await req.json();
-		const { groupId, content, fileName, fileUrl, isAnnouncement, pinned } = body;
+		const { groupId, content, fileName, fileUrl, isAnnouncement, pinned, subAppType, pollId } = body;
 
-		if (!groupId || (!content && !fileUrl)) {
+		if (!groupId || (!content && !fileUrl && !pollId)) {
 			return NextResponse.json(
-				{ error: 'Missing required parameters (groupId, content/file)' },
+				{ error: 'Missing required parameters (groupId, content/file/poll)' },
 				{ status: 400 },
 			);
 		}
@@ -118,6 +131,8 @@ export async function POST(req: NextRequest) {
 				fileUrl,
 				isAnnouncement,
 				pinned,
+				subAppType,
+				pollId,
 			});
 			return NextResponse.json({ success: true, message: newMsg });
 		}
@@ -182,10 +197,17 @@ export async function POST(req: NextRequest) {
 				fileUrl: fileUrl || null,
 				isAnnouncement: Boolean(isAnnouncement),
 				pinned: Boolean(pinned),
+				subAppType: subAppType || null,
+				pollId: pollId || null,
 			},
 			include: {
-				user: { select: { name: true } },
+				user: { select: { id: true, name: true, avatarUrl: true } },
 				group: { select: { name: true } },
+				poll: {
+					include: {
+						creator: { select: { id: true, name: true, avatarUrl: true } },
+					},
+				},
 			},
 		});
 

@@ -47,6 +47,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const [events, setEvents] = useState<MeetingEvent[]>([]);
 	const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
 	const [invites, setInvites] = useState<ClubInvite[]>([]);
+	const [polls, setPolls] = useState<Poll[]>([]);
 	const [notifications, setNotifications] = useState<AppNotification[]>([]);
 	const [notificationSettings, setNotificationSettings] =
 		useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
@@ -711,6 +712,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			fileUrl?: string,
 			isAnnouncement?: boolean,
 			pinned?: boolean,
+			subAppType?: 'poll' | 'announcement' | 'resource' | 'general',
+			pollId?: string,
 		) => {
 			try {
 				const data = await apiClient.postMessage({
@@ -720,13 +723,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					fileUrl,
 					isAnnouncement,
 					pinned,
+					subAppType,
+					pollId,
 				});
 				if (data.success && data.message) {
 					setFeedMessages((prev) => [...prev, data.message!]);
+					return data.message;
 				}
 			} catch (e) {
 				console.error('postMessage error:', e);
 			}
+			return undefined;
 		},
 		[],
 	);
@@ -750,6 +757,171 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		} catch (e) {
 			console.error('fetchFeedMessages error:', e);
+		}
+	}, []);
+
+	/* ─── Polls Sub-App Handlers ─── */
+	const fetchPolls = useCallback(async (groupId: string) => {
+		try {
+			const data = await apiClient.fetchPolls({ groupId });
+			if (data.polls) {
+				setPolls(data.polls);
+				return data.polls;
+			}
+		} catch (e) {
+			console.error('fetchPolls error:', e);
+		}
+		return [];
+	}, []);
+
+	const createPoll = useCallback(
+		async (
+			groupId: string,
+			pollData: {
+				title: string;
+				description?: string;
+				category?: string;
+				options: string[];
+				isMultipleChoice?: boolean;
+				isAnonymous?: boolean;
+				allowUserOptions?: boolean;
+				expiresAt?: string;
+				pinned?: boolean;
+				postToFeed?: boolean;
+			},
+		) => {
+			try {
+				const data = await apiClient.createPoll({ groupId, ...pollData });
+				if (data.success && data.poll) {
+					setPolls((prev) => [data.poll!, ...prev]);
+					await fetchFeedMessages(groupId);
+					triggerNotification({
+						type: 'announcement',
+						title: 'New Club Poll',
+						body: `New poll posted: "${data.poll.title}"`,
+						groupId,
+						url: `/group/${groupId}/feed?tab=polls`,
+					});
+					return { success: true, poll: data.poll };
+				}
+				return { success: false, error: data.error || 'Failed to create poll' };
+			} catch (e) {
+				console.error('createPoll error:', e);
+				return { success: false, error: 'Network error creating poll' };
+			}
+		},
+		[fetchFeedMessages, triggerNotification],
+	);
+
+	const votePoll = useCallback(
+		async (pollId: string, optionIds: string[]) => {
+			try {
+				const data = await apiClient.votePoll(pollId, optionIds);
+				if (data.success && data.poll) {
+					setPolls((prev) =>
+						prev.map((p) => (p.id === pollId ? data.poll! : p)),
+					);
+					// Also update feed messages referencing this poll
+					setFeedMessages((prev) =>
+						prev.map((m) =>
+							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+						),
+					);
+					return { success: true, poll: data.poll };
+				}
+				return { success: false, error: data.error || 'Vote failed' };
+			} catch (e) {
+				console.error('votePoll error:', e);
+				return { success: false, error: 'Network error voting on poll' };
+			}
+		},
+		[],
+	);
+
+	const addPollOption = useCallback(
+		async (pollId: string, optionText: string) => {
+			try {
+				const data = await apiClient.addPollOption(pollId, optionText);
+				if (data.success && data.poll) {
+					setPolls((prev) =>
+						prev.map((p) => (p.id === pollId ? data.poll! : p)),
+					);
+					setFeedMessages((prev) =>
+						prev.map((m) =>
+							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+						),
+					);
+					return { success: true, poll: data.poll };
+				}
+				return { success: false, error: data.error || 'Failed to add option' };
+			} catch (e) {
+				console.error('addPollOption error:', e);
+				return { success: false, error: 'Network error adding option' };
+			}
+		},
+		[],
+	);
+
+	const togglePollClose = useCallback(
+		async (pollId: string, isClosed?: boolean) => {
+			try {
+				const data = await apiClient.togglePollClose(pollId, isClosed);
+				if (data.success && data.poll) {
+					setPolls((prev) =>
+						prev.map((p) => (p.id === pollId ? data.poll! : p)),
+					);
+					setFeedMessages((prev) =>
+						prev.map((m) =>
+							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+						),
+					);
+					return { success: true, poll: data.poll };
+				}
+				return { success: false, error: data.error || 'Failed to update poll' };
+			} catch (e) {
+				console.error('togglePollClose error:', e);
+				return { success: false, error: 'Network error updating poll' };
+			}
+		},
+		[],
+	);
+
+	const togglePollPin = useCallback(
+		async (pollId: string, pinned?: boolean) => {
+			try {
+				const data = await apiClient.togglePollPin(pollId, pinned);
+				if (data.success && data.poll) {
+					setPolls((prev) =>
+						prev.map((p) => (p.id === pollId ? data.poll! : p)),
+					);
+					setFeedMessages((prev) =>
+						prev.map((m) =>
+							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+						),
+					);
+					return { success: true, poll: data.poll };
+				}
+				return { success: false, error: data.error || 'Failed to pin poll' };
+			} catch (e) {
+				console.error('togglePollPin error:', e);
+				return { success: false, error: 'Network error pinning poll' };
+			}
+		},
+		[],
+	);
+
+	const deletePoll = useCallback(async (pollId: string) => {
+		try {
+			const data = await apiClient.deletePoll(pollId);
+			if (data.success) {
+				setPolls((prev) => prev.filter((p) => p.id !== pollId));
+				setFeedMessages((prev) => prev.filter((m) => m.pollId !== pollId));
+				return { success: true };
+			}
+			return { success: false, error: data.error || 'Failed to delete poll' };
+		} catch (e) {
+			console.error('deletePoll error:', e);
+			return { success: false, error: 'Network error deleting poll' };
 		}
 	}, []);
 
@@ -1041,6 +1213,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		events,
 		attendances,
 		invites,
+		polls,
 		notifications,
 		notificationSettings,
 		unreadNotificationCount,
@@ -1057,6 +1230,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		postMessage,
 		updateProfile,
 		fetchFeedMessages,
+		fetchPolls,
+		createPoll,
+		votePoll,
+		addPollOption,
+		togglePollClose,
+		togglePollPin,
+		deletePoll,
 		createGroup,
 		deleteMessage,
 		updateGroupSettings,

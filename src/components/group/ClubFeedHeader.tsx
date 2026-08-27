@@ -3,11 +3,23 @@
 import React from 'react';
 import { Group, MeetingEvent } from '@/types/models';
 import ClubBanner from '@/components/ui/ClubBanner';
-import { FiInstagram, FiGlobe, FiMessageCircle, FiClock, FiUsers, FiCalendar, FiShield, FiSettings, FiEyeOff } from 'react-icons/fi';
+import {
+	FiInstagram,
+	FiGlobe,
+	FiMessageCircle,
+	FiClock,
+	FiUsers,
+	FiCalendar,
+	FiShield,
+	FiSettings,
+	FiEyeOff,
+	FiBarChart2,
+} from 'react-icons/fi';
 import { FaDiscord } from 'react-icons/fa';
 
 export type FeedTab =
 	| 'feed'
+	| 'polls'
 	| 'attendance'
 	| 'roster'
 	| 'roles'
@@ -21,6 +33,7 @@ interface ClubFeedHeaderProps {
 	canManage: boolean;
 	isLeader: boolean;
 	clubEvents: MeetingEvent[];
+	activePollsCount?: number;
 }
 
 export default function ClubFeedHeader({
@@ -131,6 +144,23 @@ export default function ClubFeedHeader({
 						aria-selected={activeTab === 'feed'}
 					>
 						<span className="inline-flex items-center gap-1.5"><FiMessageCircle aria-hidden="true" /> Feed</span>
+					</button>
+					<button
+						onClick={() => setActiveTab('polls')}
+						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+							activeTab === 'polls'
+								? 'border-primary text-primary'
+								: 'border-transparent text-text-muted hover:text-text-primary'
+						}`}
+						role="tab"
+						aria-selected={activeTab === 'polls'}
+					>
+						<FiBarChart2 aria-hidden="true" /> Polls
+						{typeof activePollsCount === 'number' && activePollsCount > 0 && (
+							<span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-white text-[9px] font-bold">
+								{activePollsCount}
+							</span>
+						)}
 					</button>
 					<button
 						onClick={() => setActiveTab('attendance')}

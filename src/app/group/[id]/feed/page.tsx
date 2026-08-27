@@ -9,12 +9,14 @@ import { MeetingEvent } from '@/types/models';
 import { ClubHubSkeleton } from '@/components/ui/Skeleton';
 import ClubFeedHeader, { FeedTab } from '@/components/group/ClubFeedHeader';
 import ClubFeedTab from '@/components/group/tabs/ClubFeedTab';
+import ClubPollsTab from '@/components/group/tabs/ClubPollsTab';
 import ClubAttendanceTab from '@/components/group/tabs/ClubAttendanceTab';
 import ClubRosterTab from '@/components/group/tabs/ClubRosterTab';
 import ClubRolesTab from '@/components/group/tabs/ClubRolesTab';
 import ClubSettingsTab from '@/components/group/tabs/ClubSettingsTab';
 import ClubActivitiesTab from '@/components/group/tabs/ClubActivitiesTab';
 import CreateEventModal from '@/components/group/CreateEventModal';
+import CreatePollModal from '@/components/group/CreatePollModal';
 import ScheduleMeetingModal from '@/components/group/ScheduleMeetingModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
@@ -41,6 +43,14 @@ export default function GroupFeedPage() {
 		generateClubInvite,
 		deleteClubInvites,
 		invites,
+		polls,
+		fetchPolls,
+		createPoll,
+		votePoll,
+		addPollOption,
+		togglePollClose,
+		togglePollPin,
+		deletePoll,
 		fetchGroups,
 		fetchInvites,
 		fetchEvents,
@@ -59,6 +69,7 @@ export default function GroupFeedPage() {
 	const canManage = isLeader || isOfficer || (!currentUser && USE_MOCK_DATA);
 
 	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
+	const [createPollModalOpen, setCreatePollModalOpen] = useState(false);
 
 	// Sync activeTab with URL search params / localStorage
 	/* eslint-disable react-hooks/set-state-in-effect */
@@ -71,6 +82,7 @@ export default function GroupFeedPage() {
 			) as FeedTab | null;
 			const validTabs: FeedTab[] = [
 				'feed',
+				'polls',
 				'attendance',
 				'roster',
 				'activities',
@@ -216,6 +228,12 @@ export default function GroupFeedPage() {
 			return () => clearInterval(interval);
 		}
 	}, [id, activeTab, isIdle, fetchFeedMessages]);
+
+	useEffect(() => {
+		if (id) {
+			fetchPolls(id);
+		}
+	}, [id, activeTab, fetchPolls]);
 
 	useEffect(() => {
 		if (activeTab === 'settings') {
@@ -497,6 +515,11 @@ export default function GroupFeedPage() {
 				canManage={canManage}
 				isLeader={isLeader}
 				clubEvents={clubEvents}
+				activePollsCount={
+					polls.filter(
+						(p) => p.groupId === id && !p.isClosed,
+					).length
+				}
 			/>
 
 			{activeTab === 'feed' && (
@@ -506,11 +529,35 @@ export default function GroupFeedPage() {
 					users={users}
 					feedMessages={feedMessages}
 					clubActivities={clubActivities}
+					polls={polls}
 					canManage={canManage}
 					isLoading={isLoading}
 					postMessage={postMessage}
 					deleteMessage={deleteMessage}
 					setActiveTab={setActiveTab}
+					createPoll={createPoll}
+					votePoll={votePoll}
+					addPollOption={addPollOption}
+					togglePollClose={togglePollClose}
+					togglePollPin={togglePollPin}
+					deletePoll={deletePoll}
+				/>
+			)}
+
+			{activeTab === 'polls' && (
+				<ClubPollsTab
+					group={group}
+					currentUser={currentUser}
+					users={users}
+					polls={polls}
+					canManage={canManage}
+					isLoading={isLoading}
+					onOpenCreateModal={() => setCreatePollModalOpen(true)}
+					onVote={votePoll}
+					onAddOption={addPollOption}
+					onToggleClose={togglePollClose}
+					onTogglePin={togglePollPin}
+					onDelete={deletePoll}
 				/>
 			)}
 
@@ -664,6 +711,12 @@ export default function GroupFeedPage() {
 				meetingStatus={meetingStatus}
 				setMeetingStatus={setMeetingStatus}
 				creatingEvent={creatingEvent}
+			/>
+
+			<CreatePollModal
+				isOpen={createPollModalOpen}
+				onClose={() => setCreatePollModalOpen(false)}
+				onSubmit={createPoll.bind(null, id)}
 			/>
 
 			<ConfirmModal

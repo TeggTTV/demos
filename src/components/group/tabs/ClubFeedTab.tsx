@@ -10,10 +10,13 @@ import {
 	FiSend,
 	FiCalendar,
 	FiMapPin,
+	FiPlus,
 } from 'react-icons/fi';
 import { FeedMessageSkeleton } from '@/components/ui/Skeleton';
-import { Group, User, FeedMessage, MeetingEvent } from '@/types/models';
+import { Group, User, FeedMessage, MeetingEvent, Poll } from '@/types/models';
 import { FeedTab } from '@/components/group/ClubFeedHeader';
+import FeedSubAppsPopover from '@/components/group/FeedSubAppsPopover';
+import PollCard from '@/components/group/PollCard';
 
 interface ClubFeedTabProps {
 	group: Group;
@@ -21,6 +24,7 @@ interface ClubFeedTabProps {
 	users: User[];
 	feedMessages: FeedMessage[];
 	clubActivities: MeetingEvent[];
+	polls: Poll[];
 	canManage: boolean;
 	isLoading: boolean;
 	postMessage: (
@@ -30,9 +34,45 @@ interface ClubFeedTabProps {
 		fileUrl?: string,
 		isAnnouncement?: boolean,
 		pinned?: boolean,
-	) => Promise<void>;
+		subAppType?: 'poll' | 'announcement' | 'resource' | 'general',
+		pollId?: string,
+	) => Promise<FeedMessage | undefined>;
 	deleteMessage: (messageId: string) => Promise<void>;
 	setActiveTab: (tab: FeedTab) => void;
+	createPoll: (
+		groupId: string,
+		pollData: {
+			title: string;
+			description?: string;
+			category?: string;
+			options: string[];
+			isMultipleChoice?: boolean;
+			isAnonymous?: boolean;
+			allowUserOptions?: boolean;
+			expiresAt?: string;
+			pinned?: boolean;
+			postToFeed?: boolean;
+		},
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	votePoll: (
+		pollId: string,
+		optionIds: string[],
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	addPollOption: (
+		pollId: string,
+		optionText: string,
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	togglePollClose: (
+		pollId: string,
+		isClosed?: boolean,
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	togglePollPin: (
+		pollId: string,
+		pinned?: boolean,
+	) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
+	deletePoll: (
+		pollId: string,
+	) => Promise<{ success: boolean; error?: string }>;
 }
 
 export default function ClubFeedTab({
@@ -41,18 +81,26 @@ export default function ClubFeedTab({
 	users,
 	feedMessages,
 	clubActivities,
+	polls,
 	canManage,
 	isLoading,
 	postMessage,
 	deleteMessage,
 	setActiveTab,
+	createPoll,
+	votePoll,
+	addPollOption,
+	togglePollClose,
+	togglePollPin,
+	deletePoll,
 }: ClubFeedTabProps) {
 	const router = useRouter();
 	const [feedFilter, setFeedFilter] = useState<
-		'all' | 'announcements' | 'files' | 'links'
+		'all' | 'announcements' | 'polls' | 'files' | 'links'
 	>('all');
 	const [messageText, setMessageText] = useState('');
 	const [isAnnouncement, setIsAnnouncement] = useState(false);
+	const [subAppsOpen, setSubAppsOpen] = useState(false);
 	const [fileInput, setFileInput] = useState<File | null>(null);
 	const [fileSizeErrorFeed, setFileSizeErrorFeed] = useState('');
 	const [resourceLink, setResourceLink] = useState('');
@@ -71,6 +119,7 @@ export default function ClubFeedTab({
 
 	const filteredMessages = groupMessages.filter((m) => {
 		if (feedFilter === 'announcements') return m.isAnnouncement;
+		if (feedFilter === 'polls') return Boolean(m.pollId || m.subAppType === 'poll');
 		if (feedFilter === 'files') return Boolean(m.fileName);
 		if (feedFilter === 'links')
 			return m.content.startsWith('🔗 Resource shared:');
@@ -96,7 +145,8 @@ export default function ClubFeedTab({
 		if (msg.user?.name) return msg.user.name;
 		const found = users.find((u) => u.id === msg.userId);
 		if (found?.name) return found.name;
-		if (currentUser && currentUser.id === msg.userId) return currentUser.name;
+		if (currentUser && currentUser.id === msg.userId)
+			return currentUser.name;
 		return 'Club Member';
 	};
 
@@ -104,7 +154,8 @@ export default function ClubFeedTab({
 		if (msg.user?.avatarUrl) return msg.user.avatarUrl;
 		const found = users.find((u) => u.id === msg.userId);
 		if (found?.avatarUrl) return found.avatarUrl;
-		if (currentUser && currentUser.id === msg.userId) return currentUser.avatarUrl;
+		if (currentUser && currentUser.id === msg.userId)
+			return currentUser.avatarUrl;
 		return undefined;
 	};
 
@@ -145,7 +196,14 @@ export default function ClubFeedTab({
 		if (!resourceLink.trim()) return;
 
 		const content = `🔗 Resource shared: ${resourceTitle.trim() || 'Link'}\n${resourceLink.trim()}`;
-		await postMessage(group.id, content, undefined, undefined, false, false);
+		await postMessage(
+			group.id,
+			content,
+			undefined,
+			undefined,
+			false,
+			false,
+		);
 		setResourceLink('');
 		setResourceTitle('');
 		setTimeout(() => scrollToBottom('smooth'), 50);
@@ -154,7 +212,7 @@ export default function ClubFeedTab({
 	return (
 		<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 			{/* Left: Message Feed */}
-			<div className="lg:col-span-3 bg-surface border border-border rounded-2xl flex flex-col overflow-hidden shadow-xs">
+			<div className="lg:col-span-3 bg-surface border border-border rounded-2xl flex flex-col shadow-xs overflow-visible relative">
 				{/* Sub-filters */}
 				<div className="border-b border-border px-5 py-3 flex items-center justify-between gap-3 bg-surface-secondary/40">
 					<div className="flex items-center gap-2">
@@ -177,6 +235,16 @@ export default function ClubFeedTab({
 							}`}
 						>
 							📢 Announcements
+						</button>
+						<button
+							onClick={() => setFeedFilter('polls')}
+							className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+								feedFilter === 'polls'
+									? 'bg-primary text-white shadow-xs'
+									: 'text-text-muted hover:text-text-primary'
+							}`}
+						>
+							📊 Polls
 						</button>
 						<button
 							onClick={() => setFeedFilter('files')}
@@ -208,18 +276,25 @@ export default function ClubFeedTab({
 						</div>
 					) : filteredMessages.length === 0 ? (
 						<div className="text-center py-16 text-text-muted text-xs">
-							No messages found in this category. Be the first to post!
+							No messages found in this category. Be the first to
+							post!
 						</div>
 					) : (
 						filteredMessages.map((msg) => {
-							const isMe = currentUser ? msg.userId === currentUser.id : false;
+							const isMe = currentUser
+								? msg.userId === currentUser.id
+								: false;
 							const authorName = getUserName(msg);
 							const avatar = getUserAvatar(msg);
-							const authorIsLeader = group.leaderId === msg.userId;
+							const authorIsLeader =
+								group.leaderId === msg.userId;
 							const authorIsOfficer = Boolean(
 								group.officerIds &&
-									group.officerIds.includes(msg.userId),
+								group.officerIds.includes(msg.userId),
 							);
+							const pollObj = msg.pollId
+								? polls.find((p) => p.id === msg.pollId) || msg.poll
+								: undefined;
 
 							return (
 								<div
@@ -246,10 +321,8 @@ export default function ClubFeedTab({
 									)}
 
 									<div
-										className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${
-											isMe
-												? 'items-end'
-												: 'items-start'
+										className={`flex flex-col max-w-[90%] sm:max-w-[80%] ${
+											isMe ? 'items-end' : 'items-start'
 										}`}
 									>
 										<div className="flex items-center space-x-1.5 mb-1 px-1">
@@ -286,47 +359,67 @@ export default function ClubFeedTab({
 											)}
 										</div>
 
-										{/* Message Bubble */}
-										<div
-											className={`rounded-2xl p-3 text-xs leading-relaxed ${
-												msg.isAnnouncement
-													? 'bg-primary-light border border-primary/30 text-text-primary font-medium shadow-xs'
-													: isMe
-														? 'bg-primary text-white rounded-tr-xs'
-														: 'bg-surface-secondary border border-border text-text-primary rounded-tl-xs'
-											}`}
-										>
-											{msg.isAnnouncement && (
-												<div className="text-[10px] font-bold text-primary flex items-center gap-1 uppercase tracking-wider mb-1">
-													📢 Announcement
-												</div>
-											)}
-
-											<p className="whitespace-pre-wrap">
-												{msg.content || (
-													<span className="italic text-text-muted">
-														(Attached file with no message)
-													</span>
+										{/* In-Feed Poll Card Embedding */}
+										{pollObj ? (
+											<div className="w-full min-w-[280px] sm:min-w-[360px] max-w-lg mt-1">
+												<PollCard
+													poll={pollObj}
+													currentUser={currentUser}
+													users={users}
+													group={group}
+													canManage={canManage}
+													onVote={votePoll}
+													onAddOption={addPollOption}
+													onToggleClose={togglePollClose}
+													onTogglePin={togglePollPin}
+													onDelete={deletePoll}
+													compact
+												/>
+											</div>
+										) : (
+											/* Standard Message Bubble */
+											<div
+												className={`rounded-2xl p-3 text-xs leading-relaxed ${
+													msg.isAnnouncement
+														? 'bg-primary-light border border-primary/30 text-text-primary font-medium shadow-xs'
+														: isMe
+															? 'bg-primary text-white rounded-tr-xs'
+															: 'bg-surface-secondary border border-border text-text-primary rounded-tl-xs'
+												}`}
+											>
+												{msg.isAnnouncement && (
+													<div className="text-[10px] font-bold text-primary flex items-center gap-1 uppercase tracking-wider mb-1">
+														📢 Announcement
+													</div>
 												)}
-											</p>
 
-											{/* File attachment preview */}
-											{msg.fileName && msg.fileUrl && (
-												<div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between gap-3">
-													<span className="flex items-center gap-1.5 text-[11px] font-semibold truncate">
-														<FiFile className="shrink-0" />{' '}
-														{msg.fileName}
-													</span>
-													<a
-														href={msg.fileUrl}
-														download={msg.fileName}
-														className="rounded-lg bg-surface px-2 py-1 text-[10px] font-bold text-primary hover:underline border border-border shadow-2xs shrink-0"
-													>
-														Download
-													</a>
-												</div>
-											)}
-										</div>
+												<p className="whitespace-pre-wrap">
+													{msg.content || (
+														<span className="italic text-text-muted">
+															(Attached file with no
+															message)
+														</span>
+													)}
+												</p>
+
+												{/* File attachment preview */}
+												{msg.fileName && msg.fileUrl && (
+													<div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between gap-3">
+														<span className="flex items-center gap-1.5 text-[11px] font-semibold truncate">
+															<FiFile className="shrink-0" />{' '}
+															{msg.fileName}
+														</span>
+														<a
+															href={msg.fileUrl}
+															download={msg.fileName}
+															className="rounded-lg bg-surface px-2 py-1 text-[10px] font-bold text-primary hover:underline border border-border shadow-2xs shrink-0"
+														>
+															Download
+														</a>
+													</div>
+												)}
+											</div>
+										)}
 									</div>
 								</div>
 							);
@@ -337,7 +430,7 @@ export default function ClubFeedTab({
 
 				<form
 					onSubmit={handlePost}
-					className="border-t border-border p-3 bg-surface space-y-2 relative"
+					className="border-t border-border p-3 bg-surface space-y-2 relative z-30 rounded-b-2xl"
 				>
 					{fileInput && (
 						<div className="flex items-center justify-between p-2 rounded-lg bg-primary-light text-xs text-primary">
@@ -382,6 +475,34 @@ export default function ClubFeedTab({
 								</button>
 							</div>
 						)}
+
+						{/* Sub-Apps + Launcher Button (Leader & Officer Only) */}
+						{canManage && (
+							<div className="relative">
+								<button
+									type="button"
+									onClick={() => setSubAppsOpen(!subAppsOpen)}
+									className={`p-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+										subAppsOpen
+											? 'bg-primary text-white shadow-xs'
+											: 'text-text-muted hover:text-text-primary hover:bg-surface-secondary'
+									}`}
+									title="Sub-Apps: Polls & Tools"
+								>
+									<FiPlus size={18} />
+								</button>
+
+								<FeedSubAppsPopover
+									isOpen={subAppsOpen}
+									onClose={() => setSubAppsOpen(false)}
+									onCreatePoll={(pollData) =>
+										createPoll(group.id, pollData)
+									}
+								/>
+							</div>
+						)}
+
+						{/* Attach File Button */}
 						<label
 							className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-secondary cursor-pointer transition-colors"
 							title="Attach File, Document, Image, or Spreadsheet"
@@ -394,11 +515,30 @@ export default function ClubFeedTab({
 								onChange={(e) => {
 									if (e.target.files?.[0]) {
 										const file = e.target.files[0];
-										const ext = file.name.split('.').pop()?.toLowerCase() || '';
-										const allowedExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'csv'];
-										
+										const ext =
+											file.name
+												.split('.')
+												.pop()
+												?.toLowerCase() || '';
+										const allowedExts = [
+											'png',
+											'jpg',
+											'jpeg',
+											'gif',
+											'webp',
+											'pdf',
+											'doc',
+											'docx',
+											'txt',
+											'xls',
+											'xlsx',
+											'csv',
+										];
+
 										if (!allowedExts.includes(ext)) {
-											setFileSizeErrorFeed('Disallowed file type. Supported formats: Images, PDFs, Docs, and Spreadsheets (.xlsx, .xls, .csv).');
+											setFileSizeErrorFeed(
+												'Disallowed file type. Supported formats: Images, PDFs, Docs, and Spreadsheets (.xlsx, .xls, .csv).',
+											);
 											e.target.value = '';
 											return;
 										}
@@ -492,12 +632,7 @@ export default function ClubFeedTab({
 									(e) =>
 										e.dateObj >=
 										new Date(
-											new Date().setHours(
-												0,
-												0,
-												0,
-												0,
-											),
+											new Date().setHours(0, 0, 0, 0),
 										),
 								)
 								.sort(
@@ -543,6 +678,73 @@ export default function ClubFeedTab({
 						className="w-full mt-2 rounded-xl bg-surface border border-border py-1.5 text-[10px] font-bold text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-all text-center block cursor-pointer"
 					>
 						View Calendar Schedule →
+					</button>
+				</div>
+
+				{/* Active Club Polls Side Card */}
+				<div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-3">
+					<div className="flex items-center justify-between">
+						<span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
+							Active Polls
+						</span>
+						<span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+					</div>
+
+					{(() => {
+						const activeGroupPolls = polls
+							.filter((p) => p.groupId === group.id && !p.isClosed)
+							.slice(0, 2);
+
+						if (activeGroupPolls.length === 0) {
+							return (
+								<p className="text-[11px] text-text-muted italic">
+									No active polls right now.
+								</p>
+							);
+						}
+
+						return (
+							<div className="space-y-3">
+								{activeGroupPolls.map((poll) => {
+									const totalVotes = poll.options.reduce(
+										(sum, o) => sum + o.votes.length,
+										0,
+									);
+									const userVoted = poll.options.some((o) =>
+										o.votes.includes(currentUser?.id || ''),
+									);
+
+									return (
+										<div
+											key={poll.id}
+											className="text-xs border-b border-border/40 pb-2.5 last:border-0 last:pb-0 space-y-1.5"
+										>
+											<div className="flex items-center justify-between gap-1">
+												<span className="font-bold text-text-primary block truncate">
+													{poll.title}
+												</span>
+												{userVoted && (
+													<span className="text-[9px] font-bold text-primary bg-primary-light px-1.5 py-0.5 rounded-full shrink-0">
+														Voted
+													</span>
+												)}
+											</div>
+											<div className="flex items-center justify-between text-[10px] text-text-muted">
+												<span>{poll.options.length} options</span>
+												<span>{totalVotes} votes</span>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						);
+					})()}
+
+					<button
+						onClick={() => setActiveTab('polls')}
+						className="w-full mt-2 rounded-xl bg-primary-light py-2 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-all text-center block cursor-pointer"
+					>
+						Open Polls Hub →
 					</button>
 				</div>
 

@@ -6,6 +6,7 @@ import {
 	FeedMessage,
 	MeetingEvent,
 	AttendanceRecord,
+	Poll,
 } from '@/types/models';
 
 async function safeJson<T>(res: Response): Promise<T> {
@@ -228,6 +229,8 @@ export const apiClient = {
 		fileUrl?: string;
 		isAnnouncement?: boolean;
 		pinned?: boolean;
+		subAppType?: 'poll' | 'announcement' | 'resource' | 'general';
+		pollId?: string;
 	}): Promise<{ success: boolean; message?: FeedMessage; error?: string }> {
 		const res = await fetch('/api/feed', {
 			method: 'POST',
@@ -239,6 +242,95 @@ export const apiClient = {
 
 	async deleteMessage(messageId: string): Promise<{ success: boolean; error?: string }> {
 		const res = await fetch(`/api/feed?messageId=${encodeURIComponent(messageId)}`, {
+			method: 'DELETE',
+		});
+		return safeJson(res);
+	},
+
+	// ─── Polls Sub-App ───
+	async fetchPolls(params?: {
+		groupId?: string;
+		pollId?: string;
+	}): Promise<{ polls?: Poll[]; poll?: Poll; error?: string }> {
+		const searchParams = new URLSearchParams();
+		if (params?.groupId) searchParams.append('groupId', params.groupId);
+		if (params?.pollId) searchParams.append('pollId', params.pollId);
+		const qs = searchParams.toString();
+		const res = await fetch(`/api/polls${qs ? `?${qs}` : ''}`);
+		return safeJson(res);
+	},
+
+	async createPoll(payload: {
+		groupId: string;
+		title: string;
+		description?: string;
+		category?: string;
+		options: string[];
+		isMultipleChoice?: boolean;
+		isAnonymous?: boolean;
+		allowUserOptions?: boolean;
+		expiresAt?: string;
+		pinned?: boolean;
+		postToFeed?: boolean;
+	}): Promise<{ success: boolean; poll?: Poll; error?: string }> {
+		const res = await fetch('/api/polls', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload),
+		});
+		return safeJson(res);
+	},
+
+	async votePoll(
+		pollId: string,
+		optionIds: string[],
+	): Promise<{ success: boolean; poll?: Poll; error?: string }> {
+		const res = await fetch('/api/polls', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'vote', pollId, optionIds }),
+		});
+		return safeJson(res);
+	},
+
+	async addPollOption(
+		pollId: string,
+		optionText: string,
+	): Promise<{ success: boolean; poll?: Poll; error?: string }> {
+		const res = await fetch('/api/polls', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'add_option', pollId, optionText }),
+		});
+		return safeJson(res);
+	},
+
+	async togglePollClose(
+		pollId: string,
+		isClosed?: boolean,
+	): Promise<{ success: boolean; poll?: Poll; error?: string }> {
+		const res = await fetch('/api/polls', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'toggle_close', pollId, isClosed }),
+		});
+		return safeJson(res);
+	},
+
+	async togglePollPin(
+		pollId: string,
+		pinned?: boolean,
+	): Promise<{ success: boolean; poll?: Poll; error?: string }> {
+		const res = await fetch('/api/polls', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'toggle_pin', pollId, pinned }),
+		});
+		return safeJson(res);
+	},
+
+	async deletePoll(pollId: string): Promise<{ success: boolean; error?: string }> {
+		const res = await fetch(`/api/polls?pollId=${encodeURIComponent(pollId)}`, {
 			method: 'DELETE',
 		});
 		return safeJson(res);
