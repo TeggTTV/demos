@@ -43,6 +43,7 @@ export default function ClubFeedHeader({
 	canManage,
 	isLeader,
 	clubEvents,
+	activePollsCount,
 }: ClubFeedHeaderProps) {
 	return (
 		<div className="border-b border-border bg-surface">
