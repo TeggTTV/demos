@@ -107,7 +107,6 @@ export default function ClubFeedTab({
 	const [resourceTitle, setResourceTitle] = useState('');
 
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
-	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	const groupMessages = feedMessages
 		.filter((m) => m.groupId === group.id)
@@ -127,11 +126,11 @@ export default function ClubFeedTab({
 	});
 
 	const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-		if (messagesEndRef.current) {
-			messagesEndRef.current.scrollIntoView({ behavior });
-		} else if (messagesContainerRef.current) {
-			messagesContainerRef.current.scrollTop =
-				messagesContainerRef.current.scrollHeight;
+		if (messagesContainerRef.current) {
+			messagesContainerRef.current.scrollTo({
+				top: messagesContainerRef.current.scrollHeight,
+				behavior,
+			});
 		}
 	};
 
@@ -425,7 +424,6 @@ export default function ClubFeedTab({
 							);
 						})
 					)}
-					<div ref={messagesEndRef} />
 				</div>
 
 				<form
