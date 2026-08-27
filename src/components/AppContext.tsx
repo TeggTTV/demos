@@ -182,6 +182,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
+	/* ─── Restore Session from Cookie / Server ─── */
+	const restoreSession = useCallback(async () => {
+		try {
+			const res = await apiClient.getMe();
+			if (res.success && res.user) {
+				setCurrentUser(res.user);
+				localStorage.setItem(
+					'demos_current_user',
+					JSON.stringify(res.user),
+				);
+			} else if (!USE_MOCK_DATA && res.success === false) {
+				// Server session invalid / expired: sync client state
+				const savedUser = localStorage.getItem('demos_current_user');
+				if (savedUser) {
+					localStorage.removeItem('demos_current_user');
+					setCurrentUser(null);
+				}
+			}
+		} catch (e) {
+			console.warn('restoreSession failed:', e);
+		}
+	}, []);
+
 	/* ─── Hydrate pure from API ─── */
 	const loadData = useCallback(async () => {
 		const isPendingPage =
@@ -191,9 +214,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			fetchGroups(),
 			fetchRequests(),
 			fetchUsers(),
+			restoreSession(),
 			isPendingPage ? fetchInvites() : Promise.resolve(),
 		]);
-	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers]);
+	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers, restoreSession]);
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {

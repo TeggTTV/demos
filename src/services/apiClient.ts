@@ -23,6 +23,11 @@ async function safeJson<T>(res: Response): Promise<T> {
 
 export const apiClient = {
 	// ─── Auth & Users ───
+	async getMe(): Promise<{ success: boolean; user?: User | null; error?: string }> {
+		const res = await fetch('/api/auth/me');
+		return safeJson(res);
+	},
+
 	async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
 		const res = await fetch('/api/auth/login', {
 			method: 'POST',

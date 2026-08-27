@@ -61,7 +61,7 @@ export default function ScrollReveal({
 		<motion.div
 			initial={getInitialTransform()}
 			whileInView={getAnimateTransform()}
-			viewport={{ once, margin: '-40px' }}
+			viewport={{ once, margin: '0px', amount: 0.05 }}
 			transition={{
 				duration,
 				delay,
@@ -104,8 +104,9 @@ export function ScrollStaggerContainer({
 			variants={containerVariants}
 			initial="hidden"
 			whileInView="show"
+			animate="show"
 			custom={staggerDelay}
-			viewport={{ once, margin: '-40px' }}
+			viewport={{ once, margin: '0px', amount: 0.05 }}
 			className={className}
 			{...props}
 		>
@@ -115,12 +116,12 @@ export function ScrollStaggerContainer({
 }
 
 const itemVariants: Variants = {
-	hidden: { opacity: 0, y: 20 },
+	hidden: { opacity: 0, y: 16 },
 	show: {
 		opacity: 1,
 		y: 0,
 		transition: {
-			duration: 0.4,
+			duration: 0.35,
 			ease: [0.21, 0.47, 0.32, 0.98],
 		},
 	},
@@ -132,7 +133,13 @@ export function ScrollStaggerItem({
 	...props
 }: HTMLMotionProps<'div'>) {
 	return (
-		<motion.div variants={itemVariants} className={className} {...props}>
+		<motion.div
+			variants={itemVariants}
+			initial="hidden"
+			animate="show"
+			className={className}
+			{...props}
+		>
 			{children}
 		</motion.div>
 	);

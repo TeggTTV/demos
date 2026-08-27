@@ -34,8 +34,9 @@ function LoginContent() {
 
 		if (res.success) {
 			router.push(redirectUrl);
+			router.refresh();
 		} else {
-			setError(res.error || 'Login failed');
+			setError(res.error || 'Invalid email or password');
 		}
 	};
 
@@ -48,8 +49,9 @@ function LoginContent() {
 		setLoading(false);
 		if (res.success) {
 			router.push(redirectUrl);
+			router.refresh();
 		} else {
-			setError(res.error || 'Login failed');
+			setError(res.error || 'Invalid credentials');
 		}
 	};
 
@@ -112,8 +114,21 @@ function LoginContent() {
 
 				<form onSubmit={handleLogin} className="space-y-4">
 					{error && (
-						<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-3 rounded-lg text-center">
-							{error}
+						<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-3 rounded-xl text-left space-y-1">
+							<p className="font-semibold flex items-center gap-1.5">
+								<span>⚠️</span> {error}
+							</p>
+							{error.toLowerCase().includes('invalid') && (
+								<p className="text-[11px] text-danger/80">
+									Don&apos;t have an account yet?{' '}
+									<Link
+										href={`/auth/register${searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`}
+										className="underline font-semibold hover:opacity-80"
+									>
+										Create an account here →
+									</Link>
+								</p>
+							)}
 						</div>
 					)}
 

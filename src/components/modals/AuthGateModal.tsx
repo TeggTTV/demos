@@ -69,8 +69,22 @@ export default function AuthGateModal({
 
 				<form onSubmit={handleAuthSubmit} className="space-y-3">
 					{authError && (
-						<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-2.5 rounded-lg text-center">
-							{authError}
+						<div className="text-xs text-danger bg-danger-bg border border-danger/20 p-2.5 rounded-lg text-left space-y-1">
+							<p className="font-semibold flex items-center gap-1.5">
+								<span>⚠️</span> {authError}
+							</p>
+							{authError.toLowerCase().includes('invalid') && (
+								<p className="text-[11px] text-danger/80">
+									Need an account?{' '}
+									<Link
+										href="/auth/register"
+										onClick={onClose}
+										className="underline font-semibold hover:opacity-80"
+									>
+										Register here →
+									</Link>
+								</p>
+							)}
 						</div>
 					)}
 					<Input
