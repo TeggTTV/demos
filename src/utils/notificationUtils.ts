@@ -11,7 +11,10 @@ export type NotificationType =
 	| 'member_removed'
 	| 'attendance_opened'
 	| 'attendance_closed'
-	| 'attendance_status';
+	| 'attendance_status'
+	| 'poll_created'
+	| 'poll_ended'
+	| 'poll_result';
 
 export interface AppNotification {
 	id: string;
@@ -46,6 +49,9 @@ export interface NotificationSettings {
 	attendance_opened: boolean;
 	attendance_closed: boolean;
 	attendance_status: boolean;
+	poll_created: boolean;
+	poll_ended: boolean;
+	poll_result: boolean;
 }
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
@@ -66,6 +72,9 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
 	attendance_opened: true,
 	attendance_closed: true,
 	attendance_status: true,
+	poll_created: true,
+	poll_ended: true,
+	poll_result: true,
 };
 
 export const NOTIFICATION_CONFIG_MAP: Record<
@@ -98,7 +107,8 @@ export const NOTIFICATION_CONFIG_MAP: Record<
 	},
 	join_request_status: {
 		label: 'Join Request Status',
-		description: 'Updates when your club application is approved or declined',
+		description:
+			'Updates when your club application is approved or declined',
 		icon: '📋',
 		category: 'Membership & Invites',
 	},
@@ -146,9 +156,28 @@ export const NOTIFICATION_CONFIG_MAP: Record<
 	},
 	attendance_status: {
 		label: 'Attendance Status',
-		description: 'Updates to your attendance record (Present, Late, Excused)',
+		description:
+			'Updates to your attendance record (Present, Late, Excused)',
 		icon: '✅',
 		category: 'Attendance & Meetings',
+	},
+	poll_created: {
+		label: 'Poll Created',
+		description: 'New poll has been created for voting',
+		icon: '📊',
+		category: 'Club Feed',
+	},
+	poll_result: {
+		label: 'Poll Result',
+		description: 'View the results of a closed poll',
+		icon: '📈',
+		category: 'Club Feed',
+	},
+	poll_ended: {
+		label: 'Poll Ended',
+		description: 'A poll you created has ended, view results',
+		icon: '🏅',
+		category: 'Club Feed',
 	},
 };
 

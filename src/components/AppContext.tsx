@@ -27,6 +27,7 @@ import {
 	AttendanceRecord,
 	Theme,
 	AppContextType,
+	Poll,
 } from '@/types/models';
 import { apiClient } from '@/services/apiClient';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
@@ -127,7 +128,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			eventId?: string,
 		) => {
 			try {
-				const data = await apiClient.fetchEvents({ groupId, type, eventId });
+				const data = await apiClient.fetchEvents({
+					groupId,
+					type,
+					eventId,
+				});
 				if (data.events) {
 					setEvents((prev) => {
 						if (!groupId && !eventId) return data.events!;
@@ -156,7 +161,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const fetchAttendances = useCallback(
 		async (groupId?: string, eventId?: string) => {
 			try {
-				const data = await apiClient.fetchAttendances({ groupId, eventId });
+				const data = await apiClient.fetchAttendances({
+					groupId,
+					eventId,
+				});
 				if (data.attendances) setAttendances(data.attendances);
 			} catch (e) {
 				console.error('fetchAttendances failed:', e);
@@ -340,7 +348,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		async function pollIncomingData() {
 			if (!active || isPolling || isIdle) return;
 			const user = userRef.current;
-			if ((!user && !USE_MOCK_DATA) || typeof window === 'undefined') return;
+			if ((!user && !USE_MOCK_DATA) || typeof window === 'undefined')
+				return;
 
 			const pathname = window.location.pathname;
 
@@ -384,10 +393,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						await fetchUsers();
 					}
 				} else if (pathname === '/pending') {
-					await Promise.allSettled([
-						fetchRequests(),
-						fetchInvites(),
-					]);
+					await Promise.allSettled([fetchRequests(), fetchInvites()]);
 				} else if (pathname === '/profile') {
 					await fetchUsers();
 				}
@@ -488,7 +494,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				);
 				return { success: true };
 			}
-			return { success: false, error: data.error || 'Invalid credentials' };
+			return {
+				success: false,
+				error: data.error || 'Invalid credentials',
+			};
 		} catch (e) {
 			console.error('Login error:', e);
 			return { success: false, error: 'Login network error' };
@@ -551,8 +560,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Join Request Handlers ─── */
 	const sendJoinRequest = useCallback(
-		async (groupId: string, message?: string): Promise<{ success: boolean; error?: string }> => {
-			if (!currentUser) return { success: false, error: 'Please log in to join clubs.' };
+		async (
+			groupId: string,
+			message?: string,
+		): Promise<{ success: boolean; error?: string }> => {
+			if (!currentUser)
+				return {
+					success: false,
+					error: 'Please log in to join clubs.',
+				};
 			try {
 				const data = await apiClient.sendJoinRequest(groupId, message);
 				if (data.request) {
@@ -584,11 +600,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		async (requestId: string) => {
 			try {
 				const reqObj = requests.find((r) => r.id === requestId);
-				const data = await apiClient.updateRequestStatus(requestId, 'APPROVED');
+				const data = await apiClient.updateRequestStatus(
+					requestId,
+					'APPROVED',
+				);
 				if (data.success) {
 					setRequests((prev) =>
 						prev.map((r) =>
-							r.id === requestId ? { ...r, status: 'APPROVED' } : r,
+							r.id === requestId
+								? { ...r, status: 'APPROVED' }
+								: r,
 						),
 					);
 					await fetchGroups();
@@ -613,11 +634,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		async (requestId: string) => {
 			try {
 				const reqObj = requests.find((r) => r.id === requestId);
-				const data = await apiClient.updateRequestStatus(requestId, 'DECLINED');
+				const data = await apiClient.updateRequestStatus(
+					requestId,
+					'DECLINED',
+				);
 				if (data.success) {
 					setRequests((prev) =>
 						prev.map((r) =>
-							r.id === requestId ? { ...r, status: 'DECLINED' } : r,
+							r.id === requestId
+								? { ...r, status: 'DECLINED' }
+								: r,
 						),
 					);
 					if (reqObj) {
@@ -646,31 +672,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					await fetchInvites();
 					return { success: true, code: data.code };
 				}
-				return { success: false, error: data.error || 'Failed to generate code' };
+				return {
+					success: false,
+					error: data.error || 'Failed to generate code',
+				};
 			} catch (e) {
 				console.error('generateClubInvite error:', e);
-				return { success: false, error: 'Network error generating invite' };
+				return {
+					success: false,
+					error: 'Network error generating invite',
+				};
 			}
 		},
 		[fetchInvites],
 	);
 
-	const deleteClubInvites = useCallback(
-		async (groupId: string) => {
-			try {
-				const data = await apiClient.deleteClubInvites(groupId);
-				if (data.success) {
-					setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
-					return { success: true };
-				}
-				return { success: false, error: data.error };
-			} catch (e) {
-				console.error('deleteClubInvites error:', e);
-				return { success: false, error: 'Network error deleting invites' };
+	const deleteClubInvites = useCallback(async (groupId: string) => {
+		try {
+			const data = await apiClient.deleteClubInvites(groupId);
+			if (data.success) {
+				setInvites((prev) => prev.filter((i) => i.groupId !== groupId));
+				return { success: true };
 			}
-		},
-		[],
-	);
+			return { success: false, error: data.error };
+		} catch (e) {
+			console.error('deleteClubInvites error:', e);
+			return { success: false, error: 'Network error deleting invites' };
+		}
+	}, []);
 
 	const joinViaInviteCode = useCallback(
 		async (code: string) => {
@@ -742,7 +771,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		try {
 			const data = await apiClient.deleteMessage(messageId);
 			if (data.success) {
-				setFeedMessages((prev) => prev.filter((m) => m.id !== messageId));
+				setFeedMessages((prev) =>
+					prev.filter((m) => m.id !== messageId),
+				);
 			}
 		} catch (e) {
 			console.error('deleteMessage error:', e);
@@ -791,12 +822,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			},
 		) => {
 			try {
-				const data = await apiClient.createPoll({ groupId, ...pollData });
+				const data = await apiClient.createPoll({
+					groupId,
+					...pollData,
+				});
 				if (data.success && data.poll) {
 					setPolls((prev) => [data.poll!, ...prev]);
 					await fetchFeedMessages(groupId);
 					triggerNotification({
-						type: 'announcement',
+						type: 'poll_created',
 						title: 'New Club Poll',
 						body: `New poll posted: "${data.poll.title}"`,
 						groupId,
@@ -804,7 +838,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					});
 					return { success: true, poll: data.poll };
 				}
-				return { success: false, error: data.error || 'Failed to create poll' };
+				return {
+					success: false,
+					error: data.error || 'Failed to create poll',
+				};
 			} catch (e) {
 				console.error('createPoll error:', e);
 				return { success: false, error: 'Network error creating poll' };
@@ -824,7 +861,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					// Also update feed messages referencing this poll
 					setFeedMessages((prev) =>
 						prev.map((m) =>
-							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+							m.pollId === pollId
+								? { ...m, poll: data.poll! }
+								: m,
 						),
 					);
 					return { success: true, poll: data.poll };
@@ -832,7 +871,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				return { success: false, error: data.error || 'Vote failed' };
 			} catch (e) {
 				console.error('votePoll error:', e);
-				return { success: false, error: 'Network error voting on poll' };
+				return {
+					success: false,
+					error: 'Network error voting on poll',
+				};
 			}
 		},
 		[],
@@ -848,12 +890,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					);
 					setFeedMessages((prev) =>
 						prev.map((m) =>
-							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+							m.pollId === pollId
+								? { ...m, poll: data.poll! }
+								: m,
 						),
 					);
 					return { success: true, poll: data.poll };
 				}
-				return { success: false, error: data.error || 'Failed to add option' };
+				return {
+					success: false,
+					error: data.error || 'Failed to add option',
+				};
 			} catch (e) {
 				console.error('addPollOption error:', e);
 				return { success: false, error: 'Network error adding option' };
@@ -872,12 +919,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					);
 					setFeedMessages((prev) =>
 						prev.map((m) =>
-							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+							m.pollId === pollId
+								? { ...m, poll: data.poll! }
+								: m,
 						),
 					);
 					return { success: true, poll: data.poll };
 				}
-				return { success: false, error: data.error || 'Failed to update poll' };
+				return {
+					success: false,
+					error: data.error || 'Failed to update poll',
+				};
 			} catch (e) {
 				console.error('togglePollClose error:', e);
 				return { success: false, error: 'Network error updating poll' };
@@ -896,12 +948,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					);
 					setFeedMessages((prev) =>
 						prev.map((m) =>
-							m.pollId === pollId ? { ...m, poll: data.poll! } : m,
+							m.pollId === pollId
+								? { ...m, poll: data.poll! }
+								: m,
 						),
 					);
 					return { success: true, poll: data.poll };
 				}
-				return { success: false, error: data.error || 'Failed to pin poll' };
+				return {
+					success: false,
+					error: data.error || 'Failed to pin poll',
+				};
 			} catch (e) {
 				console.error('togglePollPin error:', e);
 				return { success: false, error: 'Network error pinning poll' };
@@ -915,10 +972,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			const data = await apiClient.deletePoll(pollId);
 			if (data.success) {
 				setPolls((prev) => prev.filter((p) => p.id !== pollId));
-				setFeedMessages((prev) => prev.filter((m) => m.pollId !== pollId));
+				setFeedMessages((prev) =>
+					prev.filter((m) => m.pollId !== pollId),
+				);
 				return { success: true };
 			}
-			return { success: false, error: data.error || 'Failed to delete poll' };
+			return {
+				success: false,
+				error: data.error || 'Failed to delete poll',
+			};
 		} catch (e) {
 			console.error('deletePoll error:', e);
 			return { success: false, error: 'Network error deleting poll' };
@@ -953,7 +1015,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						JSON.stringify(data.user),
 					);
 					setUsers((prev) =>
-						prev.map((u) => (u.id === data.user!.id ? data.user! : u)),
+						prev.map((u) =>
+							u.id === data.user!.id ? data.user! : u,
+						),
 					);
 				}
 			} catch (e) {
@@ -1032,7 +1096,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			},
 		) => {
 			try {
-				const data = await apiClient.updateGroupSettings(groupId, settings);
+				const data = await apiClient.updateGroupSettings(
+					groupId,
+					settings,
+				);
 				if (data.success && data.group) {
 					setGroups((prev) =>
 						prev.map((g) => (g.id === groupId ? data.group! : g)),
@@ -1045,7 +1112,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				};
 			} catch (e) {
 				console.error('updateGroupSettings error:', e);
-				return { success: false, error: 'Network error updating settings' };
+				return {
+					success: false,
+					error: 'Network error updating settings',
+				};
 			}
 		},
 		[],
@@ -1079,7 +1149,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			},
 		) => {
 			try {
-				const data = await apiClient.createMeetingEvent(groupId, eventData);
+				const data = await apiClient.createMeetingEvent(
+					groupId,
+					eventData,
+				);
 				if (data.success && data.event) {
 					setEvents((prev) => [data.event!, ...prev]);
 					return { success: true, event: data.event };
@@ -1090,7 +1163,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				};
 			} catch (e) {
 				console.error('createMeetingEvent error:', e);
-				return { success: false, error: 'Network error creating event' };
+				return {
+					success: false,
+					error: 'Network error creating event',
+				};
 			}
 		},
 		[],
@@ -1099,7 +1175,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const toggleEventActive = useCallback(
 		async (eventId: string, isActive: boolean) => {
 			try {
-				const data = await apiClient.toggleEventActive(eventId, isActive);
+				const data = await apiClient.toggleEventActive(
+					eventId,
+					isActive,
+				);
 				if (data.success) {
 					setEvents((prev) =>
 						prev.map((e) =>
@@ -1143,10 +1222,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					await fetchAttendances(undefined, eventId);
 					return { success: true, message: data.message };
 				}
-				return { success: false, error: data.error || 'Check-in failed' };
+				return {
+					success: false,
+					error: data.error || 'Check-in failed',
+				};
 			} catch (e) {
 				console.error('checkInToEvent error:', e);
-				return { success: false, error: 'Network error during check-in' };
+				return {
+					success: false,
+					error: 'Network error during check-in',
+				};
 			}
 		},
 		[fetchAttendances],
@@ -1172,7 +1257,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						if (exists) {
 							return prev.map((a) =>
 								a.eventId === eventId && a.userId === userId
-									? { ...a, status, timestamp: new Date().toISOString() }
+									? {
+											...a,
+											status,
+											timestamp: new Date().toISOString(),
+										}
 									: a,
 							);
 						}
