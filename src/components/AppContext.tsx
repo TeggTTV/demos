@@ -168,6 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					groupId,
 					eventId,
 					type: type === 'attendance' ? 'attendance' : type === 'activity' ? 'activity' : undefined,
+					userId: currentUser?.id,
 				});
 				setEvents((prev) => {
 					if (!groupId && !eventId) return mockEvs;
@@ -204,7 +205,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				console.error('fetchEvents failed:', e);
 			}
 		},
-		[isTutorialMode],
+		[isTutorialMode, currentUser?.id],
 	);
 
 	const fetchAttendances = useCallback(

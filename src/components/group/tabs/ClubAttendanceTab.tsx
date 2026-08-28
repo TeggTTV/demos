@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,12 +14,19 @@ import {
 	FiMapPin,
 	FiUsers,
 	FiLink,
+	FiUserCheck,
+	FiUserX,
+	FiPercent,
+	FiSearch,
+	FiCheckCircle,
 } from 'react-icons/fi';
 import { Group, User, MeetingEvent, AttendanceRecord } from '@/types/models';
 import { exportAttendanceCSV } from '@/utils/csvExport';
 import QRCodeSVG from '@/components/ui/QRCode';
 import { Checkbox } from '@/components/ui/Checkbox';
 import ConfirmModal from '@/components/modals/ConfirmModal';
+import { mockStore } from '@/mock/mockStore';
+import { MOCK_USERS } from '@/mock/mockData';
 
 interface ClubAttendanceTabProps {
 	group: Group;
@@ -72,6 +79,9 @@ export default function ClubAttendanceTab({
 	const [checkInInput, setCheckInInput] = useState('');
 	const [showDeleteSessionConfirm, setShowDeleteSessionConfirm] =
 		useState(false);
+	const [rosterSearch, setRosterSearch] = useState('');
+	const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT'>('ALL');
+	const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
 	const currentSelectedEvent = clubEvents.find(
 		(e) => e.id === selectedEventId,
@@ -110,13 +120,38 @@ export default function ClubAttendanceTab({
 		? attendances.filter((a) => a.eventId === currentSelectedEvent.id)
 		: [];
 
-	const rosterMemberIds = Array.from(
-		new Set([
-			...(group.leaderId ? [group.leaderId] : []),
-			...(group.officerIds || []),
-			...(group.memberIds || []),
-		]),
-	);
+	const rosterMemberIds = useMemo(() => {
+		return Array.from(
+			new Set([
+				...(group.leaderId ? [group.leaderId] : []),
+				...(group.officerIds || []),
+				...(group.memberIds || []),
+			]),
+		);
+	}, [group.leaderId, group.officerIds, group.memberIds]);
+
+	const resolveUser = (mId: string): User => {
+		const found =
+			users.find((u) => u.id === mId) ||
+			mockStore.getUserById(mId) ||
+			MOCK_USERS.find((u) => u.id === mId);
+		if (found) return found;
+
+		const cleanName = mId.replace('user_', '').replace('_', ' ');
+		const capitalized = cleanName
+			.split(' ')
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
+
+		return {
+			id: mId,
+			name: capitalized || 'Campus Member',
+			email: `${mId}@campus.edu`,
+			role: 'GUEST',
+			major: 'Computer Science',
+		};
+
+	};
 
 	const presentCount = sessionAttendances.filter(
 		(a) => a.status === 'PRESENT',
@@ -124,6 +159,10 @@ export default function ClubAttendanceTab({
 	const lateCount = sessionAttendances.filter(
 		(a) => a.status === 'LATE',
 	).length;
+	const totalRosterCount = rosterMemberIds.length;
+	const attendedCount = presentCount + lateCount;
+	const turnoutRate = totalRosterCount > 0 ? Math.round((attendedCount / totalRosterCount) * 100) : 0;
+	const absentCount = Math.max(0, totalRosterCount - attendedCount);
 
 	const handleMemberCheckIn = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -141,6 +180,25 @@ export default function ClubAttendanceTab({
 		if (!currentSelectedEvent) return;
 		exportAttendanceCSV(group, currentSelectedEvent, attendances, users);
 	};
+
+	const handleMarkAllUnmarkedPresent = async () => {
+		if (!currentSelectedEvent || isBulkUpdating) return;
+		setIsBulkUpdating(true);
+		try {
+			const unmarkedIds = rosterMemberIds.filter((mId) => {
+				const att = sessionAttendances.find((a) => a.userId === mId);
+				return !att || att.status === 'ABSENT';
+			});
+			await Promise.all(
+				unmarkedIds.map((mId) =>
+					updateAttendanceStatus(currentSelectedEvent.id, mId, 'PRESENT'),
+				),
+			);
+		} finally {
+			setIsBulkUpdating(false);
+		}
+	};
+
 
 	return (
 		<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -732,137 +790,238 @@ export default function ClubAttendanceTab({
 											</div>
 										)}
 
-										{/* Live Member Roster Checklist */}
-										<div
-											data-tour="attendance-roster-checklist"
-											className="space-y-3 pt-4 border-t border-border"
-										>
-											<div className="flex items-center justify-between">
-												<h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-													Meeting Roster &amp; Verification
-												</h4>
-												<span className="text-xs text-text-muted">
-													{canManage
-														? 'Officers & Leaders can toggle status below'
-														: 'Live member turnout'}
-												</span>
+										{/* Live Attendance Telemetry HUD */}
+										<div className="space-y-4 pt-4 border-t border-border">
+											<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+												{/* Rate KPI */}
+												<div className="p-4 rounded-2xl border border-border bg-surface-secondary/40 flex flex-col justify-between">
+													<div className="flex items-center justify-between">
+														<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Turnout Rate</span>
+														<div className="h-6 w-6 rounded-lg bg-primary-light text-primary flex items-center justify-center">
+															<FiPercent size={12} />
+														</div>
+													</div>
+													<div className="mt-2">
+														<span className="text-2xl font-extrabold text-text-primary">{turnoutRate}%</span>
+														<div className="w-full bg-border rounded-full h-1.5 mt-1.5 overflow-hidden">
+															<div
+																className="bg-primary h-1.5 rounded-full transition-all duration-500"
+																style={{ width: `${Math.min(100, turnoutRate)}%` }}
+															/>
+														</div>
+													</div>
+												</div>
+
+												{/* Present KPI */}
+												<div className="p-4 rounded-2xl border border-success/20 bg-success-bg/30 flex flex-col justify-between">
+													<div className="flex items-center justify-between">
+														<span className="text-[11px] font-bold text-success uppercase tracking-wider">Present</span>
+														<div className="h-6 w-6 rounded-lg bg-success-bg text-success flex items-center justify-center">
+															<FiUserCheck size={13} />
+														</div>
+													</div>
+													<div className="mt-2">
+														<span className="text-2xl font-extrabold text-success">{presentCount}</span>
+														<span className="text-[11px] text-text-muted block">Verified on time</span>
+													</div>
+												</div>
+
+												{/* Late KPI */}
+												<div className="p-4 rounded-2xl border border-warning/20 bg-warning-bg/30 flex flex-col justify-between">
+													<div className="flex items-center justify-between">
+														<span className="text-[11px] font-bold text-warning uppercase tracking-wider">Late</span>
+														<div className="h-6 w-6 rounded-lg bg-warning-bg text-warning flex items-center justify-center">
+															<FiClock size={13} />
+														</div>
+													</div>
+													<div className="mt-2">
+														<span className="text-2xl font-extrabold text-warning">{lateCount}</span>
+														<span className="text-[11px] text-text-muted block">Checked in late</span>
+													</div>
+												</div>
+
+												{/* Absent KPI */}
+												<div className="p-4 rounded-2xl border border-border bg-surface-secondary/40 flex flex-col justify-between">
+													<div className="flex items-center justify-between">
+														<span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Unmarked / Absent</span>
+														<div className="h-6 w-6 rounded-lg bg-surface text-text-muted flex items-center justify-center border border-border">
+															<FiUserX size={13} />
+														</div>
+													</div>
+													<div className="mt-2">
+														<span className="text-2xl font-extrabold text-text-primary">{absentCount}</span>
+														<span className="text-[11px] text-text-muted block">of {totalRosterCount} members</span>
+													</div>
+												</div>
 											</div>
 
-											<div className="rounded-xl border border-border overflow-hidden">
+											{/* Search, Status Filters & Bulk Actions */}
+											<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+												<div className="flex items-center gap-2 grow max-w-md">
+													<div className="relative grow">
+														<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
+														<input
+															type="text"
+															placeholder="Filter roster by member name or email..."
+															value={rosterSearch}
+															onChange={(e) => setRosterSearch(e.target.value)}
+															className="w-full rounded-xl border border-border bg-surface pl-9 pr-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
+														/>
+													</div>
+												</div>
+
+												<div className="flex items-center gap-2 flex-wrap">
+													<div className="flex items-center gap-1 bg-surface-secondary/60 p-1 rounded-xl border border-border">
+														{(['ALL', 'PRESENT', 'LATE', 'ABSENT'] as const).map((filterVal) => (
+															<button
+																key={filterVal}
+																type="button"
+																onClick={() => setStatusFilter(filterVal)}
+																className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+																	statusFilter === filterVal
+																		? 'bg-surface text-primary shadow-2xs'
+																		: 'text-text-muted hover:text-text-primary'
+																}`}
+															>
+																{filterVal === 'ALL' ? 'All' : filterVal.charAt(0) + filterVal.slice(1).toLowerCase()}
+															</button>
+														))}
+													</div>
+
+													{canManage && (
+														<button
+															type="button"
+															disabled={isBulkUpdating || absentCount === 0}
+															onClick={handleMarkAllUnmarkedPresent}
+															className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-success-bg border border-success/30 text-success text-xs font-bold hover:bg-success hover:text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+														>
+															<FiCheckCircle size={13} />
+															<span>Mark Unmarked Present</span>
+														</button>
+													)}
+												</div>
+											</div>
+
+											{/* Live Presence Table */}
+											<div className="rounded-2xl border border-border overflow-hidden shadow-2xs">
 												<table className="w-full text-left text-xs table-fixed">
-													<thead className="bg-surface-secondary/70 border-b border-border text-text-muted text-[11px]">
+													<thead className="bg-surface-secondary/80 border-b border-border text-text-muted text-[11px]">
 														<tr>
-															<th className="p-3 w-[45%] sm:w-[35%]">
-																Member
+															<th className="p-3.5 w-[45%] sm:w-[35%] font-bold uppercase tracking-wider">
+																Member Profile
 															</th>
-															<th className="p-3 w-[25%] sm:w-[20%]">
-																Status
+															<th className="p-3.5 w-[25%] sm:w-[20%] font-bold uppercase tracking-wider">
+																Verification
 															</th>
 															{canManage && (
 																<>
-																	<th className="p-3 hidden sm:table-cell sm:w-[20%]">
-																		Method
+																	<th className="p-3.5 hidden sm:table-cell sm:w-[20%] font-bold uppercase tracking-wider">
+																		Source
 																	</th>
-																	<th className="p-3 text-right w-[30%] sm:w-[25%]">
-																		Actions
+																	<th className="p-3.5 text-right w-[30%] sm:w-[25%] font-bold uppercase tracking-wider">
+																		Quick Override
 																	</th>
 																</>
 															)}
 														</tr>
 													</thead>
-													<tbody className="divide-y divide-border">
-														{rosterMemberIds.map(
-															(mId) => {
-																const mem =
-																	users.find(
-																		(u) =>
-																			u.id ===
-																			mId,
-																	);
-																const attRecord =
-																	sessionAttendances.find(
-																		(a) =>
-																			a.userId ===
-																			mId,
-																	);
-																const status =
-																	attRecord?.status ||
-																	'ABSENT';
+													<tbody className="divide-y divide-border bg-surface">
+														{rosterMemberIds
+															.filter((mId) => {
+																const mem = resolveUser(mId);
+																const attRecord = sessionAttendances.find((a) => a.userId === mId);
+																const currentStatus = attRecord?.status || 'ABSENT';
+
+																if (statusFilter !== 'ALL' && currentStatus !== statusFilter) {
+																	return false;
+																}
+
+																const q = rosterSearch.toLowerCase().trim();
+																if (!q) return true;
+																return (
+																	mem.name?.toLowerCase().includes(q) ||
+																	mem.email?.toLowerCase().includes(q)
+																);
+															})
+															.map((mId) => {
+																const mem = resolveUser(mId);
+																const attRecord = sessionAttendances.find((a) => a.userId === mId);
+																const status = attRecord?.status || 'ABSENT';
+																const isLeader = group.leaderId === mId;
+																const isOfficer = Boolean(group.officerIds && group.officerIds.includes(mId));
 
 																return (
-																	<tr
-																		key={mId}
-																		className="hover:bg-surface-secondary/20 transition-colors"
-																	>
-																		<td className="p-3 font-semibold text-text-primary truncate">
-																			<div className="flex items-center gap-2.5 min-w-0">
-																				{mem?.avatarUrl ? (
+																	<tr key={mId} className="hover:bg-surface-secondary/30 transition-colors">
+																		<td className="p-3.5 font-semibold text-text-primary truncate">
+																			<div className="flex items-center gap-3 min-w-0">
+																				{mem.avatarUrl ? (
 																					<Image
-																						src={
-																							mem.avatarUrl
-																						}
+																						src={mem.avatarUrl}
 																						alt=""
-																						width={
-																							28
-																						}
-																						height={
-																							28
-																						}
-																						className="h-7 w-7 rounded-full object-cover border border-border shrink-0"
+																						width={32}
+																						height={32}
+																						className="h-8 w-8 rounded-full object-cover border border-border shrink-0 shadow-2xs"
 																						unoptimized
 																					/>
 																				) : (
-																					<div className="h-7 w-7 rounded-full bg-primary-light text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
-																						{mem
-																							?.name?.[0] ||
-																							'M'}
+																					<div className="h-8 w-8 rounded-full bg-linear-to-br from-primary/20 to-violet-500/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0 border border-primary/20 shadow-2xs">
+																						{mem.name?.[0] || 'M'}
 																					</div>
 																				)}
-																				<span
-																					className="truncate block"
-																					title={
-																						mem?.name ||
-																						'Member'
-																					}
-																				>
-																					{mem?.name ||
-																						'Member'}
-																				</span>
+																				<div className="min-w-0">
+																					<div className="flex items-center gap-1.5">
+																						<span className="truncate block font-bold text-xs" title={mem.name}>
+																							{mem.name}
+																						</span>
+																						{isLeader && (
+																							<span className="text-[9px] font-bold bg-primary text-white px-1.5 py-0.2 rounded shadow-2xs">
+																								Lead
+																							</span>
+																						)}
+																						{isOfficer && !isLeader && (
+																							<span className="text-[9px] font-bold bg-primary-light text-primary px-1.5 py-0.2 rounded border border-primary/20">
+																								Officer
+																							</span>
+																						)}
+																					</div>
+																					<span className="text-[10px] text-text-muted block truncate mt-0.5">
+																						{mem.email}
+																					</span>
+																				</div>
 																			</div>
 																		</td>
 
-																		<td className="p-3">
-																			{status ===
-																				'PRESENT' && (
-																				<span className="inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success-bg border border-success/20 px-2 py-0.5 rounded-full whitespace-nowrap">
-																					✓ Present
+																		<td className="p-3.5">
+																			{status === 'PRESENT' && (
+																				<span className="inline-flex items-center gap-1 text-[11px] font-bold text-success bg-success-bg border border-success/30 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-2xs">
+																					<FiCheck size={12} /> Present
 																				</span>
 																			)}
-																			{status ===
-																				'LATE' && (
-																				<span className="inline-flex items-center gap-1 text-[10px] font-bold text-warning bg-warning-bg border border-warning/20 px-2 py-0.5 rounded-full whitespace-nowrap">
-																					⏰ Late
+																			{status === 'LATE' && (
+																				<span className="inline-flex items-center gap-1 text-[11px] font-bold text-warning bg-warning-bg border border-warning/30 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-2xs">
+																					<FiClock size={12} /> Late
 																				</span>
 																			)}
-																			{status ===
-																				'ABSENT' && (
-																				<span className="inline-flex items-center text-[10px] font-medium text-text-muted bg-surface-secondary border border-border px-2 py-0.5 rounded-full whitespace-nowrap">
-																					Absent
+																			{status === 'ABSENT' && (
+																				<span className="inline-flex items-center text-[11px] font-medium text-text-muted bg-surface-secondary border border-border px-2.5 py-0.5 rounded-full whitespace-nowrap">
+																					Unmarked
 																				</span>
 																			)}
 																		</td>
 
 																		{canManage && (
-																			<td className="p-3 text-text-muted text-[11px] hidden sm:table-cell truncate">
-																				{attRecord?.checkInMethod ||
-																					'—'}
+																			<td className="p-3.5 text-text-muted text-xs hidden sm:table-cell truncate">
+																				<span className="bg-surface-secondary px-2 py-0.5 rounded-md border border-border/60 text-[11px]">
+																					{attRecord?.checkInMethod || 'Manual Checklist'}
+																				</span>
 																			</td>
 																		)}
 
 																		{canManage && (
-																			<td className="p-3 text-right whitespace-nowrap">
+																			<td className="p-3.5 text-right whitespace-nowrap">
 																				<div className="inline-flex items-center gap-1">
 																					<button
+																						type="button"
 																						onClick={() =>
 																							updateAttendanceStatus(
 																								currentSelectedEvent.id,
@@ -870,16 +1029,16 @@ export default function ClubAttendanceTab({
 																								'PRESENT',
 																							)
 																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-all ${
-																							status ===
-																							'PRESENT'
-																								? 'bg-success text-white border-success'
-																								: 'border-border text-text-secondary hover:text-success'
+																						className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border cursor-pointer transition-all ${
+																							status === 'PRESENT'
+																								? 'bg-success text-white border-success shadow-2xs'
+																								: 'border-border text-text-secondary hover:text-success hover:border-success/40'
 																						}`}
 																					>
 																						Present
 																					</button>
 																					<button
+																						type="button"
 																						onClick={() =>
 																							updateAttendanceStatus(
 																								currentSelectedEvent.id,
@@ -887,16 +1046,16 @@ export default function ClubAttendanceTab({
 																								'LATE',
 																							)
 																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-all ${
-																							status ===
-																							'LATE'
-																								? 'bg-warning text-white border-warning'
-																								: 'border-border text-text-secondary hover:text-warning'
+																						className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border cursor-pointer transition-all ${
+																							status === 'LATE'
+																								? 'bg-warning text-white border-warning shadow-2xs'
+																								: 'border-border text-text-secondary hover:text-warning hover:border-warning/40'
 																						}`}
 																					>
 																						Late
 																					</button>
 																					<button
+																						type="button"
 																						onClick={() =>
 																							updateAttendanceStatus(
 																								currentSelectedEvent.id,
@@ -904,11 +1063,10 @@ export default function ClubAttendanceTab({
 																								'ABSENT',
 																							)
 																						}
-																						className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-all ${
-																							status ===
-																							'ABSENT'
-																								? 'bg-surface-secondary text-text-primary border-border'
-																								: 'border-border text-text-muted hover:text-danger'
+																						className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border cursor-pointer transition-all ${
+																							status === 'ABSENT'
+																								? 'bg-surface-secondary text-text-primary border-border font-bold'
+																								: 'border-border text-text-muted hover:text-danger hover:border-danger/40'
 																						}`}
 																					>
 																						Absent
@@ -918,8 +1076,7 @@ export default function ClubAttendanceTab({
 																		)}
 																	</tr>
 																);
-															},
-														)}
+															})}
 													</tbody>
 												</table>
 											</div>

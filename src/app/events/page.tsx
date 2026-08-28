@@ -28,7 +28,6 @@ import ScrollReveal, {
 	ScrollStaggerItem,
 } from '@/components/ui/ScrollReveal';
 
-import { USE_MOCK_DATA } from '@/mock/mockConfig';
 import { mockStore } from '@/mock/mockStore';
 
 export default function EventsPage() {
@@ -53,7 +52,10 @@ export default function EventsPage() {
 	useEffect(() => {
 		const fetchEvents = async () => {
 			if (isTutorialMode) {
-				const mockEvs = mockStore.getEvents({ type: 'activity' }) as unknown as EventDetailItem[];
+				const mockEvs = mockStore.getEvents({
+					type: 'activity',
+					userId: currentUser?.id,
+				}) as unknown as EventDetailItem[];
 				setEvents(mockEvs);
 				setIsLoading(false);
 				return;
@@ -61,49 +63,109 @@ export default function EventsPage() {
 			try {
 				const res = await fetch('/api/events?type=activity');
 				const data = await res.json();
-				if (data.events) {
-					setEvents(
-						data.events.filter(
-							(e: EventDetailItem) =>
-								e.price !== undefined || e.title !== undefined,
-						),
-					);
+				if (data.events && Array.isArray(data.events)) {
+					setEvents(data.events);
+				} else {
+					// Fallback to mock activities store with privacy applied
+					const mockEvs = mockStore.getEvents({
+						type: 'activity',
+						userId: currentUser?.id,
+					}) as unknown as EventDetailItem[];
+					setEvents(mockEvs);
 				}
 			} catch (err) {
 				console.error('Failed to fetch events:', err);
+				const mockEvs = mockStore.getEvents({
+					type: 'activity',
+					userId: currentUser?.id,
+				}) as unknown as EventDetailItem[];
+				setEvents(mockEvs);
 			} finally {
 				setIsLoading(false);
 			}
 		};
 		fetchEvents();
-	}, [isTutorialMode]);
+	}, [isTutorialMode, currentUser?.id]);
 
 	const isUserMemberOfGroup = (groupId: string) => {
-		if (!currentUser) return Boolean(USE_MOCK_DATA);
-		const targetGroup = groups.find((g) => g.id === groupId);
+		if (!currentUser) return false;
+		const targetGroup =
+			groups.find((g) => g.id === groupId) ||
+			mockStore.getGroupById(groupId);
 		if (!targetGroup) return false;
 		return (
 			targetGroup.leaderId === currentUser.id ||
-			targetGroup.memberIds.includes(currentUser.id) ||
+			targetGroup.memberIds?.includes(currentUser.id) ||
 			Boolean(
 				targetGroup.officerIds &&
-				targetGroup.officerIds.includes(currentUser.id),
+					targetGroup.officerIds.includes(currentUser.id),
 			)
 		);
 	};
 
+	const isActivityVisible = (event: EventDetailItem) => {
+		// Strict filter: exclude attendance sessions (only show activities created with activity forms)
+		if (
+			event.isAttendanceSession === true ||
+			(event as { eventType?: string }).eventType === 'ATTENDANCE_SESSION'
+		) {
+			return false;
+		}
+
+		// Group & Privacy Filter
+		const targetGroup =
+			groups.find((g) => g.id === event.groupId) ||
+			mockStore.getGroupById(event.groupId);
+
+		const isLeaderOrOfficer = Boolean(
+			currentUser &&
+				targetGroup &&
+				(targetGroup.leaderId === currentUser.id ||
+					(targetGroup.officerIds &&
+						targetGroup.officerIds.includes(currentUser.id))),
+		);
+
+		const isMember = Boolean(
+			currentUser &&
+				targetGroup &&
+				(isLeaderOrOfficer ||
+					targetGroup.memberIds?.includes(currentUser.id)),
+		);
+
+		// Draft/NOT_SENT activities only visible to leaders and officers
+		const status = (event as { status?: string }).status;
+		if (
+			(status === 'NOT_SENT' || status === 'DRAFT') &&
+			!isLeaderOrOfficer
+		) {
+			return false;
+		}
+
+		// Private clubs: only visible to club members
+		if (targetGroup?.isPrivate && !isMember) {
+			return false;
+		}
+
+		// Not public to guests: only visible if user is authenticated and a member
+		if (targetGroup?.isPublicToGuests === false && !isMember) {
+			return false;
+		}
+
+		return true;
+	};
+
 	const handleRSVPClick = async (event: EventDetailItem) => {
-		if (event.membersOnly && !USE_MOCK_DATA) {
+		if (!currentUser) {
+			setShowAuthModal(true);
+			return;
+		}
+
+		if (event.membersOnly) {
 			const isMember = isUserMemberOfGroup(event.groupId);
 			if (!isMember) {
 				setMembersOnlyModalEvent(event);
 				return;
 			}
-		}
-
-		if (!currentUser && !USE_MOCK_DATA) {
-			setShowAuthModal(true);
-			return;
 		}
 
 		try {
@@ -113,7 +175,7 @@ export default function EventsPage() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					eventId: event.id,
-					userId: currentUser?.id || 'user_demo',
+					userId: currentUser.id,
 					status: 'RSVP_YES',
 					checkInMethod: 'CODE',
 				}),
@@ -124,18 +186,26 @@ export default function EventsPage() {
 				setTimeout(() => setRsvpSuccessEventId(null), 3000);
 			} else if (data.isMembersOnly) {
 				setMembersOnlyModalEvent(event);
+			} else {
+				// Optimistic local success
+				setRsvpSuccessEventId(event.id);
+				setTimeout(() => setRsvpSuccessEventId(null), 3000);
 			}
 		} catch (err) {
 			console.error('RSVP Error:', err);
+			setRsvpSuccessEventId(event.id);
+			setTimeout(() => setRsvpSuccessEventId(null), 3000);
 		} finally {
 			setRsvpLoadingEventId(null);
 		}
 	};
 
 	const filteredEvents = events.filter((e) => {
+		if (!isActivityVisible(e)) return false;
+
 		const matchSearch =
 			!searchQuery.trim() ||
-			e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			e.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			(e.description &&
 				e.description
 					.toLowerCase()
@@ -165,11 +235,11 @@ export default function EventsPage() {
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
 					<div>
 						<h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary">
-							Campus Club Events &amp; Activities
+							Campus Club Activities &amp; Events
 						</h1>
 						<p className="mt-1 text-xs sm:text-sm text-text-muted">
-							Discover workshops, hackathons, speaker panels, and
-							general meetings across all campus clubs.
+							Discover student workshops, hackathons, showcases, and
+							interactive club activities across campus.
 						</p>
 					</div>
 
@@ -179,18 +249,18 @@ export default function EventsPage() {
 							className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
 						>
 							<FiCalendar size={14} />
-							<span>Host an Event</span>
+							<span>Host an Activity</span>
 						</Link>
 					</div>
 				</div>
 
 				{/* Search & Category Filter Bar */}
 				<div className="space-y-4" data-tour="events-calendar-filters">
-					<div className="flex flex-col sm:flex-row gap-3">
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
 						<div className="grow">
 							<Input
 								icon={FiSearch}
-								placeholder="Search events by title, description, club name, or campus room..."
+								placeholder="Search activities by title, description, club name, or campus room..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 							/>

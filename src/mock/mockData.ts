@@ -514,6 +514,7 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 		price: 'Free',
 		regRequired: true,
 		regCapacity: 120,
+		membersOnly: false,
 		isAttendanceSession: false,
 		eventType: 'ACTIVITY',
 		group: {
@@ -548,6 +549,33 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 			category: 'Arts & Design',
 		},
 	},
+	{
+		id: 'event_design_02',
+		groupId: 'club_design_02',
+		title: 'Interactive UX Design Sprint & Portfolio Showcase',
+		description:
+			'A dynamic interactive sprint designing mobile interfaces and receiving portfolio critiques from senior product designers.',
+		date: '2026-09-08',
+		time: '18:30',
+		location: 'Creative Arts Center, Main Gallery',
+		checkInCode: '749201',
+		isActive: false,
+		createdById: 'user_maya_lin',
+		createdAt: '2026-08-22T10:00:00Z',
+		status: 'PUBLISHED',
+		price: 'Free',
+		regRequired: true,
+		regCapacity: 45,
+		membersOnly: false,
+		isAttendanceSession: false,
+		eventType: 'ACTIVITY',
+		group: {
+			id: 'club_design_02',
+			name: 'Campus Design Collective',
+			bannerUrl: 'linear-gradient(135deg, #be123c 0%, #f43f5e 100%)',
+			category: 'Arts & Design',
+		},
+	},
 
 	// Robotics Lab Events
 	{
@@ -573,6 +601,30 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 			category: 'Engineering & Science',
 		},
 	},
+	{
+		id: 'event_robotics_02',
+		groupId: 'club_robotics_03',
+		title: 'Autonomous Drone Flight & Rover Navigation Workshop',
+		description:
+			'Exclusive hands-on firmware tuning and optical sensor testing for competitive drone racing and rover obstacles.',
+		date: '2026-09-12',
+		time: '16:00',
+		location: 'Engineering Quad, Flight Cage',
+		checkInCode: '392018',
+		isActive: false,
+		createdById: 'user_jordan_miller',
+		createdAt: '2026-08-23T11:00:00Z',
+		status: 'PUBLISHED',
+		membersOnly: true,
+		isAttendanceSession: false,
+		eventType: 'ACTIVITY',
+		group: {
+			id: 'club_robotics_03',
+			name: 'Robotics & Autonomous Systems',
+			bannerUrl: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+			category: 'Engineering & Science',
+		},
+	},
 
 	// Venture Society Events
 	{
@@ -589,6 +641,7 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 		createdById: 'user_sophia_patel',
 		createdAt: '2026-08-22T16:00:00Z',
 		status: 'PUBLISHED',
+		membersOnly: false,
 		isAttendanceSession: false,
 		eventType: 'ACTIVITY',
 		group: {
@@ -623,6 +676,57 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 			category: 'Music & Performance',
 		},
 	},
+	{
+		id: 'event_music_02',
+		groupId: 'club_music_05',
+		title: 'Collegiate A Cappella Fall Gala Concert',
+		description:
+			'Live vocal performances featuring guest university ensembles, beatboxing battles, and contemporary arrangements.',
+		date: '2026-09-15',
+		time: '19:00',
+		location: 'Campus Concert Auditorium',
+		checkInCode: '619283',
+		isActive: false,
+		createdById: 'user_david_kim',
+		createdAt: '2026-08-23T14:00:00Z',
+		status: 'PUBLISHED',
+		price: '$5.00',
+		membersOnly: false,
+		isAttendanceSession: false,
+		eventType: 'ACTIVITY',
+		group: {
+			id: 'club_music_05',
+			name: 'Cadence Vocal Ensemble',
+			bannerUrl: 'linear-gradient(135deg, #9333ea 0%, #c026d3 100%)',
+			category: 'Music & Performance',
+		},
+	},
+
+	// EcoAction Sustainability Events
+	{
+		id: 'event_eco_01',
+		groupId: 'club_eco_06',
+		title: 'Campus Sustainability Summit & Micro-Garden Workshop',
+		description:
+			'Hands-on microgreen planting, renewable energy demos, and student sustainability policy discussions.',
+		date: '2026-09-20',
+		time: '14:00',
+		location: 'Botanical Greenhouses & Quad',
+		checkInCode: '829104',
+		isActive: false,
+		createdById: 'user_elena_r',
+		createdAt: '2026-08-24T09:00:00Z',
+		status: 'PUBLISHED',
+		membersOnly: false,
+		isAttendanceSession: false,
+		eventType: 'ACTIVITY',
+		group: {
+			id: 'club_eco_06',
+			name: 'EcoAction Sustainability Guild',
+			bannerUrl: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+			category: 'Environmental & Sustainability',
+		},
+	},
 
 	// Esports League Events
 	{
@@ -641,6 +745,33 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 		status: 'PUBLISHED',
 		isAttendanceSession: true,
 		eventType: 'ATTENDANCE_SESSION',
+		group: {
+			id: 'club_esports_07',
+			name: 'Campus Esports & Gaming League',
+			bannerUrl: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+			category: 'Gaming & Esports',
+		},
+	},
+	{
+		id: 'event_esports_02',
+		groupId: 'club_esports_07',
+		title: 'Tri-Campus Smash Bros & Valorant Championship',
+		description:
+			'Collegiate championship tournament with live esports casting, custom spectator lounge, and sponsored gear prizes.',
+		date: '2026-09-18',
+		time: '17:00',
+		location: 'Student Activity Center, Main Arena',
+		checkInCode: '491029',
+		isActive: false,
+		createdById: 'user_liam_oc',
+		createdAt: '2026-08-24T12:00:00Z',
+		status: 'PUBLISHED',
+		price: 'Free',
+		regRequired: true,
+		regCapacity: 64,
+		membersOnly: false,
+		isAttendanceSession: false,
+		eventType: 'ACTIVITY',
 		group: {
 			id: 'club_esports_07',
 			name: 'Campus Esports & Gaming League',

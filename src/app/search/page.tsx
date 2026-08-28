@@ -39,7 +39,11 @@ function SearchContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 
-	const clubList = isTutorialMode ? MOCK_GROUPS : groups;
+	const clubList = isTutorialMode
+		? MOCK_GROUPS
+		: groups.length > 0
+		? groups
+		: mockStore.getGroups();
 	const effectiveUser = currentUser || (isTutorialMode ? MOCK_USERS[0] : null);
 
 	// One-time refresh when redirecting to explore page to ensure fresh club data

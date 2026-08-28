@@ -26,6 +26,7 @@ export interface EventDetailItem {
 	location?: string | null;
 	price?: string | null;
 	membersOnly?: boolean;
+	isAttendanceSession?: boolean;
 	group?: {
 		id: string;
 		name: string;

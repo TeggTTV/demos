@@ -8,6 +8,7 @@ import {
 	FiMessageSquare,
 	FiCheckCircle,
 	FiArrowRight,
+	FiZap,
 } from 'react-icons/fi';
 import { User } from '@/types/models';
 import ScrollReveal, {
@@ -22,17 +23,69 @@ interface LandingFeaturesSectionProps {
 export default function LandingFeaturesSection({
 	currentUser,
 }: LandingFeaturesSectionProps) {
+	const features = [
+		{
+			icon: FiShare2,
+			badge: 'Public Discovery',
+			title: 'Showcase & Recruitment',
+			description:
+				'Highlight your organization’s mission, meeting cadence, room locations, leadership team, and social channels to attract new campus talent.',
+			link: '/search',
+			linkText: 'Explore Public Directory',
+			gradient: 'from-blue-500/20 to-indigo-500/20',
+			iconColor: 'text-primary',
+			tag: 'Directory',
+		},
+		{
+			icon: FiUsers,
+			badge: 'Instant Onboarding',
+			title: 'Invite Codes & Roster',
+			description:
+				'Generate secure invite codes for instant joining, manage executive officer permissions, and maintain verified digital member rosters.',
+			link: '/join',
+			linkText: 'Test Join Codes',
+			gradient: 'from-purple-500/20 to-violet-500/20',
+			iconColor: 'text-violet-500',
+			tag: 'Membership',
+		},
+		{
+			icon: FiMessageSquare,
+			badge: 'Team Collaboration',
+			title: 'Hub Feeds & Sub-Apps',
+			description:
+				'Centralized club feeds with pinned announcements, interactive member polls, meeting scheduling, and shared workshop slides.',
+			link: currentUser ? '/groups' : '/auth/register',
+			linkText: 'Explore Hub Feeds',
+			gradient: 'from-emerald-500/20 to-teal-500/20',
+			iconColor: 'text-emerald-500',
+			tag: 'Communication',
+		},
+		{
+			icon: FiCheckCircle,
+			badge: 'Zero Friction',
+			title: 'Live Attendance & CSV',
+			description:
+				'Launch live meeting sessions with projector QR codes or 6-digit PINs. Track verified turnout and export university-compliant CSV reports.',
+			link: '/search',
+			linkText: 'See Attendance Tracker',
+			gradient: 'from-amber-500/20 to-orange-500/20',
+			iconColor: 'text-amber-500',
+			tag: 'Attendance',
+		},
+	];
+
 	return (
-		<section className="py-16 bg-surface-secondary/40 border-y border-border">
-			<div className="mx-auto max-w-7xl px-6 lg:px-8">
-				<ScrollReveal direction="up" className="text-center max-w-3xl mx-auto mb-12">
-					<h2 className="text-2xl sm:text-3xl font-bold text-text-primary">
-						Everything Student Organizations Need
+		<section className="py-20 bg-surface-secondary/30 border-y border-border relative overflow-hidden">
+			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<ScrollReveal direction="up" className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+					<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-light text-primary text-xs font-bold border border-primary/20">
+						<FiZap size={12} /> Built For Campus High-Performers
+					</div>
+					<h2 className="text-2xl sm:text-4xl font-extrabold text-text-primary tracking-tight">
+						Engineered for Every University Organization
 					</h2>
-					<p className="mt-3 text-sm text-text-muted leading-relaxed">
-						Built specifically for university clubs, design teams,
-						honor societies, Greek life, cultural groups, and
-						special interest student organizations.
+					<p className="text-xs sm:text-sm text-text-muted leading-relaxed max-w-2xl mx-auto">
+						Purpose-built for engineering design teams, ACM chapters, student venture incubators, cultural societies, and collegiate performance groups.
 					</p>
 				</ScrollReveal>
 
@@ -40,99 +93,54 @@ export default function LandingFeaturesSection({
 					staggerDelay={0.1}
 					className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
 				>
-					{/* Card 1: Promotion */}
-					<ScrollStaggerItem>
-						<Link
-							href="/search"
-							className="h-full rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
-						>
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
-								<FiShare2 size={20} />
-							</div>
-							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
-								Club Promotion &amp; Discovery
-							</h3>
-							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Highlight your club’s mission, meeting times, room
-								locations, team, and social links to attract new
-								campus recruits.
-							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
-								Browse Public Directory <FiArrowRight size={12} />
-							</div>
-						</Link>
-					</ScrollStaggerItem>
+					{features.map((feat) => {
+						const Icon = feat.icon;
+						return (
+							<ScrollStaggerItem key={feat.title}>
+								<Link
+									href={feat.link}
+									className="h-full rounded-3xl border border-border bg-surface p-6 shadow-xs hover:border-primary/50 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+								>
+									{/* Subtle background glow */}
+									<div
+										className={`absolute -top-10 -right-10 h-28 w-28 rounded-full bg-linear-to-br ${feat.gradient} opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-500 pointer-events-none`}
+									/>
 
-					{/* Card 2: Onboarding */}
-					<ScrollStaggerItem>
-						<Link
-							href="/join"
-							className="h-full rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
-						>
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
-								<FiUsers size={20} />
-							</div>
-							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
-								Member Invites &amp; Roster
-							</h3>
-							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Accept membership applications with student major
-								and graduation year details, or generate invite
-								codes for instant joining.
-							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
-								Redeem Invite Codes <FiArrowRight size={12} />
-							</div>
-						</Link>
-					</ScrollStaggerItem>
+									<div className="space-y-4">
+										<div className="flex items-center justify-between">
+											<div className={`h-12 w-12 rounded-2xl bg-surface-secondary border border-border flex items-center justify-center ${feat.iconColor} group-hover:scale-110 group-hover:shadow-sm transition-all duration-300`}>
+												<Icon size={22} />
+											</div>
+											<span className="text-[10px] font-bold uppercase tracking-wider text-text-muted bg-surface-secondary px-2.5 py-0.5 rounded-full border border-border/60">
+												{feat.tag}
+											</span>
+										</div>
 
-					{/* Card 3: Communication */}
-					<ScrollStaggerItem>
-						<Link
-							href={currentUser ? '/groups' : '/auth/register'}
-							className="h-full rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
-						>
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
-								<FiMessageSquare size={20} />
-							</div>
-							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
-								Club Hub &amp; Announcements
-							</h3>
-							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Post pinned announcements, discussions, and
-								resources links in a private, focused team
-								workspace.
-							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
-								Dedicated Hub Feeds <FiArrowRight size={12} />
-							</div>
-						</Link>
-					</ScrollStaggerItem>
+										<div className="space-y-1.5">
+											<span className="text-[11px] font-bold text-primary block">
+												{feat.badge}
+											</span>
+											<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
+												{feat.title}
+											</h3>
+										</div>
 
-					{/* Card 4: Attendance */}
-					<ScrollStaggerItem>
-						<Link
-							href="/search"
-							className="h-full rounded-2xl border border-border bg-surface p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col group"
-						>
-							<div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform">
-								<FiCheckCircle size={20} />
-							</div>
-							<h3 className="text-base font-bold text-text-primary group-hover:text-primary transition-colors">
-								Live Attendance Tracking
-							</h3>
-							<p className="mt-2 text-xs text-text-secondary leading-relaxed grow">
-								Generate links or QR codes for instant student self
-								check-in during meetings and export CSV when its
-								over.
-							</p>
-							<div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-semibold text-primary inline-flex items-center gap-1">
-								Fast Link Check-In <FiArrowRight size={12} />
-							</div>
-						</Link>
-					</ScrollStaggerItem>
+										<p className="text-xs text-text-secondary leading-relaxed">
+											{feat.description}
+										</p>
+									</div>
+
+									<div className="mt-6 pt-4 border-t border-border/60 text-xs font-bold text-primary inline-flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform">
+										<span>{feat.linkText}</span>
+										<FiArrowRight size={13} />
+									</div>
+								</Link>
+							</ScrollStaggerItem>
+						);
+					})}
 				</ScrollStaggerContainer>
 			</div>
 		</section>
 	);
 }
+

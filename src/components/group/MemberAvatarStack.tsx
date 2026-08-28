@@ -3,6 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import { useAppContext } from '@/components/AppContext';
+import { mockStore } from '@/mock/mockStore';
+import { MOCK_USERS } from '@/mock/mockData';
 
 interface MemberAvatarStackProps {
 	memberIds: string[];
@@ -76,7 +78,10 @@ export default function MemberAvatarStack({
 			aria-label={`${uniqueIds.length} club members`}
 		>
 			{displayIds.map((id, index) => {
-				const user = users.find((u) => u.id === id);
+				const user =
+					users.find((u) => u.id === id) ||
+					(typeof mockStore !== 'undefined' ? mockStore.getUserById(id) : null) ||
+					(typeof MOCK_USERS !== 'undefined' ? MOCK_USERS.find((u) => u.id === id) : null);
 				const userName = user?.name || (id === leaderId ? 'Club Leader' : 'Member');
 				const initial = userName.trim()[0]?.toUpperCase() || 'M';
 				const gradient = getGradientForString(id || userName);
@@ -98,7 +103,7 @@ export default function MemberAvatarStack({
 							/>
 						) : (
 							<div
-								className={`w-full h-full bg-gradient-to-br ${gradient} text-white font-bold flex items-center justify-center select-none`}
+								className={`w-full h-full bg-linear-to-tr ${gradient} flex items-center justify-center text-white font-bold`}
 							>
 								{initial}
 							</div>

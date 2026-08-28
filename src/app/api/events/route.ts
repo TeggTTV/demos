@@ -14,13 +14,14 @@ export async function GET(req: NextRequest) {
 		const eventId = searchParams.get('eventId') || searchParams.get('sessionId') || undefined;
 		const type = searchParams.get('type') || undefined; // 'activity' | 'attendance' | 'all'
 
+		const session = await getSession(req);
+
 		if (USE_MOCK_DATA || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId)) || (eventId && !/^[0-9a-fA-F]{24}$/.test(eventId))) {
-			const mockEvents = mockStore.getEvents({ groupId, eventId, type });
+			const mockEvents = mockStore.getEvents({ groupId, eventId, type, userId: session?.userId });
 			return NextResponse.json({ events: mockEvents });
 		}
 
-		const session = await getSession(req);
-		if (!session) {
+		if (!session && groupId) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
@@ -35,10 +36,12 @@ export async function GET(req: NextRequest) {
 			if (!group) {
 				return NextResponse.json({ error: 'Group not found' }, { status: 404 });
 			}
-			if (group.isPrivate && group.leaderId !== session.userId) {
-				const member = await prisma.groupMember.findFirst({
-					where: { groupId, userId: session.userId },
-				});
+			if (group.isPrivate && (!session || group.leaderId !== session.userId)) {
+				const member = session
+					? await prisma.groupMember.findFirst({
+							where: { groupId, userId: session.userId },
+					  })
+					: null;
 				if (!member) {
 					return NextResponse.json({ error: 'Access denied' }, { status: 403 });
 				}
@@ -50,7 +53,13 @@ export async function GET(req: NextRequest) {
 			? { id: eventId, ...(groupId ? { groupId } : {}) }
 			: groupId
 				? { groupId }
-				: { group: { isPrivate: false } };
+				: {
+						group: {
+							isPrivate: false,
+							...(session ? {} : { isPublicToGuests: true }),
+						},
+						...(session ? {} : { status: 'PUBLISHED' }),
+				  };
 
 		if (!eventId) {
 			if (type === 'attendance') {

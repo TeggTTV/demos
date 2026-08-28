@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 		const session = await getSession(req);
 		const userId = session?.userId || 'user_demo';
 
-		if (USE_MOCK_DATA) {
+		if (USE_MOCK_DATA || !/^[0-9a-fA-F]{24}$/.test(groupId)) {
 			const res = mockStore.createPoll(
 				{
 					groupId,
@@ -189,7 +189,7 @@ export async function PATCH(req: NextRequest) {
 		const session = await getSession(req);
 		const userId = session?.userId || 'user_demo';
 
-		if (USE_MOCK_DATA) {
+		if (USE_MOCK_DATA || !/^[0-9a-fA-F]{24}$/.test(pollId)) {
 			if (action === 'vote') {
 				const res = mockStore.votePoll(pollId, optionIds || [], userId);
 				return NextResponse.json(res);
@@ -333,7 +333,7 @@ export async function DELETE(req: NextRequest) {
 			return NextResponse.json({ error: 'Missing pollId' }, { status: 400 });
 		}
 
-		if (USE_MOCK_DATA) {
+		if (USE_MOCK_DATA || !/^[0-9a-fA-F]{24}$/.test(pollId)) {
 			mockStore.deletePoll(pollId);
 			return NextResponse.json({ success: true });
 		}

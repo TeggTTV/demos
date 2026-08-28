@@ -191,7 +191,7 @@ class MockDataStore {
 	}
 
 	// ─── Events ───
-	getEvents(params?: { groupId?: string; type?: string; eventId?: string }): MeetingEvent[] {
+	getEvents(params?: { groupId?: string; type?: string; eventId?: string; userId?: string }): MeetingEvent[] {
 		let result = [...this.events];
 		if (params?.eventId) {
 			result = result.filter((e) => e.id === params.eventId);
@@ -204,6 +204,40 @@ class MockDataStore {
 		} else if (params?.type === 'activity') {
 			result = result.filter((e) => e.isAttendanceSession !== true && e.eventType !== 'ATTENDANCE_SESSION');
 		}
+
+		// Apply privacy settings when not querying a single event by ID
+		if (!params?.eventId) {
+			const userId = params?.userId;
+			result = result.filter((e) => {
+				const group = this.getGroupById(e.groupId);
+				if (!group) return true;
+
+				const isLeaderOrOfficer = Boolean(
+					userId && (group.leaderId === userId || (group.officerIds && group.officerIds.includes(userId)))
+				);
+				const isMember = Boolean(
+					userId && (isLeaderOrOfficer || group.memberIds.includes(userId))
+				);
+
+				// Draft / NOT_SENT privacy: only visible to club leaders and officers
+				if ((e.status === 'NOT_SENT' || e.status === 'DRAFT') && !isLeaderOrOfficer) {
+					return false;
+				}
+
+				// Private club privacy: only visible to club members
+				if (group.isPrivate && !isMember) {
+					return false;
+				}
+
+				// Club not public to guests: only visible if user is logged in & member
+				if (group.isPublicToGuests === false && !isMember) {
+					return false;
+				}
+
+				return true;
+			});
+		}
+
 		return result;
 	}
 
