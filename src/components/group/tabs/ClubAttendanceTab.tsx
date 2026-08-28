@@ -145,7 +145,10 @@ export default function ClubAttendanceTab({
 	return (
 		<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 			{/* Top Actions */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+			<div
+				data-tour="attendance-stats"
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4"
+			>
 				<div>
 					<h2 className="text-xl sm:text-2xl font-bold text-text-primary flex items-center gap-2">
 						⏱️ Meeting Attendance Tracker
@@ -160,6 +163,7 @@ export default function ClubAttendanceTab({
 					{canManage && currentSelectedEvent && (
 						<button
 							onClick={handleExportCSV}
+							data-tour="attendance-export"
 							className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary shadow-2xs cursor-pointer"
 						>
 							<FiDownload size={13} /> Export CSV Report
@@ -393,7 +397,10 @@ export default function ClubAttendanceTab({
 									<>
 										{/* Big Check-in PIN Display / Check-in Form */}
 										{canManage ? (
-											<div className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4">
+											<div
+												data-tour="attendance-checkin-link"
+												className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4"
+											>
 												<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/15 pb-3">
 													<div>
 														<span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
@@ -726,7 +733,10 @@ export default function ClubAttendanceTab({
 										)}
 
 										{/* Live Member Roster Checklist */}
-										<div className="space-y-3 pt-4 border-t border-border">
+										<div
+											data-tour="attendance-roster-checklist"
+											className="space-y-3 pt-4 border-t border-border"
+										>
 											<div className="flex items-center justify-between">
 												<h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
 													Meeting Roster &amp; Verification

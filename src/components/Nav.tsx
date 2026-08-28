@@ -5,23 +5,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAppContext } from './AppContext';
+import { useTutorial } from './tutorial/TutorialContext';
 import ProfileMenu from './ProfileMenu';
 import NotificationDrawer from './NotificationDrawer';
 import { FiMenu, FiX, FiCompass, FiUsers, FiBell, FiCalendar } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Nav() {
-	const { currentUser, unreadNotificationCount } = useAppContext();
+	const { currentUser, unreadNotificationCount, isTutorialMode } = useAppContext();
+	const { openWelcomeModal } = useTutorial();
 	const pathname = usePathname();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
 
 	const navLinks = [
 		{ label: 'Home', href: '/' },
-		{ label: 'Explore Clubs', href: '/search', icon: FiCompass },
-		{ label: 'All Events', href: '/events', icon: FiCalendar },
+		{ label: 'Explore Clubs', href: '/search', icon: FiCompass, tourId: 'nav-explore' },
+		{ label: 'All Events', href: '/events', icon: FiCalendar, tourId: 'nav-events' },
 		...(currentUser
-			? [{ label: 'My Clubs', href: '/groups', icon: FiUsers }]
+			? [{ label: 'My Clubs', href: '/groups', icon: FiUsers, tourId: 'nav-groups' }]
 			: []),
 	];
 
@@ -31,7 +33,12 @@ export default function Nav() {
 				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 					<div className="flex h-14 items-center justify-between">
 						{/* Logo */}
-						<Link href="/" className="flex items-center space-x-2" aria-label="Demos home">
+						<Link
+							href="/"
+							className="flex items-center space-x-2"
+							aria-label="Demos home"
+							data-tour="nav-brand"
+						>
 							<div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg">
 								<Image
 									src="/icon1.png"
@@ -59,12 +66,13 @@ export default function Nav() {
 									<Link
 										key={link.href}
 										href={link.href}
-									className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+										data-tour={link.tourId}
+										className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 											active
 												? 'bg-primary-light text-primary font-semibold'
 												: 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
-									}`}
-									aria-current={active ? 'page' : undefined}
+										}`}
+										aria-current={active ? 'page' : undefined}
 									>
 										{link.label}
 									</Link>
@@ -73,7 +81,21 @@ export default function Nav() {
 						</div>
 
 						{/* Right Section */}
-						<div className="flex items-center space-x-3">
+						<div className="flex items-center space-x-2 sm:space-x-3">
+							{/* Interactive Tour Launcher Button */}
+							<button
+								onClick={openWelcomeModal}
+								aria-label="Launch interactive app tutorial"
+								className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									isTutorialMode
+										? 'bg-primary text-white shadow-xs'
+										: 'bg-primary/10 text-primary hover:bg-primary/20'
+								}`}
+							>
+								<span className="text-xs">✨</span>
+								<span>{isTutorialMode ? 'Tour Active' : 'App Tour'}</span>
+							</button>
+
 							{/* Notification Bell */}
 							<button
 								onClick={() =>
@@ -81,6 +103,7 @@ export default function Nav() {
 								}
 								aria-label="Open notifications"
 								aria-expanded={notificationDrawerOpen}
+								data-tour="nav-notifications"
 								className="relative p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
 							>
 								<FiBell size={20} />
@@ -94,7 +117,9 @@ export default function Nav() {
 							</button>
 
 							{/* Profile Menu */}
-							<ProfileMenu />
+							<div data-tour="nav-profile">
+								<ProfileMenu />
+							</div>
 							{!currentUser && (
 								<Link
 									href="/auth/register"
@@ -140,12 +165,13 @@ export default function Nav() {
 											key={link.href}
 											href={link.href}
 											onClick={() => setMobileMenuOpen(false)}
-										className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+											data-tour={link.tourId}
+											className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
 												active
 													? 'bg-primary-light text-primary font-semibold'
 													: 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
-										}`}
-										aria-current={active ? 'page' : undefined}
+											}`}
+											aria-current={active ? 'page' : undefined}
 										>
 											{link.label}
 										</Link>
@@ -156,7 +182,7 @@ export default function Nav() {
 										setMobileMenuOpen(false);
 										setNotificationDrawerOpen(true);
 									}}
-									className="flex w-full items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors"
+									className="flex w-full items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors cursor-pointer"
 								>
 									<span className="flex items-center gap-2">
 										<FiBell size={16} /> Notifications
@@ -166,6 +192,17 @@ export default function Nav() {
 											{unreadNotificationCount}
 										</span>
 									)}
+								</button>
+								<button
+									onClick={() => {
+										setMobileMenuOpen(false);
+										openWelcomeModal();
+									}}
+									className="flex w-full items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer"
+								>
+									<span className="flex items-center gap-2 font-bold">
+										✨ Guided App Tour
+									</span>
 								</button>
 							</div>
 						</motion.div>

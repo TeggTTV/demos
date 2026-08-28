@@ -256,7 +256,10 @@ export default function ClubSettingsTab({
 
 				{/* Invite Link & Code Generator Box */}
 				{isLeader && !isEditingSettings && (
-					<div className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4">
+					<div
+						data-tour="settings-invite-codes"
+						className="rounded-2xl bg-primary-light/50 border border-primary/20 p-5 space-y-4"
+					>
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/15 pb-3">
 							<div>
 								<span className="text-xs font-bold text-primary flex items-center gap-1.5">

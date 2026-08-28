@@ -33,31 +33,20 @@ interface CreatePollModalProps {
 	}) => Promise<{ success: boolean; poll?: Poll; error?: string }>;
 }
 
-const CATEGORIES = [
-	'General',
-	'Meeting Scheduling',
-	'Event Planning',
-	'Club Decisions',
-	'Feedback & Fun',
-];
-
 const TEMPLATES = [
 	{
 		name: 'Meeting Times',
 		title: 'Best time for our next general meeting?',
-		category: 'Meeting Scheduling',
 		options: ['Wednesday 6:00 PM', 'Thursday 5:30 PM', 'Friday 4:00 PM'],
 	},
 	{
 		name: 'Yes / No / Abstain',
 		title: 'Vote on amendment proposal',
-		category: 'Club Decisions',
 		options: ['In Favor (Yes)', 'Opposed (No)', 'Abstain'],
 	},
 	{
 		name: 'Event Catering',
 		title: 'Food preference for upcoming social?',
-		category: 'Event Planning',
 		options: ['Pizza & Soda', 'Taco Bar', 'Boba & Pastries', 'Mediterranean Bowls'],
 	},
 ];
@@ -69,7 +58,6 @@ export default function CreatePollModal({
 }: CreatePollModalProps) {
 	const [title, setTitle] = useState('');
 	const [description, setDescription] = useState('');
-	const [category, setCategory] = useState('General');
 	const [options, setOptions] = useState<string[]>(['', '']);
 	const [isMultipleChoice, setIsMultipleChoice] = useState(false);
 	const [isAnonymous, setIsAnonymous] = useState(false);
@@ -88,7 +76,6 @@ export default function CreatePollModal({
 		if (isOpen) {
 			setTitle('');
 			setDescription('');
-			setCategory('General');
 			setOptions(['', '']);
 			setIsMultipleChoice(false);
 			setIsAnonymous(false);
@@ -106,7 +93,6 @@ export default function CreatePollModal({
 
 	const handleApplyTemplate = (template: (typeof TEMPLATES)[0]) => {
 		setTitle(template.title);
-		setCategory(template.category);
 		setOptions([...template.options]);
 	};
 
@@ -170,7 +156,6 @@ export default function CreatePollModal({
 			const res = await onSubmit({
 				title: title.trim(),
 				description: description.trim() || undefined,
-				category,
 				options: cleanOptions,
 				isMultipleChoice,
 				isAnonymous,
@@ -272,29 +257,6 @@ export default function CreatePollModal({
 							placeholder="Add context or guidelines for voters..."
 							className="w-full rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
 						/>
-					</div>
-
-					{/* Category */}
-					<div className="space-y-1.5">
-						<label className="block text-xs font-medium text-text-muted">
-							Category
-						</label>
-						<div className="flex flex-wrap gap-1.5">
-							{CATEGORIES.map((cat) => (
-								<button
-									key={cat}
-									type="button"
-									onClick={() => setCategory(cat)}
-									className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-										category === cat
-											? 'bg-primary text-white shadow-2xs'
-											: 'bg-surface-secondary text-text-muted hover:text-text-primary border border-border'
-									}`}
-								>
-									{cat}
-								</button>
-							))}
-						</div>
 					</div>
 
 					{/* Options Builder */}

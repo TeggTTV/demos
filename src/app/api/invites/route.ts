@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 		const groupId = searchParams.get('groupId') || searchParams.get('id');
 		const code = searchParams.get('code');
 
-		if (USE_MOCK_DATA) {
+		if (USE_MOCK_DATA || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))) {
 			if (code) {
 				const inv = mockStore
 					.getInvites()

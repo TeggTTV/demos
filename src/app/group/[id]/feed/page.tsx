@@ -20,6 +20,8 @@ import CreatePollModal from '@/components/group/CreatePollModal';
 import ScheduleMeetingModal from '@/components/group/ScheduleMeetingModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
+import { MOCK_USERS } from '@/mock/mockData';
 
 export default function GroupFeedPage() {
 	const { id } = useParams() as { id: string };
@@ -55,18 +57,28 @@ export default function GroupFeedPage() {
 		fetchInvites,
 		fetchEvents,
 		fetchAttendances,
-		isIdle,
+		isTutorialMode,
 	} = useAppContext();
 	const router = useRouter();
 
-	const group = groups.find((g) => g.id === id);
-	const isLeader = currentUser
-		? group?.leaderId === currentUser.id
-		: Boolean(USE_MOCK_DATA);
+	const group =
+		groups.find((g) => g.id === id) ||
+		(isTutorialMode || USE_MOCK_DATA || !/^[0-9a-fA-F]{24}$/.test(id)
+			? mockStore.getGroupById(id)
+			: undefined);
+	const effectiveUser =
+		currentUser || (isTutorialMode || USE_MOCK_DATA ? MOCK_USERS[0] : null);
+	const isLeader = effectiveUser
+		? group?.leaderId === effectiveUser.id
+		: Boolean(USE_MOCK_DATA || isTutorialMode);
 	const isOfficer = Boolean(
-		group?.officerIds && group.officerIds.includes(currentUser?.id || ''),
+		group?.officerIds &&
+			group.officerIds.includes(effectiveUser?.id || ''),
 	);
-	const canManage = isLeader || isOfficer || (!currentUser && USE_MOCK_DATA);
+	const canManage =
+		isLeader ||
+		isOfficer ||
+		(!effectiveUser && (USE_MOCK_DATA || isTutorialMode));
 
 	const [activeTab, setActiveTabState] = useState<FeedTab>('feed');
 	const [createPollModalOpen, setCreatePollModalOpen] = useState(false);
@@ -203,58 +215,26 @@ export default function GroupFeedPage() {
 	// Activities Birthday Toggle
 	const [showBirthdaysTab, setShowBirthdaysTab] = useState(true);
 
-	// Data Fetching Effects
+	// Single Initial Unified Data Fetch on Mount
 	useEffect(() => {
-		if (id && activeTab === 'feed') {
-			fetchFeedMessages(id).finally(() => setIsLoading(false));
-		}
-	}, [id, activeTab, fetchFeedMessages]);
+		if (!id) return;
+		let mounted = true;
 
-	useEffect(() => {
-		if (id && activeTab === 'feed') {
-			let isPolling = false;
-			const pollFeed = async () => {
-				if (isPolling || isIdle) return;
-				isPolling = true;
-				try {
-					await fetchFeedMessages(id);
-				} catch {
-					// Network blip
-				} finally {
-					isPolling = false;
-				}
-			};
-			const interval = setInterval(pollFeed, 3000);
-			return () => clearInterval(interval);
-		}
-	}, [id, activeTab, isIdle, fetchFeedMessages]);
+		Promise.allSettled([
+			fetchFeedMessages(id),
+			fetchPolls(id),
+			fetchEvents(id),
+			fetchAttendances(id),
+			fetchGroups(),
+			fetchInvites(),
+		]).finally(() => {
+			if (mounted) setIsLoading(false);
+		});
 
-	useEffect(() => {
-		if (id) {
-			fetchPolls(id);
-		}
-	}, [id, activeTab, fetchPolls]);
-
-	useEffect(() => {
-		if (activeTab === 'settings') {
-			fetchGroups();
-			fetchInvites();
-		}
-	}, [activeTab, fetchGroups, fetchInvites]);
-
-	useEffect(() => {
-		if (activeTab === 'attendance') {
-			fetchEvents(id, 'attendance');
-			fetchAttendances(id);
-		}
-	}, [activeTab, id, fetchEvents, fetchAttendances]);
-
-	useEffect(() => {
-		if (activeTab === 'activities') {
-			fetchEvents(id, 'activity');
-			fetchAttendances(id);
-		}
-	}, [activeTab, id, fetchEvents, fetchAttendances]);
+		return () => {
+			mounted = false;
+		};
+	}, [id, fetchFeedMessages, fetchPolls, fetchEvents, fetchAttendances, fetchGroups, fetchInvites]);
 
 	if (!hydrated) {
 		return (
@@ -266,7 +246,7 @@ export default function GroupFeedPage() {
 		);
 	}
 
-	if (!group || (!currentUser && !USE_MOCK_DATA)) {
+	if (!group || (!effectiveUser && !USE_MOCK_DATA && !isTutorialMode && !mockStore.getGroupById(id))) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />

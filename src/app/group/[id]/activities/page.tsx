@@ -21,6 +21,8 @@ import {
 import PageLoader from '@/components/ui/PageLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
+import { MOCK_USERS } from '@/mock/mockData';
 
 export default function GroupActivitiesPage() {
 	const { id } = useParams() as { id: string };
@@ -34,6 +36,7 @@ export default function GroupActivitiesPage() {
 		fetchEvents,
 		fetchAttendances,
 		fetchGroups,
+		isTutorialMode,
 	} = useAppContext();
 	const router = useRouter();
 
@@ -42,7 +45,13 @@ export default function GroupActivitiesPage() {
 	const [currentMonth, setCurrentMonth] = useState(new Date(2026, 7)); // Default to August 2026 to match mockup
 	const [rsvpSuccess, setRsvpSuccess] = useState<string | null>(null);
 
-	const group = groups.find((g) => g.id === id);
+	const group =
+		groups.find((g) => g.id === id) ||
+		(isTutorialMode || USE_MOCK_DATA || !/^[0-9a-fA-F]{24}$/.test(id)
+			? mockStore.getGroupById(id)
+			: undefined);
+	const effectiveUser =
+		currentUser || (isTutorialMode || USE_MOCK_DATA ? MOCK_USERS[0] : null);
 
 	useEffect(() => {
 		fetchGroups();
@@ -65,7 +74,7 @@ export default function GroupActivitiesPage() {
 		);
 	}
 
-	if (!group || (!currentUser && !USE_MOCK_DATA)) {
+	if (!group || (!effectiveUser && !USE_MOCK_DATA && !isTutorialMode && !mockStore.getGroupById(id))) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />

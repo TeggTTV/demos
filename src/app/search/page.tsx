@@ -21,6 +21,8 @@ import ScrollReveal, {
 	ScrollStaggerItem,
 } from '@/components/ui/ScrollReveal';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { MOCK_GROUPS, MOCK_USERS } from '@/mock/mockData';
+import { mockStore } from '@/mock/mockStore';
 
 function SearchContent() {
 	const {
@@ -32,9 +34,13 @@ function SearchContent() {
 		hydrated,
 		fetchGroups,
 		fetchEvents,
+		isTutorialMode,
 	} = useAppContext();
 	const searchParams = useSearchParams();
 	const router = useRouter();
+
+	const clubList = isTutorialMode ? MOCK_GROUPS : groups;
+	const effectiveUser = currentUser || (isTutorialMode ? MOCK_USERS[0] : null);
 
 	// One-time refresh when redirecting to explore page to ensure fresh club data
 	useEffect(() => {
@@ -74,7 +80,9 @@ function SearchContent() {
 		if (cat) setSelectedCategory(cat);
 		const clubId = searchParams.get('club');
 		if (clubId) {
-			const found = groups.find((g) => g.id === clubId);
+			const found =
+				clubList.find((g) => g.id === clubId) ||
+				mockStore.getGroupById(clubId);
 			if (found) setSelectedClub(found);
 		}
 		const codeParam = searchParams.get('code');
@@ -82,7 +90,7 @@ function SearchContent() {
 			setInviteCodeInput(codeParam);
 			setInviteModalOpen(true);
 		}
-	}, [searchParams, groups]);
+	}, [searchParams, clubList]);
 
 	useEffect(() => {
 		setIsLoading(true);
@@ -91,24 +99,25 @@ function SearchContent() {
 	}, [query, selectedCategory, searchDays]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
-	const filteredClubs = groups.filter((g) => {
+	const filteredClubs = clubList.filter((g) => {
 		const isMember =
-			currentUser &&
-			(g.leaderId === currentUser.id ||
-				g.memberIds.includes(currentUser.id));
+			effectiveUser &&
+			(g.leaderId === effectiveUser.id ||
+				g.memberIds.includes(effectiveUser.id));
 
 		const isPublicToGuests =
 			g.isPublicToGuests !== undefined ? g.isPublicToGuests : !g.isPrivate;
 		const isPublicToMembers =
 			g.isPublicToMembers !== undefined ? g.isPublicToMembers : true;
 
-		// 1. If not logged in (guest): must have isPublicToGuests enabled and isPublicToMembers enabled
-		// 2. If logged in but not a club member: must have isPublicToMembers enabled
-		// 3. If a club member/leader: always visible
+		// 1. If in tutorial mode: always visible
+		// 2. If a club member/leader: always visible
+		// 3. If logged in but not a member: must have isPublicToMembers
+		// 4. If guest: must have isPublicToGuests and isPublicToMembers
 		let isVisible = false;
-		if (isMember) {
+		if (isTutorialMode || isMember) {
 			isVisible = true;
-		} else if (currentUser) {
+		} else if (effectiveUser) {
 			isVisible = isPublicToMembers;
 		} else {
 			isVisible = isPublicToGuests && isPublicToMembers;
@@ -233,17 +242,19 @@ function SearchContent() {
 				</ScrollReveal>
 
 				{/* Search Filters */}
-				<SearchFilters
-					query={query}
-					setQuery={setQuery}
-					selectedCategory={selectedCategory}
-					setSelectedCategory={setSelectedCategory}
-					searchDays={searchDays}
-					setSearchDays={setSearchDays}
-					showFilters={showFilters}
-					setShowFilters={setShowFilters}
-					totalResults={filteredClubs.length}
-				/>
+				<div data-tour="search-filters">
+					<SearchFilters
+						query={query}
+						setQuery={setQuery}
+						selectedCategory={selectedCategory}
+						setSelectedCategory={setSelectedCategory}
+						searchDays={searchDays}
+						setSearchDays={setSearchDays}
+						showFilters={showFilters}
+						setShowFilters={setShowFilters}
+						totalResults={filteredClubs.length}
+					/>
+				</div>
 
 				{/* Results Grid / Loading / Empty State */}
 				{!hydrated || isLoading ? (
@@ -285,7 +296,7 @@ function SearchContent() {
 					</div>
 				) : (
 					<ScrollStaggerContainer
-						key={`${selectedCategory}-${searchQuery}-${filteredClubs.length}`}
+						key={`${selectedCategory}-${query}-${filteredClubs.length}`}
 						staggerDelay={0.07}
 						className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
 					>

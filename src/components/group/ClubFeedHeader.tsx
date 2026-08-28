@@ -136,6 +136,7 @@ export default function ClubFeedHeader({
 				<div className="flex items-center space-x-6 overflow-x-auto pt-3 border-t border-border/40 scrollbar-none" role="tablist" aria-label="Club hub sections">
 					<button
 						onClick={() => setActiveTab('feed')}
+						data-tour="tab-feed"
 						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === 'feed'
 								? 'border-primary text-primary'
@@ -148,6 +149,7 @@ export default function ClubFeedHeader({
 					</button>
 					<button
 						onClick={() => setActiveTab('polls')}
+						data-tour="tab-polls"
 						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
 							activeTab === 'polls'
 								? 'border-primary text-primary'
@@ -165,6 +167,7 @@ export default function ClubFeedHeader({
 					</button>
 					<button
 						onClick={() => setActiveTab('attendance')}
+						data-tour="tab-attendance"
 						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
 							activeTab === 'attendance'
 								? 'border-primary text-primary'
@@ -180,6 +183,7 @@ export default function ClubFeedHeader({
 					</button>
 					<button
 						onClick={() => setActiveTab('roster')}
+						data-tour="tab-roster"
 						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === 'roster'
 								? 'border-primary text-primary'
@@ -192,6 +196,7 @@ export default function ClubFeedHeader({
 					</button>
 					<button
 						onClick={() => setActiveTab('activities')}
+						data-tour="tab-activities"
 						className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === 'activities'
 								? 'border-primary text-primary'
@@ -205,6 +210,7 @@ export default function ClubFeedHeader({
 					{canManage && (
 						<button
 							onClick={() => setActiveTab('roles')}
+							data-tour="tab-roles"
 							className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
 								activeTab === 'roles'
 									? 'border-primary text-primary'
@@ -219,6 +225,7 @@ export default function ClubFeedHeader({
 					{isLeader && (
 						<button
 							onClick={() => setActiveTab('settings')}
+							data-tour="tab-settings"
 							className={`pb-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
 								activeTab === 'settings'
 									? 'border-primary text-primary'

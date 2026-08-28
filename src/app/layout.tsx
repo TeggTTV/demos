@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/components/AppContext';
+import { TutorialProvider } from '@/components/tutorial/TutorialContext';
+import TutorialOverlay from '@/components/tutorial/TutorialOverlay';
+import TutorialWelcomeModal from '@/components/tutorial/TutorialWelcomeModal';
 import { Analytics } from '@vercel/analytics/react';
 import PwaInstallBanner from '@/components/PwaInstallBanner';
 import DataConsentBanner from '@/components/DataConsentBanner';
@@ -120,9 +123,13 @@ export default function RootLayout({
 		>
 			<a href="#main-content" className="skip-link">Skip to content</a>
 				<AppProvider>
-					{children}
-					<PwaInstallBanner />
-					<DataConsentBanner />
+					<TutorialProvider>
+						{children}
+						<TutorialOverlay />
+						<TutorialWelcomeModal />
+						<PwaInstallBanner />
+						<DataConsentBanner />
+					</TutorialProvider>
 				</AppProvider>
 				<Analytics />
 			</body>

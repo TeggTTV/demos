@@ -15,6 +15,8 @@ import { FaDiscord } from 'react-icons/fa';
 import { Textarea } from '@/components/ui/Textarea';
 import { Group, User, JoinRequest } from '@/types/models';
 import ClubBanner from '@/components/ui/ClubBanner';
+import { useAppContext } from '@/components/AppContext';
+import { MOCK_USERS } from '@/mock/mockData';
 
 interface ClubDetailModalProps {
 	club: Group | null;
@@ -41,19 +43,23 @@ export default function ClubDetailModal({
 	isSubmitting = false,
 	onRequestJoin,
 }: ClubDetailModalProps) {
+	const { isTutorialMode } = useAppContext();
 	if (!club) return null;
 
+	const effectiveUser = currentUser || (isTutorialMode ? MOCK_USERS[0] : null);
+
 	const isMember =
-		currentUser &&
-		(club.memberIds.includes(currentUser.id) ||
-			club.leaderId === currentUser.id);
+		effectiveUser &&
+		(club.memberIds.includes(effectiveUser.id) ||
+			club.leaderId === effectiveUser.id ||
+			(isTutorialMode && club.id === 'club_acm_01'));
 
 	const hasRequested =
-		currentUser &&
+		effectiveUser &&
 		requests.some(
 			(r) =>
 				r.groupId === club.id &&
-				r.userId === currentUser.id &&
+				r.userId === effectiveUser.id &&
 				r.status === 'PENDING',
 		);
 
@@ -188,7 +194,7 @@ export default function ClubDetailModal({
 
 					{/* Join / Action Box */}
 					<div className="pt-3 border-t border-border">
-						{!currentUser ? (
+						{!effectiveUser && !isTutorialMode ? (
 							<div className="rounded-xl border border-primary/20 bg-primary-light/40 p-4 text-center space-y-2">
 								<p className="text-xs font-semibold text-text-primary">
 									Want to join or connect with {club.name}?
@@ -218,6 +224,7 @@ export default function ClubDetailModal({
 								</span>
 								<Link
 									href={`/group/${club.id}/feed`}
+									onClick={onClose}
 									className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover transition-all"
 								>
 									Open Club Hub

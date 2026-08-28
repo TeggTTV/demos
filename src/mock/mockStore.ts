@@ -691,6 +691,17 @@ class MockDataStore {
 		}
 		return { success: true, groupId: group.id, group };
 	}
+
+	reset(): void {
+		this.users = [...MOCK_USERS];
+		this.groups = [...MOCK_GROUPS];
+		this.events = [...MOCK_EVENTS];
+		this.attendances = [...MOCK_ATTENDANCES];
+		this.feedMessages = [...MOCK_FEED_MESSAGES];
+		this.requests = [...MOCK_REQUESTS];
+		this.invites = [...MOCK_INVITES];
+		this.polls = [...MOCK_POLLS];
+	}
 }
 
 // Global in-memory singleton for mock data session

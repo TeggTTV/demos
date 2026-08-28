@@ -52,7 +52,9 @@ export default function RedeemInviteModal({
 
 			const res = await joinViaInviteCode(cleanCode);
 			if (res.success && res.groupId) {
-				setInviteSuccess(`Successfully joined ${res.group?.name || 'the club'}!`);
+				setInviteSuccess(
+					`Successfully joined ${res.group?.name || 'the club'}!`,
+				);
 				setTimeout(() => {
 					onClose();
 					if (onSuccess) {
@@ -83,7 +85,8 @@ export default function RedeemInviteModal({
 				>
 					<div className="flex items-center justify-between border-b border-border pb-3">
 						<h3 className="text-base font-bold text-text-primary flex items-center gap-2">
-							<FiKey className="text-primary" /> Join with Invite Code
+							<FiKey className="text-primary" /> Join with Invite
+							Code
 						</h3>
 						<button
 							onClick={onClose}
@@ -118,7 +121,7 @@ export default function RedeemInviteModal({
 							disabled={inviteLoading}
 							className="w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer disabled:opacity-50"
 						>
-							{inviteLoading ? 'Verifying Code...' : 'Redeem & Join Club'}
+							{inviteLoading ? 'Verifying Code...' : 'Join Club'}
 						</button>
 					</form>
 				</motion.div>

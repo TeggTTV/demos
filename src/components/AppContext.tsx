@@ -31,6 +31,17 @@ import {
 } from '@/types/models';
 import { apiClient } from '@/services/apiClient';
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import {
+	MOCK_USERS,
+	MOCK_GROUPS,
+	MOCK_EVENTS,
+	MOCK_ATTENDANCES,
+	MOCK_FEED_MESSAGES,
+	MOCK_REQUESTS,
+	MOCK_INVITES,
+	MOCK_POLLS,
+} from '@/mock/mockData';
+import { mockStore } from '@/mock/mockStore';
 
 // Re-export all types so existing imports from AppContext continue working smoothly
 export * from '@/types/models';
@@ -55,6 +66,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const [theme, setTheme] = useState<Theme>('light');
 	const [hydrated, setHydrated] = useState(false);
 	const [isIdle, setIsIdle] = useState(false);
+	const [isTutorialMode, setIsTutorialMode] = useState(false);
+
+	const backupStateRef = useRef<{
+		currentUser: User | null;
+		groups: Group[];
+		requests: JoinRequest[];
+		users: User[];
+		feedMessages: FeedMessage[];
+		events: MeetingEvent[];
+		attendances: AttendanceRecord[];
+		invites: ClubInvite[];
+		polls: Poll[];
+	} | null>(null);
 
 	/* ─── Service Worker Registration ─── */
 	useEffect(() => {
@@ -95,31 +119,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	/* ─── Modular Data Fetchers for Active Tabs / Pages ─── */
 	const fetchGroups = useCallback(async () => {
+		if (isTutorialMode) {
+			setGroups([...MOCK_GROUPS]);
+			return;
+		}
 		try {
 			const data = await apiClient.fetchGroups();
 			if (data.groups) setGroups(data.groups);
 		} catch (e) {
 			console.error('fetchGroups failed:', e);
 		}
-	}, []);
+	}, [isTutorialMode]);
 
 	const fetchRequests = useCallback(async () => {
+		if (isTutorialMode) {
+			setRequests([...MOCK_REQUESTS]);
+			return;
+		}
 		try {
 			const data = await apiClient.fetchRequests();
 			if (data.requests) setRequests(data.requests);
 		} catch (e) {
 			console.error('fetchRequests failed:', e);
 		}
-	}, []);
+	}, [isTutorialMode]);
 
 	const fetchUsers = useCallback(async () => {
+		if (isTutorialMode) {
+			setUsers([...MOCK_USERS]);
+			return;
+		}
 		try {
 			const data = await apiClient.fetchUsers();
 			if (data.users) setUsers(data.users);
 		} catch (e) {
 			console.error('fetchUsers failed:', e);
 		}
-	}, []);
+	}, [isTutorialMode]);
 
 	const fetchEvents = useCallback(
 		async (
@@ -127,6 +163,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			type?: 'activity' | 'attendance' | 'all',
 			eventId?: string,
 		) => {
+			if (isTutorialMode || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))) {
+				const mockEvs = mockStore.getEvents({
+					groupId,
+					eventId,
+					type: type === 'attendance' ? 'attendance' : type === 'activity' ? 'activity' : undefined,
+				});
+				setEvents((prev) => {
+					if (!groupId && !eventId) return mockEvs;
+					const otherGroupEvents = prev.filter((e) => e.groupId !== groupId);
+					return [...mockEvs, ...otherGroupEvents];
+				});
+				return;
+			}
 			try {
 				const data = await apiClient.fetchEvents({
 					groupId,
@@ -155,11 +204,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				console.error('fetchEvents failed:', e);
 			}
 		},
-		[],
+		[isTutorialMode],
 	);
 
 	const fetchAttendances = useCallback(
 		async (groupId?: string, eventId?: string) => {
+			if (isTutorialMode || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))) {
+				const mockAtts = mockStore.getAttendances({ groupId, eventId });
+				setAttendances(mockAtts);
+				return;
+			}
 			try {
 				const data = await apiClient.fetchAttendances({
 					groupId,
@@ -170,20 +224,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				console.error('fetchAttendances failed:', e);
 			}
 		},
-		[],
+		[isTutorialMode],
 	);
 
 	const fetchInvites = useCallback(async () => {
+		if (isTutorialMode) {
+			setInvites(mockStore.getInvites());
+			return;
+		}
 		try {
 			const data = await apiClient.fetchInvites();
 			if (data.invites) setInvites(data.invites);
 		} catch (e) {
 			console.error('fetchInvites failed:', e);
 		}
-	}, []);
+	}, [isTutorialMode]);
 
 	/* ─── Restore Session from Cookie / Server ─── */
 	const restoreSession = useCallback(async () => {
+		if (isTutorialMode) return;
 		try {
 			const res = await apiClient.getMe();
 			if (res.success && res.user) {
@@ -203,10 +262,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		} catch (e) {
 			console.warn('restoreSession failed:', e);
 		}
-	}, []);
+	}, [isTutorialMode]);
 
 	/* ─── Hydrate pure from API ─── */
 	const loadData = useCallback(async () => {
+		if (isTutorialMode) return;
 		const isPendingPage =
 			typeof window !== 'undefined' &&
 			window.location.pathname === '/pending';
@@ -217,7 +277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			restoreSession(),
 			isPendingPage ? fetchInvites() : Promise.resolve(),
 		]);
-	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers, restoreSession]);
+	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers, isTutorialMode, restoreSession]);
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
@@ -261,7 +321,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		}
 
-		loadData();
+		const savedTutorialMode =
+			typeof window !== 'undefined' &&
+			(sessionStorage.getItem('demos_tutorial_mode') === 'true' ||
+				document.cookie.includes('demos_tutorial_mode=true'));
+
+		if (savedTutorialMode) {
+			setIsTutorialMode(true);
+			setUsers([...MOCK_USERS]);
+			setGroups([...MOCK_GROUPS]);
+			setEvents([...MOCK_EVENTS]);
+			setAttendances([...MOCK_ATTENDANCES]);
+			setFeedMessages([...MOCK_FEED_MESSAGES]);
+			setRequests([...MOCK_REQUESTS]);
+			setInvites([...MOCK_INVITES]);
+			setPolls([...MOCK_POLLS]);
+			setCurrentUser(MOCK_USERS[0]);
+		} else {
+			loadData();
+		}
+
 		setHydrated(true);
 	}, [loadData]);
 	/* eslint-enable react-hooks/set-state-in-effect */
@@ -328,6 +407,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			url?: string;
 			meta?: Record<string, unknown>;
 		}) => {
+			if (isTutorialMode) {
+				return;
+			}
+
 			const currentSettings = settingsRef.current;
 			if (currentSettings[type] === false) {
 				return;
@@ -360,7 +443,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				sendBrowserNotification(title, body, url);
 			}
 		},
-		[saveNotifications],
+		[isTutorialMode, saveNotifications],
 	);
 
 	/* ─── Background Sync for Incoming Messages & App Data ─── */
@@ -370,7 +453,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		let isPolling = false;
 
 		async function pollIncomingData() {
-			if (!active || isPolling || isIdle) return;
+			if (!active || isPolling || isIdle || isTutorialMode) return;
 			const user = userRef.current;
 			if ((!user && !USE_MOCK_DATA) || typeof window === 'undefined')
 				return;
@@ -453,6 +536,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		fetchRequests,
 		fetchUsers,
 		isIdle,
+		isTutorialMode,
 		triggerNotification,
 	]);
 
@@ -804,30 +888,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
-	const fetchFeedMessages = useCallback(async (groupId: string) => {
-		try {
-			const data = await apiClient.fetchFeedMessages(groupId);
-			if (data.messages) {
-				setFeedMessages(data.messages);
+	const fetchFeedMessages = useCallback(
+		async (groupId: string) => {
+			if (isTutorialMode || !/^[0-9a-fA-F]{24}$/.test(groupId)) {
+				const msgs = mockStore.getFeedMessages(groupId);
+				setFeedMessages(msgs);
+				return;
 			}
-		} catch (e) {
-			console.error('fetchFeedMessages error:', e);
-		}
-	}, []);
+			try {
+				const data = await apiClient.fetchFeedMessages(groupId);
+				if (data.messages) {
+					setFeedMessages(data.messages);
+				}
+			} catch (e) {
+				console.error('fetchFeedMessages error:', e);
+			}
+		},
+		[isTutorialMode],
+	);
 
 	/* ─── Polls Sub-App Handlers ─── */
-	const fetchPolls = useCallback(async (groupId: string) => {
-		try {
-			const data = await apiClient.fetchPolls({ groupId });
-			if (data.polls) {
-				setPolls(data.polls);
-				return data.polls;
+	const fetchPolls = useCallback(
+		async (groupId: string) => {
+			if (isTutorialMode || !/^[0-9a-fA-F]{24}$/.test(groupId)) {
+				const p = mockStore.getPolls(groupId);
+				setPolls(p);
+				return p;
 			}
-		} catch (e) {
-			console.error('fetchPolls error:', e);
-		}
-		return [];
-	}, []);
+			try {
+				const data = await apiClient.fetchPolls({ groupId });
+				if (data.polls) {
+					setPolls(data.polls);
+					return data.polls;
+				}
+			} catch (e) {
+				console.error('fetchPolls error:', e);
+			}
+			return [];
+		},
+		[isTutorialMode],
+	);
 
 	const createPoll = useCallback(
 		async (
@@ -1314,8 +1414,120 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	);
 
 	const refreshData = useCallback(async () => {
+		if (isTutorialMode) return;
 		await loadData();
-	}, [loadData]);
+	}, [isTutorialMode, loadData]);
+
+	/* ─── Tutorial Sandbox Mode Handlers ─── */
+	const enableTutorialMode = useCallback(() => {
+		if (!isTutorialMode) {
+			backupStateRef.current = {
+				currentUser,
+				groups,
+				requests,
+				users,
+				feedMessages,
+				events,
+				attendances,
+				invites,
+				polls,
+			};
+		}
+		setIsTutorialMode(true);
+		if (typeof window !== 'undefined') {
+			sessionStorage.setItem('demos_tutorial_mode', 'true');
+			document.cookie = 'demos_tutorial_mode=true; path=/; SameSite=Lax';
+		}
+		// Load rich mock dataset
+		setUsers([...MOCK_USERS]);
+		setGroups([...MOCK_GROUPS]);
+		setEvents([...MOCK_EVENTS]);
+		setAttendances([...MOCK_ATTENDANCES]);
+		setFeedMessages([...MOCK_FEED_MESSAGES]);
+		setRequests([...MOCK_REQUESTS]);
+		setInvites([...MOCK_INVITES]);
+		setPolls([...MOCK_POLLS]);
+		setCurrentUser(MOCK_USERS[0]); // Alex Chen
+	}, [
+		isTutorialMode,
+		currentUser,
+		groups,
+		requests,
+		users,
+		feedMessages,
+		events,
+		attendances,
+		invites,
+		polls,
+	]);
+
+	const exitTutorialMode = useCallback(() => {
+		setIsTutorialMode(false);
+		if (typeof window !== 'undefined') {
+			sessionStorage.removeItem('demos_tutorial_mode');
+			document.cookie = 'demos_tutorial_mode=; path=/; max-age=0';
+		}
+		if (backupStateRef.current) {
+			setCurrentUser(backupStateRef.current.currentUser);
+			setGroups(backupStateRef.current.groups);
+			setRequests(backupStateRef.current.requests);
+			setUsers(backupStateRef.current.users);
+			setFeedMessages(backupStateRef.current.feedMessages);
+			setEvents(backupStateRef.current.events);
+			setAttendances(backupStateRef.current.attendances);
+			setInvites(backupStateRef.current.invites);
+			setPolls(backupStateRef.current.polls);
+			backupStateRef.current = null;
+		} else {
+			loadData();
+			restoreSession();
+		}
+	}, [loadData, restoreSession]);
+
+	const switchTutorialPersona = useCallback((userId: string) => {
+		const target = MOCK_USERS.find((u) => u.id === userId);
+		if (target) {
+			setCurrentUser(target);
+		}
+	}, []);
+
+	const injectSimulatedAttendance = useCallback(
+		(record: AttendanceRecord) => {
+			setAttendances((prev) => [record, ...prev]);
+		},
+		[],
+	);
+
+	const injectSimulatedPollVote = useCallback((updatedPolls: Poll[]) => {
+		setPolls(updatedPolls);
+	}, []);
+
+	const injectSimulatedJoinRequest = useCallback(
+		(request: JoinRequest) => {
+			setRequests((prev) => [request, ...prev]);
+		},
+		[],
+	);
+
+	const injectSimulatedFeedMessage = useCallback(
+		(message: FeedMessage) => {
+			setFeedMessages((prev) => [message, ...prev]);
+		},
+		[],
+	);
+
+	const resetTutorialMockData = useCallback(() => {
+		mockStore.reset();
+		setUsers([...MOCK_USERS]);
+		setGroups([...MOCK_GROUPS]);
+		setEvents([...MOCK_EVENTS]);
+		setAttendances([...MOCK_ATTENDANCES]);
+		setFeedMessages([...MOCK_FEED_MESSAGES]);
+		setRequests([...MOCK_REQUESTS]);
+		setInvites([...MOCK_INVITES]);
+		setPolls([...MOCK_POLLS]);
+		setCurrentUser(MOCK_USERS[0]);
+	}, []);
 
 	const value: AppContextType = {
 		currentUser,
@@ -1372,6 +1584,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		deleteNotification,
 		clearAllNotifications,
 		updateNotificationSettings,
+		isTutorialMode,
+		enableTutorialMode,
+		exitTutorialMode,
+		switchTutorialPersona,
+		injectSimulatedAttendance,
+		injectSimulatedPollVote,
+		injectSimulatedJoinRequest,
+		injectSimulatedFeedMessage,
+		resetTutorialMockData,
 	};
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

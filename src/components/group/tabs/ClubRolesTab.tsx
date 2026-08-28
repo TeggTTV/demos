@@ -350,7 +350,10 @@ export default function ClubRolesTab({
 					</div>
 				</div>
 
-				<div className="border border-border rounded-2xl bg-surface overflow-hidden shadow-2xs">
+				<div
+					data-tour="roles-management"
+					className="border border-border rounded-2xl bg-surface overflow-hidden shadow-2xs"
+				>
 					<div className="w-full overflow-x-auto">
 						<table className="w-full text-left border-collapse min-w-[700px]">
 							<thead>

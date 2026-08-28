@@ -33,15 +33,26 @@ export async function middleware(req: NextRequest) {
 
 	// Check if accessing a protected route
 	const isProtected = PROTECTED_ROUTES.some((route) =>
-		pathname.startsWith(route)
+		pathname.startsWith(route),
 	);
 
 	// Check if accessing an authentication route (login/register)
-	const isAuthRoute = AUTH_ROUTES.some((route) =>
-		pathname.startsWith(route)
-	);
+	const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
-	if (isProtected && !session && !USE_MOCK_DATA) {
+	// Allow mock clubs and tutorial mode through middleware without login redirect
+	const isMockGroup =
+		pathname.startsWith('/group/club_') ||
+		pathname.startsWith('/group/group_');
+	const isTutorialCookie =
+		req.cookies.get('demos_tutorial_mode')?.value === 'true';
+
+	if (
+		isProtected &&
+		!session &&
+		!USE_MOCK_DATA &&
+		!isMockGroup &&
+		!isTutorialCookie
+	) {
 		const loginUrl = new URL('/auth/login', req.url);
 		loginUrl.searchParams.set('redirect', pathname);
 		return NextResponse.redirect(loginUrl);
@@ -53,18 +64,18 @@ export async function middleware(req: NextRequest) {
 
 	// 2. Set Security Headers
 	const response = NextResponse.next();
-	
+
 	// Content Security Policy
 	response.headers.set(
 		'Content-Security-Policy',
-		"default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: *; connect-src 'self' https://vitals.vercel-analytics.com; worker-src 'self' blob:; object-src 'none';"
+		"default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: *; connect-src 'self' https://vitals.vercel-analytics.com; worker-src 'self' blob:; object-src 'none';",
 	);
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set(
 		'Strict-Transport-Security',
-		'max-age=31536000; includeSubDomains; preload'
+		'max-age=31536000; includeSubDomains; preload',
 	);
 	response.headers.set('X-XSS-Protection', '1; mode=block');
 

@@ -29,9 +29,10 @@ import ScrollReveal, {
 } from '@/components/ui/ScrollReveal';
 
 import { USE_MOCK_DATA } from '@/mock/mockConfig';
+import { mockStore } from '@/mock/mockStore';
 
 export default function EventsPage() {
-	const { currentUser, groups, hydrated } = useAppContext();
+	const { currentUser, groups, hydrated, isTutorialMode } = useAppContext();
 	const [events, setEvents] = useState<EventDetailItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +52,12 @@ export default function EventsPage() {
 
 	useEffect(() => {
 		const fetchEvents = async () => {
+			if (isTutorialMode) {
+				const mockEvs = mockStore.getEvents({ type: 'activity' }) as unknown as EventDetailItem[];
+				setEvents(mockEvs);
+				setIsLoading(false);
+				return;
+			}
 			try {
 				const res = await fetch('/api/events?type=activity');
 				const data = await res.json();
@@ -69,7 +76,7 @@ export default function EventsPage() {
 			}
 		};
 		fetchEvents();
-	}, []);
+	}, [isTutorialMode]);
 
 	const isUserMemberOfGroup = (groupId: string) => {
 		if (!currentUser) return Boolean(USE_MOCK_DATA);
@@ -178,7 +185,7 @@ export default function EventsPage() {
 				</div>
 
 				{/* Search & Category Filter Bar */}
-				<div className="space-y-4">
+				<div className="space-y-4" data-tour="events-calendar-filters">
 					<div className="flex flex-col sm:flex-row gap-3">
 						<div className="grow">
 							<Input

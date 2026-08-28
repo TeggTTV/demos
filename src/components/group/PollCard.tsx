@@ -162,16 +162,9 @@ export default function PollCard({
 					: 'bg-surface border-border shadow-2xs hover:shadow-xs'
 			} ${compact ? 'p-3.5 space-y-2.5' : 'p-5 space-y-4'}`}
 		>
-			{/* Top Bar: Category, Badges, Expiry, Actions */}
+			{/* Top Bar: Badges, Expiry, Actions */}
 			<div className="flex items-start justify-between gap-2">
 				<div className="flex flex-wrap items-center gap-1.5">
-					{/* Category Tag */}
-					{poll.category && (
-						<span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-primary-light text-primary">
-							{poll.category}
-						</span>
-					)}
-
 					{/* Multiple Choice Badge */}
 					{poll.isMultipleChoice && (
 						<span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-surface-secondary text-text-secondary border border-border flex items-center gap-1">
@@ -386,7 +379,7 @@ export default function PollCard({
 								<div key={opt.id} className="space-y-1">
 									<div
 										onClick={() => {
-											if (!poll.isAnonymous && voteCount > 0) {
+											if (!poll.isAnonymous && canManage && voteCount > 0) {
 												setExpandedVotersOptionId(isExpanded ? null : opt.id);
 											}
 										}}
@@ -395,7 +388,7 @@ export default function PollCard({
 												? 'border-primary/40 bg-primary-light/30 shadow-2xs'
 												: 'border-border bg-surface-secondary/40'
 										} ${
-											!poll.isAnonymous && voteCount > 0
+											!poll.isAnonymous && canManage && voteCount > 0
 												? 'cursor-pointer hover:border-text-muted'
 												: ''
 										}`}
@@ -431,10 +424,12 @@ export default function PollCard({
 												<span className="text-xs font-bold text-text-primary">
 													{percentage}%
 												</span>
-												<span className="text-[11px] text-text-muted">
-													({voteCount})
-												</span>
-												{!poll.isAnonymous && voteCount > 0 && (
+												{canManage && (
+													<span className="text-[11px] text-text-muted">
+														({voteCount})
+													</span>
+												)}
+												{!poll.isAnonymous && canManage && voteCount > 0 && (
 													<span className="text-text-muted text-[10px]">
 														{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
 													</span>
@@ -443,9 +438,9 @@ export default function PollCard({
 										</div>
 									</div>
 
-									{/* Expanded Public Voter List (if not anonymous) */}
+									{/* Expanded Public Voter List (if not anonymous and officer) */}
 									<AnimatePresence>
-										{isExpanded && !poll.isAnonymous && (
+										{isExpanded && !poll.isAnonymous && canManage && (
 											<motion.div
 												initial={{ opacity: 0, height: 0 }}
 												animate={{ opacity: 1, height: 'auto' }}
@@ -453,7 +448,7 @@ export default function PollCard({
 												className="px-3 py-2 rounded-lg bg-surface-secondary border border-border/70 flex flex-wrap items-center gap-1.5"
 											>
 												<span className="text-[10px] font-bold text-text-muted mr-1">
-													Voted by:
+													Voters:
 												</span>
 												{opt.votes.map((voterId) => {
 													const voter = getVoterDetails(voterId);
@@ -555,9 +550,11 @@ export default function PollCard({
 			{/* Card Footer: Metadata & Voter Avatars Preview */}
 			<div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-[10px] text-text-muted">
 				<div className="flex items-center gap-3">
-					<span className="font-semibold text-text-secondary">
-						{totalVotesCount} {totalVotesCount === 1 ? 'vote' : 'votes'} total
-					</span>
+					{canManage && (
+						<span className="font-semibold text-text-secondary">
+							{totalVotesCount} {totalVotesCount === 1 ? 'vote' : 'votes'} total
+						</span>
+					)}
 
 					{poll.expiresAt && (
 						<span className="flex items-center gap-1">

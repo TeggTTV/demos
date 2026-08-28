@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FiSearch, FiArrowRight, FiChevronDown } from 'react-icons/fi';
-import { CLUB_CATEGORIES } from '@/constants/categories';
 import { User } from '@/types/models';
 
 interface LandingHeroProps {
@@ -37,16 +36,6 @@ export default function LandingHero({
 			</div>
 
 			<div className="mx-auto max-w-4xl px-6 text-center my-auto">
-				<motion.div
-					initial={{ opacity: 0, y: -12 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.4 }}
-				>
-					<span className="inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3.5 py-1 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/20 mb-5">
-						🚀 The All-in-One Campus Club Platform
-					</span>
-				</motion.div>
-
 				<motion.h1
 					initial={{ opacity: 0, y: 15 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -72,54 +61,38 @@ export default function LandingHero({
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.5, delay: 0.3 }}
 					onSubmit={onSearchSubmit}
-					className="mt-8 max-w-xl mx-auto"
+					className="mt-8 max-w-xl mx-auto w-full px-2 sm:px-0"
 				>
-					<div className="flex items-center gap-2 rounded-xl border border-border bg-surface p-1.5 shadow-md focus-within:ring-2 focus-within:ring-primary/30 transition-all">
-						<FiSearch size={18} className="ml-3 text-text-muted shrink-0" />
-						<input
-							type="text"
-							placeholder="Search clubs by name, category, or interests..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="grow bg-transparent px-2 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none"
-						/>
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-2xl sm:rounded-xl border border-border bg-surface p-2 sm:p-1.5 shadow-md focus-within:ring-2 focus-within:ring-primary/30 transition-all">
+						<div className="flex items-center gap-2 grow px-1 sm:px-0 min-w-0">
+							<FiSearch size={18} className="ml-1 sm:ml-3 text-text-muted shrink-0" />
+							<input
+								type="text"
+								placeholder="Search clubs by name, category..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="w-full bg-transparent px-2 py-2 sm:py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none min-w-0"
+							/>
+						</div>
 						<button
 							type="submit"
-							className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus:outline-none transition-colors shrink-0 cursor-pointer"
+							className="w-full sm:w-auto rounded-xl sm:rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus:outline-none transition-colors shrink-0 cursor-pointer text-center"
 						>
 							Explore Clubs
 						</button>
 					</div>
 				</motion.form>
 
-				{/* Quick Category Links */}
-				<motion.div
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					transition={{ duration: 0.6, delay: 0.4 }}
-					className="mt-6 flex flex-wrap justify-center items-center gap-2"
-				>
-					{CLUB_CATEGORIES.map((cat) => (
-						<Link
-							key={cat}
-							href={`/search?cat=${encodeURIComponent(cat)}`}
-							className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-all shadow-2xs"
-						>
-							{cat}
-						</Link>
-					))}
-				</motion.div>
-
 				{/* Action Buttons */}
 				<motion.div
 					initial={{ opacity: 0, y: 12 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.5, delay: 0.5 }}
+					transition={{ duration: 0.5, delay: 0.4 }}
 					className="mt-8 flex flex-wrap justify-center items-center gap-3"
 				>
 					<Link
 						href="/search"
-						className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-primary-hover transition-all inline-flex items-center gap-2 cursor-pointer"
+						className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md shadow-primary/20 hover:bg-primary-hover transition-all inline-flex items-center gap-2 cursor-pointer"
 					>
 						Explore All Clubs <FiArrowRight size={16} />
 					</Link>

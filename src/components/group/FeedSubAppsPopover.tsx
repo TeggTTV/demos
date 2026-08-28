@@ -39,14 +39,6 @@ interface FeedSubAppsPopoverProps {
 
 type SubAppView = 'menu' | 'create_poll';
 
-const CATEGORIES = [
-	'General',
-	'Meeting Scheduling',
-	'Event Planning',
-	'Club Decisions',
-	'Feedback & Fun',
-];
-
 const slideVariants = {
 	enter: (direction: number) => ({
 		x: direction > 0 ? 60 : -60,
@@ -74,7 +66,6 @@ export default function FeedSubAppsPopover({
 	// Poll Creation Form State
 	const [title, setTitle] = useState('');
 	const [description, setDescription] = useState('');
-	const [category, setCategory] = useState('General');
 	const [options, setOptions] = useState<string[]>(['', '']);
 	const [isMultipleChoice, setIsMultipleChoice] = useState(false);
 	const [isAnonymous, setIsAnonymous] = useState(false);
@@ -95,7 +86,6 @@ export default function FeedSubAppsPopover({
 			setDirection(1);
 			setTitle('');
 			setDescription('');
-			setCategory('General');
 			setOptions(['', '']);
 			setIsMultipleChoice(false);
 			setIsAnonymous(false);
@@ -195,7 +185,6 @@ export default function FeedSubAppsPopover({
 			const res = await onCreatePoll({
 				title: title.trim(),
 				description: description.trim() || undefined,
-				category,
 				options: cleanOptions,
 				isMultipleChoice,
 				isAnonymous,
@@ -419,29 +408,6 @@ export default function FeedSubAppsPopover({
 											placeholder="Add details, links, or context for voters..."
 											className="w-full rounded-xl border border-border bg-surface-secondary p-2.5 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
 										/>
-									</div>
-
-									{/* Category Selection */}
-									<div className="space-y-1">
-										<label className="block text-[10px] font-medium text-text-muted">
-											Category
-										</label>
-										<div className="flex flex-wrap gap-1">
-											{CATEGORIES.map((cat) => (
-												<button
-													key={cat}
-													type="button"
-													onClick={() => setCategory(cat)}
-													className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
-														category === cat
-															? 'bg-primary text-white shadow-2xs'
-															: 'bg-surface-secondary text-text-muted hover:text-text-primary border border-border'
-													}`}
-												>
-													{cat}
-												</button>
-											))}
-										</div>
 									</div>
 
 									{/* Poll Items List */}

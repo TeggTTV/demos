@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 		const eventId = searchParams.get('eventId') || searchParams.get('sessionId') || undefined;
 		const type = searchParams.get('type') || undefined; // 'activity' | 'attendance' | 'all'
 
-		if (USE_MOCK_DATA) {
+		if (USE_MOCK_DATA || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId)) || (eventId && !/^[0-9a-fA-F]{24}$/.test(eventId))) {
 			const mockEvents = mockStore.getEvents({ groupId, eventId, type });
 			return NextResponse.json({ events: mockEvents });
 		}

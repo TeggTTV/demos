@@ -33,12 +33,14 @@ export async function sendWebPushToUsers(
 	payload: PushPayload,
 ) {
 	if (!userIds || userIds.length === 0) return;
+	const validUserIds = userIds.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
+	if (validUserIds.length === 0) return;
 	if (!(await isDbConnected())) return;
 
 	try {
 		const subscriptions = await prisma.pushSubscription.findMany({
 			where: {
-				userId: { in: userIds },
+				userId: { in: validUserIds },
 			},
 		});
 
@@ -92,6 +94,7 @@ export async function sendWebPushToGroupMembers(
 	excludeUserId: string | null,
 	payload: PushPayload,
 ) {
+	if (!groupId || !/^[0-9a-fA-F]{24}$/.test(groupId)) return;
 	if (!(await isDbConnected())) return;
 
 	try {

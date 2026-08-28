@@ -165,7 +165,8 @@ export interface AttendanceRecord {
 		| 'RSVP_YES'
 		| 'RSVP_NO'
 		| 'RSVP_MAYBE';
-	checkInMethod: 'CODE' | 'MANUAL' | 'QR';
+	checkInMethod: 'CODE' | 'MANUAL' | 'QR' | 'LINK';
+	verifiedBy?: string;
 	timestamp: string;
 }
 
@@ -385,4 +386,15 @@ export interface AppContextType {
 	updateNotificationSettings: (
 		newSettings: Partial<NotificationSettings>,
 	) => void;
+
+	// Tutorial Sandbox Mode API
+	isTutorialMode: boolean;
+	enableTutorialMode: () => void;
+	exitTutorialMode: () => void;
+	switchTutorialPersona: (userId: string) => void;
+	injectSimulatedAttendance: (record: AttendanceRecord) => void;
+	injectSimulatedPollVote: (updatedPolls: Poll[]) => void;
+	injectSimulatedJoinRequest: (request: JoinRequest) => void;
+	injectSimulatedFeedMessage: (message: FeedMessage) => void;
+	resetTutorialMockData: () => void;
 }

@@ -96,16 +96,13 @@ export default function ClubFeedTab({
 }: ClubFeedTabProps) {
 	const router = useRouter();
 	const [feedFilter, setFeedFilter] = useState<
-		'all' | 'announcements' | 'polls' | 'files' | 'links'
+		'all' | 'announcements' | 'files' | 'links'
 	>('all');
 	const [messageText, setMessageText] = useState('');
 	const [isAnnouncement, setIsAnnouncement] = useState(false);
 	const [subAppsOpen, setSubAppsOpen] = useState(false);
 	const [fileInput, setFileInput] = useState<File | null>(null);
 	const [fileSizeErrorFeed, setFileSizeErrorFeed] = useState('');
-	const [resourceLink, setResourceLink] = useState('');
-	const [resourceTitle, setResourceTitle] = useState('');
-
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 
 	const groupMessages = feedMessages
@@ -118,7 +115,6 @@ export default function ClubFeedTab({
 
 	const filteredMessages = groupMessages.filter((m) => {
 		if (feedFilter === 'announcements') return m.isAnnouncement;
-		if (feedFilter === 'polls') return Boolean(m.pollId || m.subAppType === 'poll');
 		if (feedFilter === 'files') return Boolean(m.fileName);
 		if (feedFilter === 'links')
 			return m.content.startsWith('🔗 Resource shared:');
@@ -190,24 +186,6 @@ export default function ClubFeedTab({
 		setTimeout(() => scrollToBottom('smooth'), 50);
 	};
 
-	const handlePostResource = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!resourceLink.trim()) return;
-
-		const content = `🔗 Resource shared: ${resourceTitle.trim() || 'Link'}\n${resourceLink.trim()}`;
-		await postMessage(
-			group.id,
-			content,
-			undefined,
-			undefined,
-			false,
-			false,
-		);
-		setResourceLink('');
-		setResourceTitle('');
-		setTimeout(() => scrollToBottom('smooth'), 50);
-	};
-
 	return (
 		<main className="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 			{/* Left: Message Feed */}
@@ -234,16 +212,6 @@ export default function ClubFeedTab({
 							}`}
 						>
 							📢 Announcements
-						</button>
-						<button
-							onClick={() => setFeedFilter('polls')}
-							className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-								feedFilter === 'polls'
-									? 'bg-primary text-white shadow-xs'
-									: 'text-text-muted hover:text-text-primary'
-							}`}
-						>
-							📊 Polls
 						</button>
 						<button
 							onClick={() => setFeedFilter('files')}
@@ -428,6 +396,7 @@ export default function ClubFeedTab({
 
 				<form
 					onSubmit={handlePost}
+					data-tour="feed-composer"
 					className="border-t border-border p-3 bg-surface space-y-2 relative z-30 rounded-b-2xl"
 				>
 					{fileInput && (
@@ -476,7 +445,7 @@ export default function ClubFeedTab({
 
 						{/* Sub-Apps + Launcher Button (Leader & Officer Only) */}
 						{canManage && (
-							<div className="relative">
+							<div className="relative" data-tour="feed-subapps">
 								<button
 									type="button"
 									onClick={() => setSubAppsOpen(!subAppsOpen)}
@@ -677,105 +646,6 @@ export default function ClubFeedTab({
 					>
 						View Calendar Schedule →
 					</button>
-				</div>
-
-				{/* Active Club Polls Side Card */}
-				<div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-3">
-					<div className="flex items-center justify-between">
-						<span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
-							Active Polls
-						</span>
-						<span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-					</div>
-
-					{(() => {
-						const activeGroupPolls = polls
-							.filter((p) => p.groupId === group.id && !p.isClosed)
-							.slice(0, 2);
-
-						if (activeGroupPolls.length === 0) {
-							return (
-								<p className="text-[11px] text-text-muted italic">
-									No active polls right now.
-								</p>
-							);
-						}
-
-						return (
-							<div className="space-y-3">
-								{activeGroupPolls.map((poll) => {
-									const totalVotes = poll.options.reduce(
-										(sum, o) => sum + o.votes.length,
-										0,
-									);
-									const userVoted = poll.options.some((o) =>
-										o.votes.includes(currentUser?.id || ''),
-									);
-
-									return (
-										<div
-											key={poll.id}
-											className="text-xs border-b border-border/40 pb-2.5 last:border-0 last:pb-0 space-y-1.5"
-										>
-											<div className="flex items-center justify-between gap-1">
-												<span className="font-bold text-text-primary block truncate">
-													{poll.title}
-												</span>
-												{userVoted && (
-													<span className="text-[9px] font-bold text-primary bg-primary-light px-1.5 py-0.5 rounded-full shrink-0">
-														Voted
-													</span>
-												)}
-											</div>
-											<div className="flex items-center justify-between text-[10px] text-text-muted">
-												<span>{poll.options.length} options</span>
-												<span>{totalVotes} votes</span>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						);
-					})()}
-
-					<button
-						onClick={() => setActiveTab('polls')}
-						className="w-full mt-2 rounded-xl bg-primary-light py-2 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-all text-center block cursor-pointer"
-					>
-						Open Polls Hub →
-					</button>
-				</div>
-
-				{/* Quick Resource Link Sharing */}
-				<div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-3">
-					<span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
-						Share Resource Link
-					</span>
-					<form
-						onSubmit={handlePostResource}
-						className="space-y-2 text-xs"
-					>
-						<input
-							type="text"
-							value={resourceTitle}
-							onChange={(e) => setResourceTitle(e.target.value)}
-							className="w-full rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-							placeholder="Resource Title"
-						/>
-						<input
-							type="url"
-							value={resourceLink}
-							onChange={(e) => setResourceLink(e.target.value)}
-							className="w-full rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-							placeholder="Resource Link"
-						/>
-						<button
-							type="submit"
-							className="w-full rounded-lg bg-surface border border-border py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-secondary transition-all cursor-pointer"
-						>
-							Post Link to Feed
-						</button>
-					</form>
 				</div>
 			</div>
 		</main>

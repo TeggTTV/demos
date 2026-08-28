@@ -28,6 +28,7 @@ function GroupsContent() {
 		hydrated,
 		fetchGroups,
 		fetchEvents,
+		isTutorialMode,
 	} = useAppContext();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -73,7 +74,7 @@ function GroupsContent() {
 		);
 	}
 
-	if (!currentUser && !USE_MOCK_DATA) {
+	if (!currentUser && !USE_MOCK_DATA && !isTutorialMode) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />

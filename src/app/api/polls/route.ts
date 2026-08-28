@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 		const groupId = searchParams.get('groupId');
 		const pollId = searchParams.get('pollId');
 
-		if (USE_MOCK_DATA) {
+		if (USE_MOCK_DATA || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId)) || (pollId && !/^[0-9a-fA-F]{24}$/.test(pollId))) {
 			if (pollId) {
 				const poll = mockStore.getPollById(pollId);
 				return NextResponse.json({ poll });
