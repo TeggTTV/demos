@@ -15,11 +15,7 @@ import {
 import { Checkbox } from '@/components/ui/Checkbox';
 
 export default function TutorialWelcomeModal() {
-	const {
-		welcomeModalOpen,
-		closeWelcomeModal,
-		startTour,
-	} = useTutorial();
+	const { welcomeModalOpen, closeWelcomeModal, startTour } = useTutorial();
 
 	const [selectedTrack, setSelectedTrack] = useState<TourTrack>('full');
 	const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -64,7 +60,7 @@ export default function TutorialWelcomeModal() {
 				>
 					{/* Decorative Glow */}
 					<div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-xl" />
-					<div className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-indigo-500/10 blur-xl" />
+					{/* <div className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-indigo-500/10 blur-xl" /> */}
 
 					{/* Close Button */}
 					<button
@@ -85,7 +81,9 @@ export default function TutorialWelcomeModal() {
 							Welcome to Demos!
 						</h2>
 						<p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-							Choose a guided walkthrough below to explore the platform using realistic mock clubs, live meeting check-ins, campus polls, and officer tools.
+							Choose a guided walkthrough below to explore the
+							platform using realistic mock clubs, live meeting
+							check-ins, campus polls, and officer tools.
 						</p>
 					</div>
 
@@ -106,7 +104,9 @@ export default function TutorialWelcomeModal() {
 									}`}
 								>
 									<div className="flex items-start gap-3.5 min-w-0 grow">
-										<span className="text-2xl shrink-0 mt-0.5">{info.icon}</span>
+										<span className="text-2xl shrink-0 mt-0.5">
+											{info.icon}
+										</span>
 										<div className="min-w-0 grow space-y-1">
 											<div className="flex items-center gap-2 flex-wrap">
 												<h3 className="text-sm font-bold text-text-primary">
@@ -131,7 +131,12 @@ export default function TutorialWelcomeModal() {
 													: 'border-border bg-surface'
 											}`}
 										>
-											{isSelected && <FiCheck size={12} strokeWidth={3} />}
+											{isSelected && (
+												<FiCheck
+													size={12}
+													strokeWidth={3}
+												/>
+											)}
 										</div>
 									</div>
 								</div>
@@ -143,31 +148,38 @@ export default function TutorialWelcomeModal() {
 					<div className="mb-5 flex items-center gap-2.5 rounded-xl bg-surface-secondary/70 border border-border/60 p-3 text-xs text-text-muted">
 						<FiShield className="shrink-0 text-primary" size={16} />
 						<span>
-							Tutorial mode uses safe client-side mock data. Live database records are never modified.
+							Tutorial mode uses safe client-side mock data. Live
+							database records are never modified.
 						</span>
 					</div>
 
 					{/* Modal Footer Controls */}
-					<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-border/60">
+					<div className="flex flex-col sm:flex-row items-center justify-between pt-2 border-t border-border/60">
 						<div className="flex items-center">
 							<Checkbox
 								id="dont-show-tour-again"
 								checked={dontShowAgain}
-								onChange={(e) => setDontShowAgain(e.target.checked)}
-								label={<span className="text-xs text-text-muted">Don&apos;t show this again automatically</span>}
+								onChange={(e) =>
+									setDontShowAgain(e.target.checked)
+								}
+								label={
+									<span className="text-xs text-text-muted">
+										Don&apos;t show this again automatically
+									</span>
+								}
 							/>
 						</div>
 
-						<div className="flex items-center gap-2.5 w-full sm:w-auto">
+						<div className="flex items-center gap-1 w-full sm:w-auto">
 							<button
 								onClick={handleDismiss}
-								className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 text-xs font-semibold text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors cursor-pointer"
+								className="flex-1 sm:flex-none rounded-full py-2.5 text-xs font-semibold text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors cursor-pointer"
 							>
 								Explore on My Own
 							</button>
 							<button
 								onClick={handleStart}
-								className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-hover active:scale-[0.98] transition-all cursor-pointer"
+								className="flex-1 sm:flex-none flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-hover active:scale-[0.98] transition-all cursor-pointer"
 							>
 								<FiPlay size={13} />
 								<span>Start Guided Tour</span>
