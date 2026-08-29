@@ -117,11 +117,13 @@ export default function RootLayout({
 				<meta name="theme-color" content="#4f46e5" />
 				<link rel="manifest" href="/manifest.json" />
 			</head>
-		<body
+			<body
 				className="min-h-full flex flex-col bg-background text-foreground font-sans"
 				suppressHydrationWarning
-		>
-			<a href="#main-content" className="skip-link">Skip to content</a>
+			>
+				<a href="#main-content" className="skip-link">
+					Skip to content
+				</a>
 				<AppProvider>
 					<TutorialProvider>
 						{children}
