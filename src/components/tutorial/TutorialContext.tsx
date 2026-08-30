@@ -59,19 +59,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 	const activeSteps = TOUR_STEPS[currentTrack] || TOUR_STEPS.full;
 	const currentStep = isTourActive && activeSteps[currentStepIndex] ? activeSteps[currentStepIndex] : null;
 
-	// Check if user is first-time visitor on mount
-	useEffect(() => {
-		if (typeof window !== 'undefined') {
-			const hasSeenWelcome = localStorage.getItem('demos_has_seen_tutorial_welcome');
-			if (!hasSeenWelcome) {
-				// Show welcome modal after a slight delay for smooth entry
-				const timer = setTimeout(() => {
-					setWelcomeModalOpen(true);
-				}, 1200);
-				return () => clearTimeout(timer);
-			}
-		}
-	}, []);
+
 
 	// Locate element bounding rect for spotlight
 	const updateTargetRect = useCallback(() => {
@@ -83,9 +71,9 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 		const selector = currentStep.targetSelector;
 		const el = document.querySelector(selector);
 		if (el) {
+			// Ensure element is comfortably centered in viewport on all screen sizes
+			el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
 			const rect = el.getBoundingClientRect();
-			// Ensure element is visible in viewport
-			el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
 			setTargetRect(rect);
 		} else {
 			setTargetRect(null);

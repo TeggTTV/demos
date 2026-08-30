@@ -15,7 +15,13 @@ export interface TourStep {
 
 export const TOUR_TRACKS_INFO: Record<
 	TourTrack,
-	{ title: string; subtitle: string; icon: string; estimatedTime: string; description: string }
+	{
+		title: string;
+		subtitle: string;
+		icon: string;
+		estimatedTime: string;
+		description: string;
+	}
 > = {
 	full: {
 		title: 'Complete App Tour',
@@ -86,7 +92,7 @@ export const TOUR_STEPS: Record<TourTrack, TourStep[]> = {
 			targetSelector: '[data-tour="feed-subapps"]',
 			targetPage: '/group/club_acm_01/feed?tab=feed',
 			tab: 'feed',
-			placement: 'left',
+			placement: 'bottom',
 		},
 		{
 			id: 'attendance-center',

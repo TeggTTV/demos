@@ -46,6 +46,45 @@ import { mockStore } from '@/mock/mockStore';
 // Re-export all types so existing imports from AppContext continue working smoothly
 export * from '@/types/models';
 
+/**
+ * Strict verification helper to determine if a user object is a mock/simulation persona.
+ */
+export function isMockUser(user: User | null | undefined): boolean {
+	if (!user || typeof user !== 'object') return false;
+	if (typeof user.id === 'string') {
+		if (
+			user.id.startsWith('user_demo') ||
+			user.id === 'user_1' ||
+			user.id.startsWith('user_alex') ||
+			user.id.startsWith('user_maya') ||
+			user.id.startsWith('user_jordan') ||
+			user.id.startsWith('user_sophia') ||
+			user.id.startsWith('user_marcus') ||
+			user.id.startsWith('user_elena') ||
+			user.id.startsWith('user_david') ||
+			user.id.startsWith('user_chloe') ||
+			user.id.startsWith('user_liam') ||
+			user.id.startsWith('user_aisha') ||
+			user.id.startsWith('user_zach') ||
+			user.id.startsWith('user_olivia')
+		) {
+			return true;
+		}
+		// Real MongoDB users have 24-character hexadecimal IDs
+		if (!/^[0-9a-fA-F]{24}$/.test(user.id)) {
+			return true;
+		}
+	}
+	if (typeof user.email === 'string') {
+		return MOCK_USERS.some(
+			(m) =>
+				m.id === user.id ||
+				m.email.toLowerCase() === user.email.toLowerCase(),
+		);
+	}
+	return false;
+}
+
 /* ──────────────────────────── Context ─────────────────────────── */
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -246,22 +285,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		if (isTutorialMode) return;
 		try {
 			const res = await apiClient.getMe();
-			if (res.success && res.user) {
+			if (res.success && res.user && !isMockUser(res.user)) {
 				setCurrentUser(res.user);
 				localStorage.setItem(
 					'demos_current_user',
 					JSON.stringify(res.user),
 				);
-			} else if (!USE_MOCK_DATA && res.success === false) {
-				// Server session invalid / expired: sync client state
-				const savedUser = localStorage.getItem('demos_current_user');
-				if (savedUser) {
-					localStorage.removeItem('demos_current_user');
+			} else {
+				// Server session invalid, absent, or mock user
+				if (typeof window !== 'undefined') {
+					const savedUser = localStorage.getItem('demos_current_user');
+					if (savedUser) {
+						try {
+							if (isMockUser(JSON.parse(savedUser))) {
+								localStorage.removeItem('demos_current_user');
+							}
+						} catch {
+							localStorage.removeItem('demos_current_user');
+						}
+					}
+				}
+				if (!res.success) {
 					setCurrentUser(null);
 				}
 			}
 		} catch (e) {
 			console.warn('restoreSession failed:', e);
+			setCurrentUser((prev) => (isMockUser(prev) ? null : prev));
 		}
 	}, [isTutorialMode]);
 
@@ -293,9 +343,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		const savedUser = localStorage.getItem('demos_current_user');
 		if (savedUser && savedUser !== 'null') {
 			try {
-				setCurrentUser(JSON.parse(savedUser));
+				const parsed = JSON.parse(savedUser);
+				if (!isMockUser(parsed)) {
+					setCurrentUser(parsed);
+				} else {
+					localStorage.removeItem('demos_current_user');
+					setCurrentUser(null);
+				}
 			} catch {
 				localStorage.removeItem('demos_current_user');
+				setCurrentUser(null);
 			}
 		}
 
@@ -339,11 +396,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			setPolls([...MOCK_POLLS]);
 			setCurrentUser(MOCK_USERS[0]);
 		} else {
+			// Outside tutorial mode: verify savedUser is NOT a mock user
+			if (savedUser && savedUser !== 'null') {
+				try {
+					const parsed = JSON.parse(savedUser);
+					if (isMockUser(parsed)) {
+						localStorage.removeItem('demos_current_user');
+						setCurrentUser(null);
+					}
+				} catch {
+					localStorage.removeItem('demos_current_user');
+					setCurrentUser(null);
+				}
+			}
 			loadData();
 		}
 
 		setHydrated(true);
 	}, [loadData]);
+	/* eslint-enable react-hooks/set-state-in-effect */
+
+	/* eslint-disable react-hooks/set-state-in-effect */
+	// Continuous security invariant: if outside tutorial mode, NEVER allow a mock persona as currentUser
+	useEffect(() => {
+		if (!isTutorialMode && isMockUser(currentUser)) {
+			setCurrentUser(null);
+			if (typeof window !== 'undefined') {
+				const savedUser = localStorage.getItem('demos_current_user');
+				if (savedUser) {
+					try {
+						if (isMockUser(JSON.parse(savedUser))) {
+							localStorage.removeItem('demos_current_user');
+						}
+					} catch {
+						localStorage.removeItem('demos_current_user');
+					}
+				}
+			}
+		}
+	}, [isTutorialMode, currentUser]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	/* ─── Ref sync for notificationSettings & currentUser ─── */
@@ -1423,7 +1514,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const enableTutorialMode = useCallback(() => {
 		if (!isTutorialMode) {
 			backupStateRef.current = {
-				currentUser,
+				currentUser: isMockUser(currentUser) ? null : currentUser,
 				groups,
 				requests,
 				users,
@@ -1448,7 +1539,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		setRequests([...MOCK_REQUESTS]);
 		setInvites([...MOCK_INVITES]);
 		setPolls([...MOCK_POLLS]);
-		setCurrentUser(MOCK_USERS[0]); // Alex Chen
+		setCurrentUser(MOCK_USERS[0]); // Alex Chen (Only active during tutorial/sandbox)
 	}, [
 		isTutorialMode,
 		currentUser,
@@ -1462,14 +1553,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		polls,
 	]);
 
-	const exitTutorialMode = useCallback(() => {
+	const exitTutorialMode = useCallback(async () => {
 		setIsTutorialMode(false);
 		if (typeof window !== 'undefined') {
 			sessionStorage.removeItem('demos_tutorial_mode');
-			document.cookie = 'demos_tutorial_mode=; path=/; max-age=0';
+			document.cookie = 'demos_tutorial_mode=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+			const savedUser = localStorage.getItem('demos_current_user');
+			if (savedUser) {
+				try {
+					if (isMockUser(JSON.parse(savedUser))) {
+						localStorage.removeItem('demos_current_user');
+					}
+				} catch {
+					localStorage.removeItem('demos_current_user');
+				}
+			}
 		}
+
+		const backupUser = backupStateRef.current?.currentUser;
+		const hasRealBackupUser = backupUser && !isMockUser(backupUser);
+
 		if (backupStateRef.current) {
-			setCurrentUser(backupStateRef.current.currentUser);
+			setCurrentUser(hasRealBackupUser ? backupUser : null);
 			setGroups(backupStateRef.current.groups);
 			setRequests(backupStateRef.current.requests);
 			setUsers(backupStateRef.current.users);
@@ -1480,17 +1585,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			setPolls(backupStateRef.current.polls);
 			backupStateRef.current = null;
 		} else {
-			loadData();
-			restoreSession();
+			setCurrentUser(null);
 		}
+
+		// Always reload real data from backend/database
+		await loadData();
+		await restoreSession();
 	}, [loadData, restoreSession]);
 
-	const switchTutorialPersona = useCallback((userId: string) => {
-		const target = MOCK_USERS.find((u) => u.id === userId);
-		if (target) {
-			setCurrentUser(target);
-		}
-	}, []);
+	const switchTutorialPersona = useCallback(
+		(userId: string) => {
+			if (!isTutorialMode) return;
+			const target = MOCK_USERS.find((u) => u.id === userId);
+			if (target) {
+				setCurrentUser(target);
+			}
+		},
+		[isTutorialMode],
+	);
 
 	const injectSimulatedAttendance = useCallback(
 		(record: AttendanceRecord) => {

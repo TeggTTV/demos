@@ -47,7 +47,7 @@ export default function TutorialFab() {
 	];
 
 	return (
-		<div className="fixed bottom-5 right-5 z-40 flex flex-col items-end">
+		<div className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-40 flex flex-col items-end max-w-[calc(100vw-32px)]">
 			{/* Toast Feedback Notification */}
 			<AnimatePresence>
 				{actionFeedback && (
@@ -55,10 +55,10 @@ export default function TutorialFab() {
 						initial={{ opacity: 0, y: 10, scale: 0.95 }}
 						animate={{ opacity: 1, y: 0, scale: 1 }}
 						exit={{ opacity: 0, y: 5, scale: 0.95 }}
-						className="mb-2 flex items-center gap-2 rounded-xl bg-slate-900 text-white px-3 py-2 text-xs font-semibold shadow-xl border border-white/10"
+						className="mb-2 flex items-center gap-2 rounded-xl bg-slate-900 text-white px-3 py-2 text-xs font-semibold shadow-xl border border-white/10 max-w-[calc(100vw-32px)]"
 					>
 						<FiCheckCircle className="text-emerald-400" size={14} />
-						<span>{actionFeedback}</span>
+						<span className="truncate">{actionFeedback}</span>
 					</motion.div>
 				)}
 			</AnimatePresence>
@@ -71,7 +71,7 @@ export default function TutorialFab() {
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.9, y: 20 }}
 						transition={{ duration: 0.2 }}
-						className="mb-3 w-84 sm:w-96 rounded-2xl border border-border/80 bg-surface/95 dark:bg-slate-900/95 p-4 shadow-2xl backdrop-blur-xl max-h-[80vh] overflow-y-auto"
+						className="mb-3 w-[calc(100vw-32px)] sm:w-96 max-w-sm rounded-2xl border border-border/80 bg-surface/95 dark:bg-slate-900/95 p-4 shadow-2xl backdrop-blur-xl max-h-[78vh] overflow-y-auto"
 					>
 						{/* HUD Header */}
 						<div className="flex items-center justify-between border-b border-border/60 pb-3 mb-3">
