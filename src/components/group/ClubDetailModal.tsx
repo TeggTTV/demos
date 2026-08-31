@@ -200,7 +200,7 @@ export default function ClubDetailModal({
 									Want to join or connect with {club.name}?
 								</p>
 								<p className="text-[11px] text-text-muted">
-									Sign in or register with your campus email to apply for membership, chat in club hubs, and participate in events.
+									Sign in or register with your campus email to apply for membership, chat in club management, and participate in events.
 								</p>
 								<div className="pt-1 flex items-center justify-center gap-2">
 									<Link
@@ -227,7 +227,7 @@ export default function ClubDetailModal({
 									onClick={onClose}
 									className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover transition-all"
 								>
-									Open Club Hub
+									Open Club Management
 								</Link>
 							</div>
 						) : hasRequested ? (

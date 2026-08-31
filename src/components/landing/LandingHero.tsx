@@ -198,7 +198,7 @@ export default function LandingHero({
 					</div>
 				</motion.div> */}
 
-				{/* Interactive Live Club Hub Sandbox Preview Widget */}
+				{/* Interactive Live Club Management Sandbox Preview Widget */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -439,7 +439,7 @@ export default function LandingHero({
 							href="/group/club_acm_01/feed"
 							className="font-bold text-primary hover:underline inline-flex items-center gap-1"
 						>
-							<span>Open Full ACM Club Hub</span>
+							<span>Open Full ACM Club Management</span>
 							<FiArrowRight size={12} />
 						</Link>
 					</div>

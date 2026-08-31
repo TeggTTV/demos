@@ -11,7 +11,7 @@ const STEPS = [
 	{
 		num: '01',
 		icon: FiPlusCircle,
-		title: 'Create or Claim Your Club Hub',
+		title: 'Create or Claim Your Club Management',
 		desc: 'Set up your club profile in under 2 minutes. Customize tags, banners, meeting schedule, and social links.',
 	},
 	{

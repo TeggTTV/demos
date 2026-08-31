@@ -1,6 +1,6 @@
 # Deimos - Club Management
 
-A Next.js application for campus clubs and student organizations to promote themselves, invite and onboard new members, communicate via dedicated club hubs, and track meeting attendance seamlessly using MongoDB, Tailwind CSS, and TypeScript.
+A Next.js application for campus clubs and student organizations to promote themselves, invite and onboard new members, communicate via dedicated club management, and track meeting attendance seamlessly using MongoDB, Tailwind CSS, and TypeScript.
 
 ## Dev environment
 

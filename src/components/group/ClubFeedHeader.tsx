@@ -133,7 +133,7 @@ export default function ClubFeedHeader({
 
 			{/* Tab Navigation */}
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="flex items-center space-x-6 overflow-x-auto pt-3 border-t border-border/40 scrollbar-none" role="tablist" aria-label="Club hub sections">
+				<div className="flex items-center space-x-6 overflow-x-auto pt-3 border-t border-border/40 scrollbar-none" role="tablist" aria-label="Club management sections">
 					<button
 						onClick={() => setActiveTab('feed')}
 						data-tour="tab-feed"

@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 		url: '/',
 		title: 'Deimos - Club Management, Recruitment & Attendance',
 		description:
-			'Promote your club, recruit members, collaborate in hubs, and track meeting attendance seamlessly.',
+			'Promote your club, recruit members, and track meeting attendance seamlessly.',
 		images: [
 			{
 				url: '/ogimage.png',

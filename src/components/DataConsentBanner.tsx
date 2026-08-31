@@ -43,9 +43,10 @@ export default function DataConsentBanner() {
 								</h3>
 								<p className="text-xs text-text-secondary leading-relaxed">
 									We collect personal user data to enable club
-									hub functions and track event attendance. We
-									also use third-party analytics to monitor
-									usage and improve performance.
+									management functions and track event
+									attendance. We also use third-party
+									analytics to monitor usage and improve
+									performance.
 								</p>
 								<div className="flex items-center gap-3 pt-2">
 									<button

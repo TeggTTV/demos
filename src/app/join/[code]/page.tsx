@@ -199,7 +199,7 @@ export default function JoinCodePage({
 										<strong className="text-text-primary">
 											{clubInfo?.name}
 										</strong>
-										. Redirecting you to the Club Hub...
+										. Redirecting you to Club Management...
 									</p>
 								</div>
 								{clubInfo && (
@@ -211,7 +211,7 @@ export default function JoinCodePage({
 										}
 										className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-md transition-all cursor-pointer"
 									>
-										<span>Enter Club Hub</span>
+										<span>Enter Club Management</span>
 										<FiArrowRight size={14} />
 									</button>
 								)}
