@@ -223,7 +223,7 @@ function JoinContent() {
 							disabled={loading || !cleanCode}
 							className="w-full rounded-2xl bg-primary py-3.5 text-xs font-bold text-white hover:bg-primary-hover shadow-md shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
 						>
-							<span>{loading ? 'Verifying & Joining...' : 'Confirm & Enter Club Management'}</span>
+							<span>{loading ? 'Verifying & Joining...' : 'Confirm & Enter Club'}</span>
 							<FiArrowRight size={14} />
 						</button>
 					</form>

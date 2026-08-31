@@ -50,7 +50,7 @@ export default function GroupCard({
 			type="button"
 			onClick={handleCardClick}
 			className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-3xl border border-border bg-surface text-left transition-all duration-300 hover:border-primary/50 hover:shadow-xl relative"
-			aria-label={`${isMember ? 'Enter' : 'View'} ${club.name} club management`}
+			aria-label={`${isMember ? 'Enter' : 'View'} ${club.name}`}
 		>
 			{/* Banner */}
 			<div className="h-36 w-full relative bg-surface-secondary overflow-hidden">

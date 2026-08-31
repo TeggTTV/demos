@@ -290,7 +290,7 @@ export default function GroupActivitiesPage() {
 					onClick={() => router.push(`/group/${id}/feed`)}
 					className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors cursor-pointer"
 				>
-					<FiArrowLeft /> Back to Club Management
+					<FiArrowLeft /> Back to Club
 				</button>
 
 				{/* Header Section */}
