@@ -6,22 +6,22 @@ export const metadata: Metadata = {
 	title: 'Terms of Service',
 
 	description:
-		'Read the terms of service and usage guidelines for student organizations, members, and officers using the Demos campus club hub platform.',
+		'Read the terms of service and usage guidelines for student organizations, members, and officers using the Deimos club management platform.',
 	alternates: {
 		canonical: '/terms',
 	},
 	openGraph: {
 		url: '/terms',
-		siteName: 'Demos',
+		siteName: 'Deimos Club Management',
 		title: 'Terms of Service',
 		description:
-			'Read the terms of service and usage guidelines for student organizations, members, and officers using the Demos campus club hub platform.',
+			'Read the terms of service and usage guidelines for student organizations, members, and officers using the Deimos club management platform.',
 		images: [
 			{
 				url: '/ogimage.png',
 				width: 1200,
 				height: 630,
-				alt: 'Demos Club Platform',
+				alt: 'Deimos Club Management',
 			},
 		],
 	},
@@ -42,7 +42,7 @@ export default function TermsPage() {
 
 					<div className="space-y-4 text-sm text-text-secondary leading-relaxed">
 						<p>
-							Welcome to Demos. By accessing or using our
+							Welcome to Deimos. By accessing or using our
 							platform, you agree to comply with and be bound by
 							these Terms of Service.
 						</p>
@@ -80,7 +80,7 @@ export default function TermsPage() {
 							4. Limitation of Liability
 						</h2>
 						<p>
-							Demos provides services &quot;as is&quot; to assist
+							Deimos provides services &quot;as is&quot; to assist
 							student organizations with promotion, communication,
 							and attendance logging.
 						</p>

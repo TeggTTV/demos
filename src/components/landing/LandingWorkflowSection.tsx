@@ -37,7 +37,7 @@ export default function LandingWorkflowSection() {
 						Workflow
 					</span>
 					<h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-1">
-						How Demos Simplifies Club Operations
+						How Deimos Simplifies Club Operations
 					</h2>
 					<p className="mt-2 text-sm text-text-muted">
 						Three seamless steps to run your organization effortlessly.

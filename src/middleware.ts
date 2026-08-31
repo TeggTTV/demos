@@ -44,7 +44,7 @@ export async function middleware(req: NextRequest) {
 		pathname.startsWith('/group/club_') ||
 		pathname.startsWith('/group/group_');
 	const isTutorialCookie =
-		req.cookies.get('demos_tutorial_mode')?.value === 'true';
+		req.cookies.get('deimos_tutorial_mode')?.value === 'true';
 
 	if (
 		isProtected &&

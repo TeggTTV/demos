@@ -69,7 +69,7 @@ export default function TutorialWelcomeModal() {
 							<span>Interactive Experience</span>
 						</div>
 						<h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary leading-tight">
-							Welcome to Demos!
+							Welcome to Deimos!
 						</h2>
 						<p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
 							Choose a guided walkthrough below to explore the

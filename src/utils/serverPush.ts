@@ -7,7 +7,7 @@ const VAPID_PUBLIC_KEY =
 const VAPID_PRIVATE_KEY =
 	process.env.VAPID_PRIVATE_KEY ||
 	'XXyDSwK5de2gduhGAn_EA3xy0HOHOgAAA7v3w_OK3Qs';
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@demos-clubs.edu';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@deimos-clubs.edu';
 
 try {
 	webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -52,7 +52,7 @@ export async function sendWebPushToUsers(
 			url: payload.url || '/',
 			icon: payload.icon || '/web-app-manifest-192x192.png',
 			badge: payload.badge || '/icon1.png',
-			tag: payload.tag || `demos_${payload.title}`,
+			tag: payload.tag || `deimos_${payload.title}`,
 			data: { url: payload.url || '/' },
 		});
 

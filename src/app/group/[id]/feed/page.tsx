@@ -72,8 +72,7 @@ export default function GroupFeedPage() {
 		? group?.leaderId === effectiveUser.id
 		: Boolean(USE_MOCK_DATA || isTutorialMode);
 	const isOfficer = Boolean(
-		group?.officerIds &&
-			group.officerIds.includes(effectiveUser?.id || ''),
+		group?.officerIds && group.officerIds.includes(effectiveUser?.id || ''),
 	);
 	const canManage =
 		isLeader ||
@@ -116,7 +115,7 @@ export default function GroupFeedPage() {
 	const setActiveTab = (tab: FeedTab) => {
 		setActiveTabState(tab);
 		if (typeof window !== 'undefined') {
-			localStorage.setItem(`demos_tab_${id}`, tab);
+			localStorage.setItem(`deimos_tab_${id}`, tab);
 			const url = new URL(window.location.href);
 			url.searchParams.set('tab', tab);
 			window.history.replaceState({}, '', url.toString());
@@ -234,7 +233,15 @@ export default function GroupFeedPage() {
 		return () => {
 			mounted = false;
 		};
-	}, [id, fetchFeedMessages, fetchPolls, fetchEvents, fetchAttendances, fetchGroups, fetchInvites]);
+	}, [
+		id,
+		fetchFeedMessages,
+		fetchPolls,
+		fetchEvents,
+		fetchAttendances,
+		fetchGroups,
+		fetchInvites,
+	]);
 
 	if (!hydrated) {
 		return (
@@ -246,7 +253,13 @@ export default function GroupFeedPage() {
 		);
 	}
 
-	if (!group || (!effectiveUser && !USE_MOCK_DATA && !isTutorialMode && !mockStore.getGroupById(id))) {
+	if (
+		!group ||
+		(!effectiveUser &&
+			!USE_MOCK_DATA &&
+			!isTutorialMode &&
+			!mockStore.getGroupById(id))
+	) {
 		return (
 			<div className="flex min-h-screen flex-col bg-background">
 				<Nav />
@@ -287,7 +300,8 @@ export default function GroupFeedPage() {
 							Private Club
 						</h2>
 						<p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-							This is a private student organization. You must be invited or approved to view the club feed.
+							This is a private student organization. You must be
+							invited or approved to view the club feed.
 						</p>
 						<button
 							onClick={() => router.push('/search')}
@@ -496,9 +510,7 @@ export default function GroupFeedPage() {
 				isLeader={isLeader}
 				clubEvents={clubEvents}
 				activePollsCount={
-					polls.filter(
-						(p) => p.groupId === id && !p.isClosed,
-					).length
+					polls.filter((p) => p.groupId === id && !p.isClosed).length
 				}
 			/>
 
@@ -560,9 +572,7 @@ export default function GroupFeedPage() {
 					onOpenScheduleModal={() => {
 						setMeetingTitle('');
 						setMeetingDesc('');
-						setMeetingDate(
-							new Date().toISOString().split('T')[0],
-						);
+						setMeetingDate(new Date().toISOString().split('T')[0]);
 						setMeetingTime('18:00');
 						setMeetingLocation('');
 						setMeetingEndDate('');
@@ -614,9 +624,7 @@ export default function GroupFeedPage() {
 						setEditingActivityId(null);
 						setEventTitle('');
 						setEventDesc('');
-						setEventDate(
-							new Date().toISOString().split('T')[0],
-						);
+						setEventDate(new Date().toISOString().split('T')[0]);
 						setEventTime('18:00');
 						setEventLocation('');
 						setActivityEndDate('');

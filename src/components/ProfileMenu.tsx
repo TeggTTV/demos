@@ -186,7 +186,7 @@ export default function ProfileMenu() {
 						) : (
 							<>
 								<div className="px-4 py-2 text-sm text-text-muted border-b border-border mb-1">
-									Welcome to Demos!
+									Welcome to Deimos!
 								</div>
 								<div className="p-1.5">
 									<Link

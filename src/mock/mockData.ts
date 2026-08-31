@@ -708,7 +708,7 @@ export const MOCK_EVENTS: MeetingEvent[] = [
 		groupId: 'club_eco_06',
 		title: 'Campus Sustainability Summit & Micro-Garden Workshop',
 		description:
-			'Hands-on microgreen planting, renewable energy demos, and student sustainability policy discussions.',
+			'Hands-on microgreen planting, renewable energy deimos, and student sustainability policy discussions.',
 		date: '2026-09-20',
 		time: '14:00',
 		location: 'Botanical Greenhouses & Quad',
@@ -948,7 +948,8 @@ export const MOCK_FEED_MESSAGES: FeedMessage[] = [
 		id: 'feed_acm_poll_01',
 		groupId: 'club_acm_01',
 		userId: 'user_alex_chen',
-		content: '📊 Created a new club poll: Spring Hackathon Track Focus. Please cast your vote!',
+		content:
+			'📊 Created a new club poll: Spring Hackathon Track Focus. Please cast your vote!',
 		subAppType: 'poll',
 		pollId: 'poll_acm_01',
 		isAnnouncement: false,
@@ -965,7 +966,8 @@ export const MOCK_FEED_MESSAGES: FeedMessage[] = [
 		id: 'feed_acm_poll_02',
 		groupId: 'club_acm_01',
 		userId: 'user_marcus_w',
-		content: '🍕 Created a poll: Preferred Pizza for Wednesday Tech Workshop',
+		content:
+			'🍕 Created a poll: Preferred Pizza for Wednesday Tech Workshop',
 		subAppType: 'poll',
 		pollId: 'poll_acm_02',
 		isAnnouncement: false,
@@ -1023,49 +1025,49 @@ export const MOCK_INVITES: ClubInvite[] = [
 	{
 		id: 'inv_acm_01',
 		groupId: 'club_acm_01',
-		code: 'DEMOS-TECH',
+		code: 'DEIMOS-TECH',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
 	{
 		id: 'inv_design_02',
 		groupId: 'club_design_02',
-		code: 'DEMOS-DESIGN',
+		code: 'DEIMOS-DESIGN',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
 	{
 		id: 'inv_robotics_03',
 		groupId: 'club_robotics_03',
-		code: 'DEMOS-ROBOT',
+		code: 'DEIMOS-ROBOT',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
 	{
 		id: 'inv_venture_04',
 		groupId: 'club_venture_04',
-		code: 'DEMOS-FOUNDER',
+		code: 'DEIMOS-FOUNDER',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
 	{
 		id: 'inv_music_05',
 		groupId: 'club_music_05',
-		code: 'DEMOS-SING',
+		code: 'DEIMOS-SING',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
 	{
 		id: 'inv_eco_06',
 		groupId: 'club_eco_06',
-		code: 'DEMOS-GREEN',
+		code: 'DEIMOS-GREEN',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
 	{
 		id: 'inv_esports_07',
 		groupId: 'club_esports_07',
-		code: 'DEMOS-PLAY',
+		code: 'DEIMOS-PLAY',
 		status: 'ACTIVE',
 		createdAt: '2026-08-20T12:00:00Z',
 	},
@@ -1078,7 +1080,8 @@ export const MOCK_POLLS: Poll[] = [
 		groupId: 'club_acm_01',
 		creatorId: 'user_alex_chen',
 		title: '🏆 Spring Hackathon Track Focus',
-		description: 'Help us decide the primary sponsored track for our upcoming 36-hour annual hackathon!',
+		description:
+			'Help us decide the primary sponsored track for our upcoming 36-hour annual hackathon!',
 		category: 'Event Planning',
 		isMultipleChoice: false,
 		isAnonymous: false,
@@ -1090,13 +1093,19 @@ export const MOCK_POLLS: Poll[] = [
 		creator: {
 			id: 'user_alex_chen',
 			name: 'Alex Chen',
-			avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+			avatarUrl:
+				'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
 		},
 		options: [
 			{
 				id: 'opt_1',
 				text: '🤖 Autonomous AI Agents & LLMs',
-				votes: ['user_alex_chen', 'user_marcus_w', 'user_jordan_miller', 'user_zach_t'],
+				votes: [
+					'user_alex_chen',
+					'user_marcus_w',
+					'user_jordan_miller',
+					'user_zach_t',
+				],
 			},
 			{
 				id: 'opt_2',
@@ -1132,7 +1141,8 @@ export const MOCK_POLLS: Poll[] = [
 		creator: {
 			id: 'user_marcus_w',
 			name: 'Marcus Washington',
-			avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+			avatarUrl:
+				'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
 		},
 		options: [
 			{
@@ -1162,7 +1172,8 @@ export const MOCK_POLLS: Poll[] = [
 		groupId: 'club_design_02',
 		creatorId: 'user_maya_lin',
 		title: '👕 Fall Semester Club Hoodie Colorway',
-		description: 'Which color combination should we print for our official member merch?',
+		description:
+			'Which color combination should we print for our official member merch?',
 		category: 'Club Decisions',
 		isMultipleChoice: false,
 		isAnonymous: false,
@@ -1173,7 +1184,8 @@ export const MOCK_POLLS: Poll[] = [
 		creator: {
 			id: 'user_maya_lin',
 			name: 'Maya Lin',
-			avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
+			avatarUrl:
+				'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
 		},
 		options: [
 			{
@@ -1198,7 +1210,8 @@ export const MOCK_POLLS: Poll[] = [
 		groupId: 'club_robotics_03',
 		creatorId: 'user_jordan_miller',
 		title: '⚙️ Microcontroller Platform for 2026 Rover',
-		description: 'Select our primary compute board for the upcoming NASA rover design cycle.',
+		description:
+			'Select our primary compute board for the upcoming NASA rover design cycle.',
 		category: 'Club Decisions',
 		isMultipleChoice: false,
 		isAnonymous: false,
@@ -1210,13 +1223,18 @@ export const MOCK_POLLS: Poll[] = [
 		creator: {
 			id: 'user_jordan_miller',
 			name: 'Jordan Miller',
-			avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+			avatarUrl:
+				'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
 		},
 		options: [
 			{
 				id: 'opt_r1',
 				text: 'STM32 Nucleo-H7 + ROS2 MicroXRCE',
-				votes: ['user_jordan_miller', 'user_marcus_w', 'user_alex_chen'],
+				votes: [
+					'user_jordan_miller',
+					'user_marcus_w',
+					'user_alex_chen',
+				],
 			},
 			{
 				id: 'opt_r2',

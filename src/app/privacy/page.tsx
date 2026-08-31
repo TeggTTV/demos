@@ -5,22 +5,22 @@ import Footer from '@/components/Footer';
 export const metadata: Metadata = {
 	title: 'Privacy Policy',
 	description:
-		'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Demos club hub platform.',
+		'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Deimos club management platform.',
 	alternates: {
 		canonical: '/privacy',
 	},
 	openGraph: {
 		url: '/privacy',
-		siteName: 'Demos',
+		siteName: 'Deimos Club Management',
 		title: 'Privacy Policy',
 		description:
-			'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Demos club hub platform.',
+			'Read the privacy policy, data practices, and security guidelines for student organization members and officers using the Deimos club management platform.',
 		images: [
 			{
 				url: '/ogimage.png',
 				width: 1200,
 				height: 630,
-				alt: 'Demos Club Platform',
+				alt: 'Deimos Club Management',
 			},
 		],
 	},
@@ -41,7 +41,7 @@ export default function PrivacyPage() {
 
 					<div className="space-y-4 text-sm text-text-secondary leading-relaxed">
 						<p>
-							At Demos, we take the privacy of student club
+							At Deimos, we take the privacy of student club
 							members and leaders seriously. This Privacy Policy
 							describes how we collect, store, and protect your
 							information.
@@ -109,7 +109,7 @@ export default function PrivacyPage() {
 							3. Public Directory &amp; Organization Privacy Controls
 						</h2>
 						<p>
-							Demos allows guest visitors and non-members to browse our public campus club showcase directory. However, club officers maintain full privacy control over their organization:
+							Deimos allows guest visitors and non-members to browse our public campus club showcase directory. However, club officers maintain full privacy control over their organization:
 						</p>
 						<ul className="list-disc pl-5 space-y-1">
 							<li>
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
 							6. Your Rights &amp; Consent
 						</h2>
 						<p>
-							By using Demos, you consent to our data collection
+							By using Deimos, you consent to our data collection
 							policies. You have the right to request deletion of
 							your account and related participation history at
 							any time.

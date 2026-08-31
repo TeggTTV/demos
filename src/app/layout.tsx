@@ -27,15 +27,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: 'Demos - Clubs, Recruitment & Attendance Tracking',
-		template: '%s | Demos',
+		default: 'Deimos - Club Management, Recruitment & Attendance',
+		template: '%s | Deimos',
 	},
 	description:
 		'The all-in-one platform for student organizations and campus clubs to promote themselves, invite members, share announcements, and track attendance.',
 	metadataBase: new URL(
 		process.env.NEXT_PUBLIC_SITE_URL ||
 			process.env.SITE_URL ||
-			'https://demosclubhub.vercel.app',
+			'https://demosclubhub.org',
 	),
 	manifest: '/manifest.json',
 	alternates: {
@@ -44,14 +44,14 @@ export const metadata: Metadata = {
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: 'default',
-		title: 'Demos',
+		title: 'Deimos',
 	},
 	openGraph: {
 		type: 'website',
 		locale: 'en_US',
-		siteName: 'Demos',
+		siteName: 'Deimos Club Management',
 		url: '/',
-		title: 'Demos - Clubs, Recruitment & Attendance Tracking',
+		title: 'Deimos - Club Management, Recruitment & Attendance',
 		description:
 			'Promote your club, recruit members, collaborate in hubs, and track meeting attendance seamlessly.',
 		images: [
@@ -59,13 +59,13 @@ export const metadata: Metadata = {
 				url: '/ogimage.png',
 				width: 1200,
 				height: 630,
-				alt: 'Demos Club Platform',
+				alt: 'Deimos Club Management',
 			},
 		],
 	},
 	twitter: {
 		card: 'summary_large_image',
-		title: 'Demos - Clubs, Recruitment & Attendance Tracking',
+		title: 'Deimos - Club Management, Recruitment & Attendance',
 		description:
 			'The all-in-one platform for student organizations to promote themselves, recruit members, and track meeting attendance.',
 		images: ['/ogtwitter.png'],
@@ -106,8 +106,8 @@ export default function RootLayout({
 			suppressHydrationWarning
 		>
 			<head>
-				<meta name="application-name" content="Demos" />
-				<meta name="apple-mobile-web-app-title" content="Demos" />
+				<meta name="application-name" content="Deimos" />
+				<meta name="apple-mobile-web-app-title" content="Deimos" />
 				<meta name="apple-mobile-web-app-capable" content="yes" />
 				<meta
 					name="apple-mobile-web-app-status-bar-style"

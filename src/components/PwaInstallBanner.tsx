@@ -26,7 +26,7 @@ export default function PwaInstallBanner() {
 
 		// 2. Check if user previously dismissed the prompt
 		const isDismissed =
-			localStorage.getItem('demos_pwa_dismissed') === 'true';
+			localStorage.getItem('deimos_pwa_dismissed') === 'true';
 		if (isDismissed) return;
 
 		// 3. Detect Platform
@@ -70,7 +70,7 @@ export default function PwaInstallBanner() {
 
 	const handleDismiss = () => {
 		setIsVisible(false);
-		localStorage.setItem('demos_pwa_dismissed', 'true');
+		localStorage.setItem('deimos_pwa_dismissed', 'true');
 	};
 
 	const handleInstall = async () => {
@@ -110,7 +110,7 @@ export default function PwaInstallBanner() {
 						<div className="relative h-11 w-11 overflow-hidden rounded-xl border border-border bg-background shrink-0 shadow-xs">
 							<Image
 								src="/icon1.png"
-								alt="Demos App Icon"
+								alt="Deimos App Icon"
 								fill
 								className="object-cover dark:invert"
 								unoptimized
@@ -118,7 +118,7 @@ export default function PwaInstallBanner() {
 						</div>
 						<div className="min-w-0 pr-6">
 							<h4 className="text-xs font-bold text-text-primary">
-								Install Demos App
+								Install Deimos App
 							</h4>
 							<p className="text-[10px] text-text-secondary leading-relaxed mt-0.5">
 								Add to your home screen for instant meeting

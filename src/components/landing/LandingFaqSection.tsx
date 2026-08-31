@@ -19,8 +19,8 @@ const FAQ_ITEMS = [
 		a: 'Students can search the public club directory with category filters, meeting day schedules, and keywords. They can submit membership applications with a note or instantly join using direct invite codes shared by officers.',
 	},
 	{
-		q: 'Is Demos free for university organizations?',
-		a: 'Yes! Demos provides a complete suite of showcase tools, private club feeds, meeting scheduling, and attendance reporting designed specifically for student clubs and campus organizations.',
+		q: 'Is Deimos free for university organizations?',
+		a: 'Yes! Deimos provides a complete suite of showcase tools, private club feeds, meeting scheduling, and attendance reporting designed specifically for student clubs and campus organizations.',
 	},
 	{
 		q: 'What happens to my club data if I graduate?',

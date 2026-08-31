@@ -15,7 +15,7 @@ export default function LandingGuideSection() {
 						Club Leadership Best Practices
 					</span>
 					<h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-1">
-						Why Student Organizations Choose Demos
+						Why Student Organizations Choose Deimos
 					</h2>
 					<p className="mt-3 text-sm text-text-secondary leading-relaxed">
 						Running a collegiate organization involves coordinating
@@ -36,7 +36,7 @@ export default function LandingGuideSection() {
 						</h3>
 						<p className="text-xs text-text-secondary leading-relaxed">
 							Stop using paper sign-in sheets and shared Google
-							Forms. Demos generates dynamic link check-in code.
+							Forms. Deimos generates dynamic link check-in code.
 							Officers can monitor the attendance roster in
 							real-time, mark absences, and download CSV reports
 							formatted for campus administration.
@@ -50,7 +50,7 @@ export default function LandingGuideSection() {
 						<p className="text-xs text-text-secondary leading-relaxed">
 							Using multiple communication platforms like
 							WhatsApp, GroupMe, Discord, and email leads to
-							missed announcements. Demos provides a dedicated
+							missed announcements. Deimos provides a dedicated
 							workspace featuring pinned executive notices, and
 							file + link sharing from any smartphone or laptop.
 						</p>
@@ -61,7 +61,7 @@ export default function LandingGuideSection() {
 							3. Modern Progressive Web App (PWA)
 						</h3>
 						<p className="text-xs text-text-secondary leading-relaxed">
-							Demos is a website but it is also installable to
+							Deimos is a website but it is also installable to
 							your homescreen as an app. Students receive push
 							notifications for important club announcements and
 							meeting check-in reminders directly on their iOS and

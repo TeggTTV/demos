@@ -6,9 +6,12 @@ async function main() {
 	console.log('Starting IndexNow submission...');
 
 	// 1. Get site URL from next-sitemap config or environment variable
-	let siteUrl = 'https://demosclubhub.vercel.app';
+	let siteUrl = 'https://demosclubhub.org';
 	try {
-		const sitemapConfigPath = path.join(__dirname, '../next-sitemap.config.js');
+		const sitemapConfigPath = path.join(
+			__dirname,
+			'../next-sitemap.config.js',
+		);
 		if (fs.existsSync(sitemapConfigPath)) {
 			const sitemapConfig = require(sitemapConfigPath);
 			if (sitemapConfig.siteUrl) {
@@ -16,7 +19,10 @@ async function main() {
 			}
 		}
 	} catch (err) {
-		console.warn('Could not read next-sitemap.config.js, using default:', err.message);
+		console.warn(
+			'Could not read next-sitemap.config.js, using default:',
+			err.message,
+		);
 	}
 
 	if (process.env.SITE_URL) {
@@ -32,15 +38,19 @@ async function main() {
 	const publicDir = path.join(__dirname, '../public');
 	if (fs.existsSync(publicDir)) {
 		const files = fs.readdirSync(publicDir);
-		const keyFile = files.find(f => /^[a-f0-9]{32}\.txt$/i.test(f));
+		const keyFile = files.find((f) => /^[a-f0-9]{32}\.txt$/i.test(f));
 		if (keyFile) {
 			key = path.basename(keyFile, '.txt');
-			console.log(`Discovered IndexNow key file: ${keyFile} (Key: ${key})`);
+			console.log(
+				`Discovered IndexNow key file: ${keyFile} (Key: ${key})`,
+			);
 		}
 	}
 
 	if (!key) {
-		console.error('Error: Could not find a 32-character hex key file (e.g. <key>.txt) in the public/ directory.');
+		console.error(
+			'Error: Could not find a 32-character hex key file (e.g. <key>.txt) in the public/ directory.',
+		);
 		process.exit(1);
 	}
 
@@ -50,7 +60,7 @@ async function main() {
 	const urls = new Set();
 	const sitemapPaths = [
 		path.join(publicDir, 'sitemap-0.xml'),
-		path.join(publicDir, 'sitemap.xml')
+		path.join(publicDir, 'sitemap.xml'),
 	];
 
 	for (const sitemapPath of sitemapPaths) {
@@ -63,7 +73,10 @@ async function main() {
 				const url = match[1];
 				// Skip static file assets, indexes, and the sitemap itself
 				const pathname = new URL(url).pathname;
-				const isAsset = /\.(png|svg|xml|json|txt|jpg|jpeg|gif|ico|css|js)$/i.test(pathname);
+				const isAsset =
+					/\.(png|svg|xml|json|txt|jpg|jpeg|gif|ico|css|js)$/i.test(
+						pathname,
+					);
 				if (!isAsset) {
 					urls.add(url);
 				}
@@ -74,19 +87,21 @@ async function main() {
 	const urlList = Array.from(urls);
 
 	if (urlList.length === 0) {
-		console.error('Error: No URLs found to submit. Make sure you build/generate the sitemap first.');
+		console.error(
+			'Error: No URLs found to submit. Make sure you build/generate the sitemap first.',
+		);
 		process.exit(1);
 	}
 
 	console.log(`Found ${urlList.length} pages to submit:`);
-	urlList.forEach(url => console.log(` - ${url}`));
+	urlList.forEach((url) => console.log(` - ${url}`));
 
 	// 4. Construct payload
 	const payload = {
 		host,
 		key,
 		keyLocation,
-		urlList
+		urlList,
 	};
 
 	console.log('\nPayload:', JSON.stringify(payload, null, 2));
@@ -97,16 +112,20 @@ async function main() {
 		const response = await fetch('https://api.indexnow.org/IndexNow', {
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json; charset=utf-8'
+				'Content-Type': 'application/json; charset=utf-8',
 			},
-			body: JSON.stringify(payload)
+			body: JSON.stringify(payload),
 		});
 
 		if (response.ok) {
-			console.log(`\nSuccess! IndexNow returned status: ${response.status} (${response.statusText})`);
+			console.log(
+				`\nSuccess! IndexNow returned status: ${response.status} (${response.statusText})`,
+			);
 		} else {
 			const bodyText = await response.text();
-			console.error(`\nFailed with status: ${response.status} (${response.statusText})`);
+			console.error(
+				`\nFailed with status: ${response.status} (${response.statusText})`,
+			);
 			console.error('Response:', bodyText);
 			process.exit(1);
 		}

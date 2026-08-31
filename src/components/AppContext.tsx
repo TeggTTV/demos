@@ -202,16 +202,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			type?: 'activity' | 'attendance' | 'all',
 			eventId?: string,
 		) => {
-			if (isTutorialMode || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))) {
+			if (
+				isTutorialMode ||
+				(groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))
+			) {
 				const mockEvs = mockStore.getEvents({
 					groupId,
 					eventId,
-					type: type === 'attendance' ? 'attendance' : type === 'activity' ? 'activity' : undefined,
+					type:
+						type === 'attendance'
+							? 'attendance'
+							: type === 'activity'
+								? 'activity'
+								: undefined,
 					userId: currentUser?.id,
 				});
 				setEvents((prev) => {
 					if (!groupId && !eventId) return mockEvs;
-					const otherGroupEvents = prev.filter((e) => e.groupId !== groupId);
+					const otherGroupEvents = prev.filter(
+						(e) => e.groupId !== groupId,
+					);
 					return [...mockEvs, ...otherGroupEvents];
 				});
 				return;
@@ -249,7 +259,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	const fetchAttendances = useCallback(
 		async (groupId?: string, eventId?: string) => {
-			if (isTutorialMode || (groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))) {
+			if (
+				isTutorialMode ||
+				(groupId && !/^[0-9a-fA-F]{24}$/.test(groupId))
+			) {
 				const mockAtts = mockStore.getAttendances({ groupId, eventId });
 				setAttendances(mockAtts);
 				return;
@@ -288,20 +301,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			if (res.success && res.user && !isMockUser(res.user)) {
 				setCurrentUser(res.user);
 				localStorage.setItem(
-					'demos_current_user',
+					'deimos_current_user',
 					JSON.stringify(res.user),
 				);
 			} else {
 				// Server session invalid, absent, or mock user
 				if (typeof window !== 'undefined') {
-					const savedUser = localStorage.getItem('demos_current_user');
+					const savedUser = localStorage.getItem(
+						'deimos_current_user',
+					);
 					if (savedUser) {
 						try {
 							if (isMockUser(JSON.parse(savedUser))) {
-								localStorage.removeItem('demos_current_user');
+								localStorage.removeItem('deimos_current_user');
 							}
 						} catch {
-							localStorage.removeItem('demos_current_user');
+							localStorage.removeItem('deimos_current_user');
 						}
 					}
 				}
@@ -328,11 +343,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			restoreSession(),
 			isPendingPage ? fetchInvites() : Promise.resolve(),
 		]);
-	}, [fetchGroups, fetchInvites, fetchRequests, fetchUsers, isTutorialMode, restoreSession]);
+	}, [
+		fetchGroups,
+		fetchInvites,
+		fetchRequests,
+		fetchUsers,
+		isTutorialMode,
+		restoreSession,
+	]);
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
-		const savedTheme = localStorage.getItem('demos_theme') as Theme | null;
+		const savedTheme = localStorage.getItem('deimos_theme') as Theme | null;
 		const resolvedTheme = savedTheme || 'light';
 		setTheme(resolvedTheme);
 		document.documentElement.classList.toggle(
@@ -340,33 +362,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			resolvedTheme === 'dark',
 		);
 
-		const savedUser = localStorage.getItem('demos_current_user');
+		const savedUser = localStorage.getItem('deimos_current_user');
 		if (savedUser && savedUser !== 'null') {
 			try {
 				const parsed = JSON.parse(savedUser);
 				if (!isMockUser(parsed)) {
 					setCurrentUser(parsed);
 				} else {
-					localStorage.removeItem('demos_current_user');
+					localStorage.removeItem('deimos_current_user');
 					setCurrentUser(null);
 				}
 			} catch {
-				localStorage.removeItem('demos_current_user');
+				localStorage.removeItem('deimos_current_user');
 				setCurrentUser(null);
 			}
 		}
 
-		const savedNotifications = localStorage.getItem('demos_notifications');
+		const savedNotifications = localStorage.getItem('deimos_notifications');
 		if (savedNotifications) {
 			try {
 				setNotifications(JSON.parse(savedNotifications));
 			} catch {
-				localStorage.removeItem('demos_notifications');
+				localStorage.removeItem('deimos_notifications');
 			}
 		}
 
 		const savedSettings = localStorage.getItem(
-			'demos_notification_settings',
+			'deimos_notification_settings',
 		);
 		if (savedSettings) {
 			try {
@@ -375,14 +397,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					...JSON.parse(savedSettings),
 				});
 			} catch {
-				localStorage.removeItem('demos_notification_settings');
+				localStorage.removeItem('deimos_notification_settings');
 			}
 		}
 
 		const savedTutorialMode =
 			typeof window !== 'undefined' &&
-			(sessionStorage.getItem('demos_tutorial_mode') === 'true' ||
-				document.cookie.includes('demos_tutorial_mode=true'));
+			(sessionStorage.getItem('deimos_tutorial_mode') === 'true' ||
+				document.cookie.includes('deimos_tutorial_mode=true'));
 
 		if (savedTutorialMode) {
 			setIsTutorialMode(true);
@@ -401,11 +423,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				try {
 					const parsed = JSON.parse(savedUser);
 					if (isMockUser(parsed)) {
-						localStorage.removeItem('demos_current_user');
+						localStorage.removeItem('deimos_current_user');
 						setCurrentUser(null);
 					}
 				} catch {
-					localStorage.removeItem('demos_current_user');
+					localStorage.removeItem('deimos_current_user');
 					setCurrentUser(null);
 				}
 			}
@@ -422,14 +444,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		if (!isTutorialMode && isMockUser(currentUser)) {
 			setCurrentUser(null);
 			if (typeof window !== 'undefined') {
-				const savedUser = localStorage.getItem('demos_current_user');
+				const savedUser = localStorage.getItem('deimos_current_user');
 				if (savedUser) {
 					try {
 						if (isMockUser(JSON.parse(savedUser))) {
-							localStorage.removeItem('demos_current_user');
+							localStorage.removeItem('deimos_current_user');
 						}
 					} catch {
-						localStorage.removeItem('demos_current_user');
+						localStorage.removeItem('deimos_current_user');
 					}
 				}
 			}
@@ -468,7 +490,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					typeof updater === 'function' ? updater(prev) : updater;
 				try {
 					localStorage.setItem(
-						'demos_notifications',
+						'deimos_notifications',
 						JSON.stringify(next),
 					);
 				} catch (e) {
@@ -661,7 +683,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			setNotificationSettings((prev) => {
 				const updated = { ...prev, ...newSettings };
 				localStorage.setItem(
-					'demos_notification_settings',
+					'deimos_notification_settings',
 					JSON.stringify(updated),
 				);
 				return updated;
@@ -676,7 +698,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const toggleTheme = useCallback(() => {
 		setTheme((prev) => {
 			const next = prev === 'light' ? 'dark' : 'light';
-			localStorage.setItem('demos_theme', next);
+			localStorage.setItem('deimos_theme', next);
 			document.documentElement.classList.toggle('dark', next === 'dark');
 			return next;
 		});
@@ -689,7 +711,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			if (data.success && data.user) {
 				setCurrentUser(data.user);
 				localStorage.setItem(
-					'demos_current_user',
+					'deimos_current_user',
 					JSON.stringify(data.user),
 				);
 				return { success: true };
@@ -729,7 +751,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				if (data.success && data.user) {
 					setCurrentUser(data.user);
 					localStorage.setItem(
-						'demos_current_user',
+						'deimos_current_user',
 						JSON.stringify(data.user),
 					);
 					return { success: true };
@@ -753,7 +775,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			console.error('Logout error:', e);
 		}
 		setCurrentUser(null);
-		localStorage.removeItem('demos_current_user');
+		localStorage.removeItem('deimos_current_user');
 		// eslint-disable-next-line @next/next/no-location-assign-relative-destination
 		window.location.href = '/';
 	}, []);
@@ -1227,7 +1249,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				if (data.success && data.user) {
 					setCurrentUser(data.user);
 					localStorage.setItem(
-						'demos_current_user',
+						'deimos_current_user',
 						JSON.stringify(data.user),
 					);
 					setUsers((prev) =>
@@ -1527,8 +1549,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 		setIsTutorialMode(true);
 		if (typeof window !== 'undefined') {
-			sessionStorage.setItem('demos_tutorial_mode', 'true');
-			document.cookie = 'demos_tutorial_mode=true; path=/; SameSite=Lax';
+			sessionStorage.setItem('deimos_tutorial_mode', 'true');
+			document.cookie = 'deimos_tutorial_mode=true; path=/; SameSite=Lax';
 		}
 		// Load rich mock dataset
 		setUsers([...MOCK_USERS]);
@@ -1556,16 +1578,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const exitTutorialMode = useCallback(async () => {
 		setIsTutorialMode(false);
 		if (typeof window !== 'undefined') {
-			sessionStorage.removeItem('demos_tutorial_mode');
-			document.cookie = 'demos_tutorial_mode=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-			const savedUser = localStorage.getItem('demos_current_user');
+			sessionStorage.removeItem('deimos_tutorial_mode');
+			document.cookie =
+				'deimos_tutorial_mode=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+			const savedUser = localStorage.getItem('deimos_current_user');
 			if (savedUser) {
 				try {
 					if (isMockUser(JSON.parse(savedUser))) {
-						localStorage.removeItem('demos_current_user');
+						localStorage.removeItem('deimos_current_user');
 					}
 				} catch {
-					localStorage.removeItem('demos_current_user');
+					localStorage.removeItem('deimos_current_user');
 				}
 			}
 		}
@@ -1615,19 +1638,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		setPolls(updatedPolls);
 	}, []);
 
-	const injectSimulatedJoinRequest = useCallback(
-		(request: JoinRequest) => {
-			setRequests((prev) => [request, ...prev]);
-		},
-		[],
-	);
+	const injectSimulatedJoinRequest = useCallback((request: JoinRequest) => {
+		setRequests((prev) => [request, ...prev]);
+	}, []);
 
-	const injectSimulatedFeedMessage = useCallback(
-		(message: FeedMessage) => {
-			setFeedMessages((prev) => [message, ...prev]);
-		},
-		[],
-	);
+	const injectSimulatedFeedMessage = useCallback((message: FeedMessage) => {
+		setFeedMessages((prev) => [message, ...prev]);
+	}, []);
 
 	const resetTutorialMockData = useCallback(() => {
 		mockStore.reset();

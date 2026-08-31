@@ -53,9 +53,9 @@ export const TOUR_STEPS: Record<TourTrack, TourStep[]> = {
 	full: [
 		{
 			id: 'welcome-hub',
-			title: 'Welcome to Demos Club Platform',
+			title: 'Welcome to Deimos Club Management',
 			description:
-				'Demos is your unified campus hub to discover student organizations, participate in active discussions, vote on polls, and track meeting attendance seamlessly.',
+				'Deimos is your unified campus hub to discover student organizations, participate in active discussions, vote on polls, and track meeting attendance seamlessly.',
 			tip: 'This tour will guide you through all major areas of the platform using interactive mock data.',
 			targetSelector: '[data-tour="nav-brand"]',
 			targetPage: '/',

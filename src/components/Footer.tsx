@@ -13,13 +13,13 @@ export default function Footer() {
 							<div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md">
 								<Image
 									src="/icon1.png"
-									alt="Demos Logo"
+									alt="Deimos Logo"
 									fill
 									className="object-cover dark:invert"
 								/>
 							</div>
 							<span className="text-lg font-bold tracking-tight text-primary">
-								Demos
+								Deimos
 							</span>
 						</div>
 						<p className="text-xs text-text-muted mt-1 max-w-sm">
@@ -68,7 +68,7 @@ export default function Footer() {
 							</Link>
 						</div>
 						<div className="text-center md:text-right text-[11px] text-text-muted/80">
-							© {new Date().getFullYear()} Demos. Built for
+							© {new Date().getFullYear()} Deimos. Built for
 							student leaders &amp; campus organizations.
 						</div>
 					</div>

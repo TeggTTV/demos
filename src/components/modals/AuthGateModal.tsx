@@ -64,7 +64,7 @@ export default function AuthGateModal({
 					</button>
 				</div>
 				<p className="text-sm text-text-secondary mb-5">
-					Sign in to your Demos account to join clubs, participate in discussions, and check in to meetings.
+					Sign in to your Deimos account to join clubs, participate in discussions, and check in to meetings.
 				</p>
 
 				<form onSubmit={handleAuthSubmit} className="space-y-3">

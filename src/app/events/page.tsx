@@ -458,7 +458,7 @@ export default function EventsPage() {
 								hands-on portfolio experience, and develops
 								lasting friendships. Learn how attendance
 								tracking, RSVPs, and membership requirements
-								work on Demos.
+								work on Deimos.
 							</p>
 						</div>
 

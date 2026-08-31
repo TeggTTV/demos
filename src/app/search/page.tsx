@@ -337,7 +337,7 @@ function SearchContent() {
 									Official Rosters
 								</h3>
 								<p className="text-text-secondary leading-relaxed">
-									Every club listed on Demos maintains active
+									Every club listed on Deimos maintains active
 									student leadership and faculty advisor contacts.
 								</p>
 							</div>

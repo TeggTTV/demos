@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @variant dark (&:where(.dark, .dark *));
 
-/* Demos design system: a light-first, task-focused club workspace. */
+/* Deimos design system: a light-first, task-focused club workspace. */
 
 :root {
 	/* Surface */

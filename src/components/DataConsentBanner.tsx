@@ -10,7 +10,7 @@ export default function DataConsentBanner() {
 
 	useEffect(() => {
 		// Check local storage for existing consent
-		const hasConsented = localStorage.getItem('demos-consent-accepted');
+		const hasConsented = localStorage.getItem('deimos-consent-accepted');
 		if (!hasConsented) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setIsVisible(true);
@@ -18,7 +18,7 @@ export default function DataConsentBanner() {
 	}, []);
 
 	const handleAccept = () => {
-		localStorage.setItem('demos-consent-accepted', 'true');
+		localStorage.setItem('deimos-consent-accepted', 'true');
 		setIsVisible(false);
 	};
 

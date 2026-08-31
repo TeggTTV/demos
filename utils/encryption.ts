@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 
-const SECRET_PHRASE = process.env.ENCRYPTION_KEY || 'default_demos_secret_fallback_phrase_secure_and_long';
+const SECRET_PHRASE =
+	process.env.ENCRYPTION_KEY ||
+	'default_deimos_secret_fallback_phrase_secure_and_long';
 // Derive a 32-byte key using SHA-256 from the environmental phrase
 const KEY = crypto.createHash('sha256').update(SECRET_PHRASE).digest();
 const ALGORITHM = 'aes-256-cbc';
@@ -40,7 +42,10 @@ export function decryptPassword(encryptedValue: string): string {
 		decrypted += decipher.final('utf8');
 		return decrypted;
 	} catch (error) {
-		console.warn('Decryption failed, treating as legacy plain-text password:', error);
+		console.warn(
+			'Decryption failed, treating as legacy plain-text password:',
+			error,
+		);
 		return encryptedValue;
 	}
 }

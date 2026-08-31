@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 		);
 
 		await sendWebPushToUsers([userId], {
-			title: '🎉 Demos Test Notification',
+			title: '🎉 Deimos Test Notification',
 			body: 'Background push notifications are working perfectly on your device!',
 			url: '/settings',
 		});

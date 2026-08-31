@@ -1,4 +1,4 @@
-const CACHE_NAME = 'demos-pwa-v1';
+const CACHE_NAME = 'deimos-pwa-v1';
 const OFFLINE_URL = '/';
 
 const STATIC_ASSETS = [
@@ -85,8 +85,8 @@ self.addEventListener('fetch', (event) => {
 // Handle push notification events
 self.addEventListener('push', (event) => {
 	let data = {
-		title: 'Demos Club Update',
-		body: 'You have a new update in Demos.',
+		title: 'Deimos Club Update',
+		body: 'You have a new update in Deimos.',
 		icon: '/web-app-manifest-192x192.png',
 		badge: '/icon1.png',
 		url: '/',
@@ -106,7 +106,7 @@ self.addEventListener('push', (event) => {
 		body: data.body,
 		icon: data.icon || '/web-app-manifest-192x192.png',
 		badge: data.badge || '/icon1.png',
-		tag: data.tag || `demos_${data.title}`,
+		tag: data.tag || `deimos_${data.title}`,
 		renotify: false,
 		vibrate: [100, 50, 100],
 		data: {

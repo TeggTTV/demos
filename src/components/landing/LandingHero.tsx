@@ -61,7 +61,7 @@ export default function LandingHero({
 						<span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
 					</span>
 					<span className="text-primary font-bold">
-						Demos Campus OS
+						Deimos Campus OS
 					</span>
 					<span className="text-text-muted">
 						· Next-Gen Club Management

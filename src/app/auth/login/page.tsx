@@ -62,14 +62,14 @@ function LoginContent() {
 					<div className="relative mx-auto w-16 h-16 mb-2 overflow-hidden rounded-xl">
 						<Image
 							src="/icon1.png"
-							alt="Demos Logo"
+							alt="Deimos Logo"
 							fill
 							className="object-cover dark:invert"
 						/>
 					</div>
 
 					<h1 className="text-2xl font-bold text-text-primary">
-						Sign In to Demos
+						Sign In to Deimos
 					</h1>
 					<p className="text-xs text-text-muted mt-1">
 						Access your campus clubs, hubs, and meeting check-ins.

@@ -136,10 +136,10 @@ function JoinContent() {
 	};
 
 	const demoCodes = [
-		{ code: 'DEMOS-ACM-2026', label: 'ACM Student Chapter' },
-		{ code: 'DEMOS-DESIGN-2026', label: 'Design Collective' },
-		{ code: 'DEMOS-ROBOTICS-2026', label: 'Robotics Systems' },
-		{ code: 'DEMOS-VENTURE-2026', label: 'Student Venture' },
+		{ code: 'DEIMOS-ACM-2026', label: 'ACM Student Chapter' },
+		{ code: 'DEIMOS-DESIGN-2026', label: 'Design Collective' },
+		{ code: 'DEIMOS-ROBOTICS-2026', label: 'Robotics Systems' },
+		{ code: 'DEIMOS-VENTURE-2026', label: 'Student Venture' },
 	];
 
 	return (
@@ -186,7 +186,7 @@ function JoinContent() {
 								</div>
 								<input
 									type="text"
-									placeholder="e.g. DEMOS-ACM-2026"
+									placeholder="e.g. DEIMOS-ACM-2026"
 									value={code}
 									onChange={(e) => setCode(e.target.value)}
 									className="w-full rounded-2xl border border-border bg-surface pl-10 pr-4 py-3 text-sm font-mono font-bold tracking-wider text-text-primary placeholder:font-sans placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-primary/30 uppercase"
@@ -236,7 +236,7 @@ function JoinContent() {
 							<FiCompass size={13} />
 							<span>Browse public directory</span>
 						</Link>
-						<span className="text-text-muted text-[11px]">Demos Verified Access</span>
+						<span className="text-text-muted text-[11px]">Deimos Verified Access</span>
 					</div>
 				</div>
 

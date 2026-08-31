@@ -65,13 +65,13 @@ function RegisterContent() {
 					<div className="relative mx-auto w-10 h-10 mb-2 overflow-hidden rounded-xl">
 						<Image
 							src="/icon1.png"
-							alt="Demos Logo"
+							alt="Deimos Logo"
 							fill
 							className="object-cover dark:invert"
 						/>
 					</div>
 					<h1 className="text-2xl font-bold text-text-primary">
-						Join Demos
+						Join Deimos
 					</h1>
 					<p className="text-xs text-text-muted mt-1">
 						Create your account to discover clubs, join rosters, and

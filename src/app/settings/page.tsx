@@ -116,7 +116,7 @@ export default function SettingsPage() {
 			}
 			sendBrowserNotification(
 				'Notifications Enabled',
-				'You will now receive Demos updates on your device.',
+				'You will now receive Deimos updates on your device.',
 			);
 		}
 	};
@@ -140,7 +140,7 @@ export default function SettingsPage() {
 		// 1. In-app notification & chime
 		triggerNotification({
 			type: 'feed_message',
-			title: 'Demos Notification Test',
+			title: 'Deimos Notification Test',
 			body: 'Your notification system is fully working!',
 			url: '/settings',
 		});
@@ -226,7 +226,7 @@ export default function SettingsPage() {
 										Progressive Web App
 									</h2>
 									<p className="text-xs text-text-muted">
-										Install Demos to your home screen or
+										Install Deimos to your home screen or
 										desktop for fast access and native
 										alerts.
 									</p>

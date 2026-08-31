@@ -691,7 +691,7 @@ class MockDataStore {
 	}
 
 	generateInvite(groupId: string): ClubInvite {
-		const code = `DEMOS-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+		const code = `DEIMOS-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 		const newInvite: ClubInvite = {
 			id: `inv_${Date.now()}`,
 			groupId,

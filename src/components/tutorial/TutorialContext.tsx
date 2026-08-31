@@ -9,11 +9,7 @@ import React, {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/components/AppContext';
-import {
-	TOUR_STEPS,
-	TourStep,
-	TourTrack,
-} from './tutorialSteps';
+import { TOUR_STEPS, TourStep, TourTrack } from './tutorialSteps';
 
 export interface TutorialContextType {
 	isTourActive: boolean;
@@ -36,7 +32,9 @@ export interface TutorialContextType {
 	resetSandbox: () => void;
 }
 
-const TutorialContext = createContext<TutorialContextType | undefined>(undefined);
+const TutorialContext = createContext<TutorialContextType | undefined>(
+	undefined,
+);
 
 export function TutorialProvider({ children }: { children: React.ReactNode }) {
 	const {
@@ -57,9 +55,10 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 	const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
 	const activeSteps = TOUR_STEPS[currentTrack] || TOUR_STEPS.full;
-	const currentStep = isTourActive && activeSteps[currentStepIndex] ? activeSteps[currentStepIndex] : null;
-
-
+	const currentStep =
+		isTourActive && activeSteps[currentStepIndex]
+			? activeSteps[currentStepIndex]
+			: null;
 
 	// Locate element bounding rect for spotlight
 	const updateTargetRect = useCallback(() => {
@@ -72,7 +71,11 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 		const el = document.querySelector(selector);
 		if (el) {
 			// Ensure element is comfortably centered in viewport on all screen sizes
-			el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+			el.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest',
+			});
 			const rect = el.getBoundingClientRect();
 			setTargetRect(rect);
 		} else {
@@ -84,10 +87,16 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		if (!isTourActive || !currentStep) return;
 
-		const targetUrl = new URL(currentStep.targetPage, window.location.origin);
+		const targetUrl = new URL(
+			currentStep.targetPage,
+			window.location.origin,
+		);
 		const currentUrl = new URL(window.location.href);
 
-		if (currentUrl.pathname !== targetUrl.pathname || currentUrl.search !== targetUrl.search) {
+		if (
+			currentUrl.pathname !== targetUrl.pathname ||
+			currentUrl.search !== targetUrl.search
+		) {
 			router.push(currentStep.targetPage);
 		}
 
@@ -107,7 +116,15 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 			window.removeEventListener('resize', handleResize);
 			window.removeEventListener('scroll', handleScroll);
 		};
-	}, [isTourActive, currentStepIndex, currentTrack, currentStep, pathname, router, updateTargetRect]);
+	}, [
+		isTourActive,
+		currentStepIndex,
+		currentTrack,
+		currentStep,
+		pathname,
+		router,
+		updateTargetRect,
+	]);
 
 	const startTour = useCallback(
 		(track: TourTrack = 'full', stepIndex = 0) => {
@@ -130,7 +147,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 		setIsTourActive(false);
 		setTargetRect(null);
 		if (typeof window !== 'undefined') {
-			localStorage.setItem('demos_has_seen_tutorial_welcome', 'true');
+			localStorage.setItem('deimos_has_seen_tutorial_welcome', 'true');
 		}
 		exitTutorialMode();
 	}, [exitTutorialMode]);
@@ -169,7 +186,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 	const closeWelcomeModal = useCallback(() => {
 		setWelcomeModalOpen(false);
 		if (typeof window !== 'undefined') {
-			localStorage.setItem('demos_has_seen_tutorial_welcome', 'true');
+			localStorage.setItem('deimos_has_seen_tutorial_welcome', 'true');
 		}
 	}, []);
 

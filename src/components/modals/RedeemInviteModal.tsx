@@ -111,7 +111,7 @@ export default function RedeemInviteModal({
 						<Input
 							label="Club Invite Code or Direct Link"
 							required
-							placeholder="e.g. DEMOS-GDSC-2026 or https://.../join/CODE"
+							placeholder="e.g. DEIMOS-GDSC-2026 or https://.../join/CODE"
 							value={inviteCodeInput}
 							onChange={(e) => setInviteCodeInput(e.target.value)}
 						/>

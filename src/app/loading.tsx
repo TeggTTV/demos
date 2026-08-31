@@ -41,7 +41,7 @@ export default function Loading() {
 				{/* Loading Text */}
 				<div className="flex flex-col items-center space-y-1">
 					<span className="text-xs font-bold uppercase tracking-widest text-text-primary">
-						Loading Demos
+						Loading Deimos
 					</span>
 					<span className="text-[11px] text-text-muted">
 						Connecting to campus hub...

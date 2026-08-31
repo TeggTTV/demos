@@ -36,13 +36,13 @@ export default function Nav() {
 						<Link
 							href="/"
 							className="flex items-center space-x-2"
-							aria-label="Demos home"
+							aria-label="Deimos home"
 							data-tour="nav-brand"
 						>
 							<div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg">
 								<Image
 									src="/icon1.png"
-									alt="Demos Logo"
+									alt="Deimos Logo"
 									fill
 									className="object-cover dark:invert"
 									priority
@@ -50,10 +50,10 @@ export default function Nav() {
 							</div>
 							<div className="flex flex-col">
 								<span className="text-lg font-extrabold tracking-tight text-primary leading-tight">
-									Demos
+									Deimos
 								</span>
 								<span className="text-[9px] font-semibold text-text-muted uppercase tracking-widest -mt-1 hidden sm:block">
-									Club Hub
+									Club Management
 								</span>
 							</div>
 						</Link>
